@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verasanti - AI Headshots</title>
+    
+    <!-- Critical CSS to ensure background isn't white/blank on error -->
+    <style>
+      html, body { margin: 0; padding: 0; background-color: #020617; color: white; min-height: 100vh; }
+      #root { width: 100%; min-height: 100vh; }
+    </style>
+
+    <!-- Global Error Handler -->
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        console.error("Global Error:", msg, error);
+        var box = document.getElementById('error-display');
+        if (box) {
+          box.style.display = 'block';
+          box.innerHTML += '<div style="margin-bottom:5px; border-bottom:1px solid #991b1b; padding-bottom:5px;">' + msg + '</div>';
+        }
+      };
+      
+      // Polyfill process for environment compatibility
+      window.process = window.process || {};
+      window.process.env = window.process.env || {};
+      window.process.env.API_KEY = ''; // Default value
+    </script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'slide-up': 'slideUp 0.5s ease-out forwards',
+              'shimmer': 'shimmer 2s linear infinite',
+            },
+            keyframes: {
+              fadeIn: { from: { opacity: '0', transform: 'translateY(10px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+              slideUp: { from: { opacity: '0', transform: 'translateY(20px)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+              shimmer: { from: { backgroundPosition: '200% 0' }, to: { backgroundPosition: '-200% 0' } }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "vite": "https://esm.sh/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-950 text-slate-100">
+    <!-- Visual Error Display -->
+    <div id="error-display" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#450a0a; color:#fecaca; padding:15px; font-family:monospace; font-size:12px; z-index:9999; border-top: 2px solid #ef4444; max-height: 30vh; overflow-y: auto;">
+        <strong>System Errors:</strong>
+    </div>
+    
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

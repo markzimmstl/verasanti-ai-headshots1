@@ -1,0 +1,7 @@
+{
+  "name": "Verasanti - AI Headshots",
+  "description": "Generate high-end corporate and professional headshots using Gemini AI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
