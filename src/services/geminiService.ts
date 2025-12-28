@@ -121,17 +121,18 @@ const buildPrompt = (
   
   if (config.retouchLevel === 'None') {
     textureInstruction = `
-      ** CRITICAL TEXTURE & REALISM INSTRUCTION (NO RETOUCHING) **
-      - CAPTURE AUTHENTIC SKIN TEXTURE: Visible natural pores, fine lines, vellus hair (peach fuzz), and subtle skin variation.
-      - HIGH-FREQUENCY DETAIL: Preserve micro-contrast and organic tonal variation across the face.
-      - OPTICAL REALISM: Skin must appear naturally imperfect, realistic, and optically true, as photographed with a professional full-frame camera and 85mm portrait lens.
-      - NO SMOOTHING: Absolutely NO beauty filters, NO plastic skin, NO airbrushed effect, NO blurred pores.
-      - LIGHTING INTERACTION: Show realistic specular highlights on skin texture, not just flat color.
+      ** CRITICAL: RAW SENSOR DATA LOOK (ZERO RETOUCHING) **
+      - TEXTURE PRIORITY: You MUST render deep, sharp high-frequency skin details (pores, micro-wrinkles, uneven skin tone).
+      - IMPERFECTIONS: Do not hide age lines, sun spots, or texture. The skin must look "uncomfortably real".
+      - SENSOR NOISE: Allow subtle luminance noise to prevent the "plastic AI look".
+      - SUBSURFACE SCATTERING: Ensure light penetrates the skin surface to create fleshy, organic translucency.
+      - PROHIBITED: Do not apply any "glamour glow" or "soft skin" filters.
+      - REFERENCE: Think "Phase One 100MP Raw File" zoomed in 100%.
     `;
     
     // Add specific negative cues for texture preservation
     negativeConstraints += `
-      - plastic skin, waxy skin, airbrushed face, beauty filter, over-smoothed skin, blurred pores, CGI skin, hyper-perfect complexion, synthetic texture.
+      - beauty filter, smoothing, airbrush, wax, plastic, blurred pores, foundation, perfect skin, doll-like, denoised, soft glow.
     `;
   } else if (config.retouchLevel === 'Natural') {
     textureInstruction = "Skin should look healthy and clean but maintain natural texture. Slight retouching allowed but keep it realistic.";
