@@ -40,31 +40,55 @@ const LOADING_PHRASES = [
 ];
 
 function App() {
-  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
-  const [credits, setCredits] = useState(0); 
+  // --- STATE WITH "LONG-TERM MEMORY" (LocalStorage) ---
   
-  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
+  // 1. Remember the current step
+  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>(() => {
+    return (localStorage.getItem('verasanti_step') as any) || 'upload';
+  });
+
+  // 2. Remember Credits (CRITICAL FIX for payment loop)
+  const [credits, setCredits] = useState(() => {
+    return parseInt(localStorage.getItem('verasanti_credits') || '0', 10);
+  });
+  
+  // 3. Remember what the user was trying to generate
+  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(() => {
+    const saved = localStorage.getItem('verasanti_pending');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // 4. Remember uploaded images (so they don't vanish on refresh)
+  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>(() => {
+    const saved = localStorage.getItem('verasanti_refs');
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   
-  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
-
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
-  
-  // State for the cycling phrases
   const [loadingPhaseIndex, setLoadingPhaseIndex] = useState(0);
-  
   const [error, setError] = useState<string | null>(null);
 
-  // --- EFFECT: Cycle Loading Phrases ---
+  // --- PERSISTENCE EFFECTS (Save to Memory) ---
+  useEffect(() => { localStorage.setItem('verasanti_step', currentStep); }, [currentStep]);
+  useEffect(() => { localStorage.setItem('verasanti_credits', credits.toString()); }, [credits]);
+  useEffect(() => { 
+    if (pendingGeneration) localStorage.setItem('verasanti_pending', JSON.stringify(pendingGeneration));
+    else localStorage.removeItem('verasanti_pending');
+  }, [pendingGeneration]);
+  useEffect(() => { localStorage.setItem('verasanti_refs', JSON.stringify(referenceImages)); }, [referenceImages]);
+
+  // --- LOADING PHRASE CYCLER ---
   useEffect(() => {
     let interval: any;
     if (isGenerating) {
-      setLoadingPhaseIndex(0); // Reset to start
+      setLoadingPhaseIndex(0);
       interval = setInterval(() => {
         setLoadingPhaseIndex(prev => (prev + 1) % LOADING_PHRASES.length);
-      }, 3500); // Change every 3.5 seconds
+      }, 3500);
     }
     return () => clearInterval(interval);
   }, [isGenerating]);
@@ -113,9 +137,9 @@ function App() {
     setError(null);
     const newImages: GeneratedImage[] = [];
     
+    // Deduct credits
     setCredits(prev => Math.max(0, prev - totalImagesRequested));
 
-    // NEW: Track global index across all styles in this batch
     let globalImageIndex = 0;
 
     try {
@@ -134,12 +158,11 @@ function App() {
             ? style.description 
             : `${style.clothingDescription} in a ${style.promptModifier}`; 
 
-          // Pass GLOBAL index to service instead of local 'i'
           const imageUrl = await generateBrandPhotoWithRefsSafe(
             referenceImages,
             fullPrompt,
             finalConfigForThisLook,
-            undefined, // Explicit undefined for legacy arg
+            undefined, 
             globalImageIndex 
           );
 
@@ -155,21 +178,20 @@ function App() {
             aspectRatio: finalConfigForThisLook.aspectRatio || '1:1'
           });
           
-          // Increment global counter
           globalImageIndex++;
-
           await new Promise(r => setTimeout(r, 500));
         }
       }
 
       setGeneratedImages(prev => [...newImages, ...prev]);
-      setPendingGeneration(null);
+      setPendingGeneration(null); // Clear pending job on success
       setCurrentStep('results');
       window.scrollTo(0, 0);
 
     } catch (err: any) {
       console.error("Generation Error:", err);
-      setError(err.message || "Something went wrong during generation.");
+      // Don't clear pendingGeneration so they can try again without losing settings
+      setError(err.message || "Something went wrong during generation. Please try again.");
     } finally {
       setIsGenerating(false);
       setLoadingMessage('');
@@ -177,11 +199,18 @@ function App() {
   };
 
   const handlePaymentComplete = (purchasedCredits: number) => {
-    setCredits(prev => prev + purchasedCredits);
+    // 1. Immediately update credits in state AND LocalStorage
+    const newCredits = credits + purchasedCredits;
+    setCredits(newCredits);
+    localStorage.setItem('verasanti_credits', newCredits.toString()); 
     
+    // 2. Check if we have a job waiting
     if (pendingGeneration) {
+      // Execute directly
       executeGeneration(pendingGeneration.styles, pendingGeneration.config);
     } else {
+      // If no job was waiting, go to settings so they can click "Generate" again
+      // (This prevents getting stuck on payment screen)
       setCurrentStep('settings'); 
     }
     window.scrollTo(0, 0);
@@ -273,7 +302,7 @@ function App() {
         {/* LOADING STATE - DYNAMIC TEXT */}
         {isGenerating ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 min-h-[60vh] animate-fade-in">
-            <div className="text-center space-y-12"> {/* Increased spacing */}
+            <div className="text-center space-y-12">
               {/* Spinner */}
               <div className="relative inline-block">
                 <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 rounded-full"></div>
@@ -283,10 +312,10 @@ function App() {
               <div className="space-y-4">
                 <h2 className="text-xl font-medium text-slate-400 tracking-tight">Creating your Photos</h2>
                 
-                {/* Cycling Status Phrases - 4X BIGGER */}
+                {/* Cycling Status Phrases */}
                 <div className="min-h-[80px] flex items-center justify-center px-4">
                   <p 
-                    key={loadingPhaseIndex} // Key forces re-render for animation
+                    key={loadingPhaseIndex} 
                     className="text-indigo-100 text-3xl md:text-5xl font-extrabold text-center animate-fade-in-up leading-tight max-w-4xl mx-auto"
                   >
                     {LOADING_PHRASES[loadingPhaseIndex]}
