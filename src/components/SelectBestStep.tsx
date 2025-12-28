@@ -52,6 +52,7 @@ export const SelectBestStep: React.FC<SelectBestStepProps> = ({
         fileName: file.name,
         base64,
         createdAt: Date.now(),
+        mimeType: file.type,
       };
       setter(uploaded);
     };
@@ -130,7 +131,6 @@ export const SelectBestStep: React.FC<SelectBestStepProps> = ({
 
             <Button
               variant="outline"
-              size="sm"
               className="mt-1 border-slate-600 text-slate-200 hover:bg-slate-800/70"
               onClick={onBack}
             >

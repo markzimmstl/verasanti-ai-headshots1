@@ -72,3 +72,20 @@ export interface GeneratedImage {
   createdAt: number;
   aspectRatio: AspectRatio;
 }
+export interface UploadedImage {
+  id?: string;
+  fileName?: string;
+  mimeType: string;
+  base64: string;
+  data?: string;
+  createdAt?: number; // <--- This fixes the error!
+}
+
+export interface BrandData {
+  // We add '?' to make these optional, fixing the brandDefinitions errors
+  brandColor?: string;
+  secondaryBrandColor?: string;
+  fontFamily?: string;
+  logoUrl?: string;
+  [key: string]: any;
+}

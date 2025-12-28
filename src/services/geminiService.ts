@@ -449,7 +449,7 @@ export const generateBrandPhotoWithRefs = async (
   parts.push({
     inlineData: {
       mimeType: "image/jpeg",
-      data: cleanBase64(refs.main.base64),
+      data: cleanBase64(refs.main?.base64 || ''),
     },
   });
 
@@ -485,7 +485,7 @@ export const generateBrandPhotoWithRefs = async (
       model: IMAGE_MODEL, 
       contents: [{ role: "user", parts }],
       config: {
-        response_modalities: ["IMAGE"], 
+        responseModalities: ["IMAGE"], 
       },
     });
 
@@ -594,7 +594,7 @@ export const refineGeneratedImage = async (
         },
       ],
       config: {
-        response_modalities: ["IMAGE"], 
+        responseModalities: ["IMAGE"], 
       },
     });
 

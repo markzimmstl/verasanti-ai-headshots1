@@ -270,8 +270,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     const brand = BRAND_DEFINITIONS[clothingStyleGroup];
     if (!brand) return;
 
-    const allClothingChoices = brand.clothingOptions.flatMap((group) =>
-      group.items.map((item) => ({
+    const allClothingChoices = brand.clothingOptions.flatMap((group: any) =>
+      group.items.map((item: any) => ({
         category: group.category,
         value: item,
       }))
@@ -551,7 +551,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  pickColorWithEyeDropper(type);
+                  pickColorWithEyeDropper(type as any);
                   setActiveColorPicker(null);
                 }}
                 disabled={!isEyeDropperSupported}
@@ -696,7 +696,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     <>
                       <div className="space-y-5">
                         {BRAND_DEFINITIONS[clothingStyleGroup]?.clothingOptions.map(
-                          (group) => (
+                          (group: any) => (
                             <div key={group.category}>
                               <p
                                 className="text-[10px] font-bold uppercase tracking-wider mb-2 ml-1"
@@ -705,7 +705,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                                 {group.category}
                               </p>
                               <div className="flex flex-wrap gap-2">
-                                {group.items.map((item) => {
+                                {group.items.map((item: any) => {
                                   const isActive = clothingOption === item;
                                   return (
                                     <button
@@ -781,7 +781,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                         {BRAND_DEFINITIONS[clothingStyleGroup]?.sceneOptions.map(
-                          (scene) => {
+                          (scene: any) => {
                             const isActive = sceneId === scene.id;
                             return (
                               <button
