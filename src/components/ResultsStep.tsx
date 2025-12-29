@@ -341,14 +341,15 @@ export const ResultsStep: React.FC<ResultsStepProps> = ({
       {/* EDIT MODAL */}
       {editingImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 animate-fade-in">
+          {/* Main Card Container */}
           <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row overflow-hidden shadow-2xl">
             
-            {/* Left: Image Preview */}
-            <div className="w-full md:w-1/2 bg-black flex items-center justify-center p-4 relative">
+            {/* Left: Image Preview (Mobile: Fixed height | Desktop: Full height) */}
+            <div className="w-full h-64 md:h-auto md:w-1/2 bg-black flex items-center justify-center p-4 relative shrink-0">
                <img 
                  src={editingImage.imageUrl} 
                  alt="Editing" 
-                 className="max-h-[60vh] md:max-h-full max-w-full object-contain rounded-lg"
+                 className="h-full w-full object-contain rounded-lg"
                />
                {isProcessing && (
                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm text-white">
@@ -362,9 +363,9 @@ export const ResultsStep: React.FC<ResultsStepProps> = ({
                )}
             </div>
 
-            {/* Right: Controls */}
-            <div className="w-full md:w-1/2 p-6 flex flex-col">
-              <div className="flex justify-between items-center mb-6">
+            {/* Right: Controls (Scrollable) */}
+            <div className="w-full md:w-1/2 p-6 flex flex-col overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 shrink-0">
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <Wand2 className="w-5 h-5 text-indigo-400" />
                   Magic Editor
@@ -407,7 +408,7 @@ export const ResultsStep: React.FC<ResultsStepProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-indigo-900/20 border border-indigo-500/20 rounded-lg p-4 flex gap-3">
+                <div className="bg-indigo-900/20 border border-indigo-500/20 rounded-lg p-4 flex gap-3 shrink-0">
                   <div className="p-2 bg-indigo-500/20 rounded-lg h-fit">
                     <Sparkles className="w-4 h-4 text-indigo-400" />
                   </div>
@@ -420,7 +421,7 @@ export const ResultsStep: React.FC<ResultsStepProps> = ({
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-3">
+              <div className="mt-6 flex justify-end gap-3 shrink-0 pt-4 bg-slate-900 sticky bottom-0 border-t border-slate-800 md:border-none md:static md:bg-transparent">
                 <Button 
                   variant="outline" 
                   onClick={() => setEditingImage(null)}
