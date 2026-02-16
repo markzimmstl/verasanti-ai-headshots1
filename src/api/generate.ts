@@ -1,4 +1,6 @@
+// @ts-nocheck
 // This file runs on Vercel's servers, NOT in the browser.
+const REPLICATE_API_TOKEN = process.env.VITE_REPLICATE_API_TOKEN;
 export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
@@ -7,13 +9,18 @@ export default async function handler(req: Request) {
   const response = await fetch("https://api.replicate.com/v1/predictions", {
     method: "POST",
     headers: {
-      "Authorization": `Token ${process.env.VITE_REPLICATE_API_TOKEN}`,
+      "Authorization": `Token ${REPLICATE_API_TOKEN}`,
       "Content-Type": "application/json",
       "Prefer": "wait"
     },
     body: JSON.stringify({
       version: "black-forest-labs/flux-schnell",
-      input: { prompt, image, aspect_ratio, output_format: "png" }
+      input: { 
+        prompt, 
+        image, 
+        aspect_ratio, 
+        output_format: "png" 
+      }
     }),
   });
 

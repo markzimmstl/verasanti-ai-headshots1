@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { UploadStep } from './components/UploadStep.tsx';
-import { PaymentStep } from './components/PaymentStep.tsx';
-import { SettingsStep } from './components/SettingsStep.tsx';
-import { ResultsStep } from './components/ResultsStep.tsx';
+import { UploadStep } from './components/UploadStep';
+import { PaymentStep } from './components/PaymentStep';
+import { SettingsStep } from './components/SettingsStep';
+import ResultsStep from './components/ResultsStep';
 import { 
   GenerationConfig, 
   GeneratedImage, 
   StyleOption, 
   MultiReferenceSet 
-} from './types.ts';
-import { generateBrandPhotoWithRefsSafe } from './services/geminiService.ts';
+} from './types';
+import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 // Default configuration
@@ -161,9 +161,7 @@ function App() {
           const imageUrl = await generateBrandPhotoWithRefsSafe(
             referenceImages,
             fullPrompt,
-            finalConfigForThisLook,
-            undefined, 
-            globalImageIndex 
+            finalConfigForThisLook
           );
 
           if (!imageUrl) throw new Error("Failed to generate image");
@@ -354,14 +352,9 @@ function App() {
             )}
 
             {currentStep === 'results' && (
-              <ResultsStep
-                results={generatedImages}
-                credits={credits}
-                onReset={handleReset}
-                onUpdateImage={handleUpdateImage}
-                onSpendCredit={handleSpendCredit}
-                onAddCredits={handleAddCredits}
-                onGenerateMore={handleGenerateMore}
+              <ResultsStep 
+                images={generatedImages}
+                onRestart={handleReset}
               />
             )}
           </div>
