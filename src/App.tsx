@@ -196,22 +196,21 @@ function App() {
     }
   };
 
-  const handlePaymentComplete = (purchasedCredits: number) => {
-    // 1. Immediately update credits in state AND LocalStorage
+const handlePaymentComplete = (purchasedCredits: number) => {
+    // 1. Update credits
     const newCredits = credits + purchasedCredits;
     setCredits(newCredits);
     localStorage.setItem('verasanti_credits', newCredits.toString()); 
     
-    // 2. Check if we have a job waiting
-    if (pendingGeneration) {
-      // Execute directly
-      executeGeneration(pendingGeneration.styles, pendingGeneration.config);
-    } else {
-      // If no job was waiting, go to settings so they can click "Generate" again
-      // (This prevents getting stuck on payment screen)
-      setCurrentStep('settings'); 
-    }
+    // 2. FORCE the app to the results screen
+    // This stops the app from looping back to the email/settings page
+    setCurrentStep('results'); 
     window.scrollTo(0, 0);
+    
+    // 3. Trigger the engine
+    if (pendingGeneration) {
+      executeGeneration(pendingGeneration.styles, pendingGeneration.config);
+    }
   };
 
   const handlePaymentBack = () => {
