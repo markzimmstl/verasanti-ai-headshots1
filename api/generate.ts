@@ -27,7 +27,7 @@ export default async function handler(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
 
-    // MODE B: Flux 2 Flex - 2026 Corrected Schema
+    // MODE B: Flux 2 Flex - Deep Cleaned Handshake
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -35,31 +35,32 @@ export default async function handler(req) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // Using the official model path string
         version: "black-forest-labs/flux-2-flex",
         input: {
           prompt: prompt,
-          input_images: [image.trim()], // Ensure no trailing spaces in base64
+          // Ensure image is a single clean string inside the array
+          input_images: [image.trim()], 
           aspect_ratio: aspect_ratio || "1:1",
           output_format: "webp",
           guidance: 3.5,
           steps: 20,
-          prompt_upsampling: false // Keeps your Peter Hurley technical terms intact
+          prompt_upsampling: false
         },
       }),
     });
 
     const result = await response.json();
     
-    // Catch specific Replicate validation errors
+    // THE SMOKING GUN: If it fails, log the exact reason to Vercel Logs
     if (response.status === 422) {
-      console.error("Replicate Schema Error:", JSON.stringify(result.detail));
-      return new Response(JSON.stringify({ error: "Schema Mismatch", details: result.detail }), { status: 422 });
+      console.error("REPLICATE VALIDATION ERROR:", JSON.stringify(result));
+      return new Response(JSON.stringify(result), { status: 422 });
     }
 
     return new Response(JSON.stringify(result), { status: 200 });
 
   } catch (error) {
+    console.error("CRITICAL API ERROR:", error.message);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
