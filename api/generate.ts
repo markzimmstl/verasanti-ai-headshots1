@@ -27,7 +27,12 @@ export default async function handler(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
 
-    // MODE B: Flux 2 Flex - Deep Cleaned Handshake
+    // MODE B: Flux 2 Flex - Validation Fixed
+    // We ensure the aspect_ratio matches Replicate's specific enum list
+    const validAspectRatio = ["1:1", "16:9", "3:2", "2:3", "4:5", "5:4", "9:16", "3:4", "4:3"].includes(aspect_ratio) 
+      ? aspect_ratio 
+      : "1:1";
+
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -38,9 +43,8 @@ export default async function handler(req) {
         version: "black-forest-labs/flux-2-flex",
         input: {
           prompt: prompt,
-          // Ensure image is a single clean string inside the array
-          input_images: [image.trim()], 
-          aspect_ratio: aspect_ratio || "1:1",
+          input_images: [image.trim()],
+          aspect_ratio: validAspectRatio,
           output_format: "webp",
           guidance: 3.5,
           steps: 20,
@@ -51,7 +55,6 @@ export default async function handler(req) {
 
     const result = await response.json();
     
-    // THE SMOKING GUN: If it fails, log the exact reason to Vercel Logs
     if (response.status === 422) {
       console.error("REPLICATE VALIDATION ERROR:", JSON.stringify(result));
       return new Response(JSON.stringify(result), { status: 422 });
