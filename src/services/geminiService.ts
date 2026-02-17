@@ -15,8 +15,8 @@ export const generateBrandPhotoWithRefs = async (
     TECHNICAL: 85mm lens, f/2.8, hyper-realistic skin texture.
   `;
 
-  try {
-    // This now calls your PRIVATE tunnel in the /api folder
+try {
+    // 1. START the job
     const response = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -27,13 +27,35 @@ export const generateBrandPhotoWithRefs = async (
       }),
     });
 
-    const result = await response.json();
+    if (!response.ok) throw new Error("Failed to start AI engine");
+    let prediction = await response.json();
 
-    if (result.output && result.output.length > 0) {
-      return result.output[0];
-    } else {
-      throw new Error("AI failed to generate. Check Vercel Logs.");
+    // 2. THE POLLING LOOP: Keep checking every 2 seconds
+    while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
+      console.log("VeraLooks Engine Status:", prediction.status);
+      
+      // Wait for 2 seconds
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // CHECK status using the prediction_id
+      const checkResponse = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prediction_id: prediction.id })
+      });
+
+      if (!checkResponse.ok) throw new Error("Failed to check AI status");
+      prediction = await checkResponse.json();
     }
+
+    // 3. FINISH: Return the final image URL
+    if (prediction.status === 'succeeded') {
+      // Replicate usually returns an array [url], but sometimes just a string
+      return Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+    } else {
+      throw new Error(prediction.error || "AI generation failed");
+    }
+
   } catch (error) {
     console.error("Generation Error:", error);
     throw error;

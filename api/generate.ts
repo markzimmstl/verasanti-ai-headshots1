@@ -1,31 +1,32 @@
 // @ts-nocheck
-// This file runs on Vercel's servers, NOT in the browser.
 const REPLICATE_API_TOKEN = process.env.VITE_REPLICATE_API_TOKEN;
-export const config = { runtime: 'edge' };
 
 export default async function handler(req: Request) {
-  const { prompt, image, aspect_ratio } = await req.json();
+  const body = await req.json();
+  const { prompt, image, aspect_ratio, prediction_id } = body;
 
+  // IF WE ALREADY HAVE AN ID, WE ARE CHECKING STATUS
+  if (prediction_id) {
+    const response = await fetch(`https://api.replicate.com/v1/predictions/${prediction_id}`, {
+      headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
+    });
+    const result = await response.json();
+    return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } });
+  }
+
+  // OTHERWISE, WE ARE STARTING A NEW JOB
   const response = await fetch("https://api.replicate.com/v1/predictions", {
     method: "POST",
     headers: {
       "Authorization": `Token ${REPLICATE_API_TOKEN}`,
       "Content-Type": "application/json",
-      "Prefer": "wait"
     },
     body: JSON.stringify({
-      version: "black-forest-labs/flux-schnell",
-      input: { 
-        prompt, 
-        image, 
-        aspect_ratio, 
-        output_format: "png" 
-      }
+      version: "f429676579b47e279434444988755695029a1b15174092b7672ecf1ca4740263",
+      input: { prompt, image, aspect_ratio, output_format: "png" }
     }),
   });
 
   const result = await response.json();
-  return new Response(JSON.stringify(result), {
-    headers: { "Content-Type": "application/json" }
-  });
+  return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } });
 }
