@@ -27,26 +27,27 @@ export default async function handler(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
 
-    // MODE B: Starting a new job with Flux 2 Flex
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Token ${REPLICATE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        // The most stable version of Flux 2 Flex for 2026
-        version: "black-forest-labs/flux-2-flex",
-        input: {
-          prompt: prompt,
-          image: image, 
-          structure_coherence: 0.7, 
-          identity_strength: 1.0,
-          aspect_ratio: aspect_ratio || "1:1",
-          output_format: "webp"
-        },
-      }),
-    });
+      // MODE B: Safety-First Flux 2 Flex Handshake
+          const response = await fetch("https://api.replicate.com/v1/predictions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Token ${REPLICATE_API_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              // The long ID version of Flux 2 Flex (more stable for APIs)
+              version: "879a8368f5c697841804b407338bc4b66df287d294da6881c19266f87452d377",
+              input: {
+                prompt: prompt,
+                image: image,
+                // We're removing the extra coherence settings for this test 
+                // to rule out the 422 validation error
+                aspect_ratio: aspect_ratio || "1:1",
+                output_format: "webp",
+                guidance_scale: 3.5
+              },
+            }),
+          });
 
     const result = await response.json();
     return new Response(JSON.stringify(result), { status: 200 });
