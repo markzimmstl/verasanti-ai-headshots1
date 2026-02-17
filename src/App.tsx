@@ -11,6 +11,7 @@ import {
 } from './types';
 import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { BRAND_DEFINITIONS } from './data/brandDefinitions';
 
 // Default configuration
 const DEFAULT_CONFIG: GenerationConfig = {
@@ -151,12 +152,29 @@ function App() {
             ...(style.overrides || {}) 
         };
 
-        for (let i = 0; i < countForThisLook; i++) {
+       for (let i = 0; i < countForThisLook; i++) {
           setLoadingMessage(`Generating ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
           
-          const fullPrompt = style.id === 'expert-custom' 
-            ? style.description 
-            : `${style.clothingDescription} in a ${style.promptModifier}`; 
+          // 1. Get user selections from the config
+          const selectedClothing = config.clothing; 
+          const selectedBackgroundID = config.backgroundType;
+
+          // 2. Find the descriptive prompt in BRAND_DEFINITIONS
+          let selectedScenePrompt = "";
+          Object.values(BRAND_DEFINITIONS).forEach(brand => {
+            const foundScene = brand.sceneOptions.find(s => s.id === selectedBackgroundID || s.name === selectedBackgroundID);
+            if (foundScene) {
+              selectedScenePrompt = foundScene.prompt;
+            }
+          });
+
+          // 3. Fallback if no preset matches
+          if (!selectedScenePrompt) {
+            selectedScenePrompt = "in a professional corporate setting";
+          }
+
+          // 4. Assemble the final text for the AI
+          const fullPrompt = `${selectedClothing}, ${selectedScenePrompt}`;
 
           const imageUrl = await generateBrandPhotoWithRefsSafe(
             referenceImages,
