@@ -27,7 +27,7 @@ export default async function handler(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
 
-    // MODE B: Flux 2 Flex - 2026 Standard Handshake
+    // MODE B: Flux 2 Flex - 2026 Corrected Schema
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -35,29 +35,26 @@ export default async function handler(req) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // Updated to the exact model path for the Flex variant
+        // Using the official model path string
         version: "black-forest-labs/flux-2-flex",
         input: {
           prompt: prompt,
-          // Explicitly naming the array and ensuring no extra spaces
-          input_images: [image.trim()], 
+          input_images: [image.trim()], // Ensure no trailing spaces in base64
           aspect_ratio: aspect_ratio || "1:1",
           output_format: "webp",
-          guidance: 4.5,
-          steps: 20
+          guidance: 3.5,
+          steps: 20,
+          prompt_upsampling: false // Keeps your Peter Hurley technical terms intact
         },
       }),
     });
 
     const result = await response.json();
     
-    // Check if Replicate rejected it with a specific message
-    if (result.status === 422 || result.detail) {
-      console.error("Validation Error Details:", result.detail);
-      return new Response(JSON.stringify({ 
-        error: "Validation Failed", 
-        details: result.detail 
-      }), { status: 422 });
+    // Catch specific Replicate validation errors
+    if (response.status === 422) {
+      console.error("Replicate Schema Error:", JSON.stringify(result.detail));
+      return new Response(JSON.stringify({ error: "Schema Mismatch", details: result.detail }), { status: 422 });
     }
 
     return new Response(JSON.stringify(result), { status: 200 });
