@@ -47,7 +47,7 @@ export default async function handler(req) {
           aspect_ratio: validAspectRatio,
           output_format: "webp",
           guidance: 3.5,
-          steps: 20,
+          steps: 30,
           prompt_upsampling: false
         },
       }),

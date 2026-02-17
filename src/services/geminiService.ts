@@ -7,12 +7,14 @@ export const generateBrandPhotoWithRefs = async (
   globalIndex: number = 0
 ): Promise<string> => {
   
-  const headshotPrompt = `
-    A high-end professional headshot of the person in the reference image.
-    STYLE: Peter Hurley cinematic lighting, square jawline emphasis, sharp eyes.
-    LIGHTING: ${config.mood}, soft-box wrap-around light.
-    SCENE: ${stylePrompt}.
-    TECHNICAL: 85mm lens, f/2.8, hyper-realistic skin texture.
+const headshotPrompt = `
+    A high-end professional commercial headshot. 
+    SUBJECT: A detailed, hyper-realistic portrait of the person in the reference image. 
+    LIGHTING: Peter Hurley's signature "Triangle" clamshell lighting setup. Bright, clean, even studio light using wrap-around strip boxes. Crisp catchlights in the eyes. No harsh shadows on the face.
+    STYLE: Professional photography, sharp focus, 8k resolution.
+    TECHNICAL: Shot on Hasselblad X2D, 85mm f/2.8 lens. Visible skin pores and fine textures. High-fidelity skin tones. 
+    BACKGROUND: Clean, high-key white seamless studio background.
+    MOOD: Confident, approachable, and professional.
   `;
 
 try {
