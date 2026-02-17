@@ -40,8 +40,8 @@ export default async function handler(req) {
         input: {
           prompt: prompt,
           image: image, 
-          structure_coherence: 0.9, 
-          identity_strength: 0.8,
+          structure_coherence: 0.7, 
+          identity_strength: 1.0,
           aspect_ratio: aspect_ratio || "1:1",
           output_format: "webp"
         },
