@@ -27,24 +27,27 @@ export default async function handler(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
 
-    // MODE B: Starting a new job
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Token ${REPLICATE_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        // Using the latest Flux Schnell version string
-        version: "f429676579b47e279434444988755695029a1b15174092b7672ecf1ca4740263",
-        input: {
-          prompt: prompt,
-          image: image,
-          aspect_ratio: aspect_ratio || "1:1",
-          output_format: "webp" // WebP is faster/smaller for the AI to return
-        },
-      }),
-    });
+    // MODE B: Starting a new job with Flux 2 Flex
+        const response = await fetch("https://api.replicate.com/v1/predictions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Token ${REPLICATE_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            // The 2026 Flux 2 Flex Model
+            version: "black-forest-labs/flux-2-flex",
+            input: {
+              prompt: prompt,
+              image: image, // Your reference photo
+              structure_coherence: 0.9, // Keeps the face shape identical
+              identity_strength: 0.8, // Ensures it looks like the user
+              guidance_scale: 3.5,
+              output_format: "webp",
+              num_outputs: 1
+            },
+          }),
+        });
 
     const result = await response.json();
 
