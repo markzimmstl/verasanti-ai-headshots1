@@ -182,7 +182,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
                     </button>
                   </div>
 
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-800">
                     Choose a preset or write your own instruction. Each edit uses 1 credit and adds the result next to the original.
                   </p>
 
@@ -195,7 +195,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
                         className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
                           editPrompt === preset
                             ? 'bg-indigo-600 border-indigo-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
+                            : 'bg-white border-gray-300 text-gray-800 hover:border-indigo-400 hover:text-indigo-600'
                         }`}
                       >
                         {preset}
