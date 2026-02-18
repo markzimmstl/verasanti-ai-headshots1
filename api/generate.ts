@@ -69,4 +69,6 @@ export default async function handler(req) {
 
   } catch (error) {
     console.error("CRITICAL API ERROR:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+}
