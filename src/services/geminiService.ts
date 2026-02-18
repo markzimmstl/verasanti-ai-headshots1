@@ -604,11 +604,13 @@ export const refineGeneratedImage = async (
         },
       ],
       config: {
-        // ✅ CRITICAL FIX: Must include TEXT alongside IMAGE
         responseModalities: ["TEXT", "IMAGE"],
+        imageConfig: {
+          aspectRatio: aspectRatio.replace('/', ':'),
+        },
       },
     });
-
+    
     const outputParts = response.candidates?.[0]?.content?.parts;
     const images = extractImagesFromParts(outputParts || []);
 
