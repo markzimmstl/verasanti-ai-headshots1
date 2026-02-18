@@ -21,7 +21,7 @@ export default async function handler(req) {
   try {
     // MODE A: Checking status of existing prediction
     if (prediction_id) {
-      const response = await fetch(`https://api.replicate.com/v1/predictions/${prediction_id}`, {
+      const response = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-2-flex/predictions", {
         headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
       });
       const result = await response.json();
@@ -41,8 +41,7 @@ export default async function handler(req) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "black-forest-labs/flux-2-flex",
-        input: {
+         input: {
           prompt: prompt,
           input_images: [image.trim()],
           aspect_ratio: validAspectRatio,
