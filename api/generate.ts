@@ -11,7 +11,7 @@ export default async function handler(req) {
     data = req.body;
   }
 
- const { prompt, image, aspect_ratio, prediction_id } = data;
+  const { prompt, image, aspect_ratio, prediction_id } = data;
   console.log("API CALLED WITH:", { prompt: prompt?.slice(0,50), hasImage: !!image, aspect_ratio, prediction_id });
 
   if (!REPLICATE_API_TOKEN) {
@@ -19,7 +19,7 @@ export default async function handler(req) {
   }
 
   try {
-    // MODE A: Checking status
+    // MODE A: Checking status of existing prediction
     if (prediction_id) {
       const response = await fetch(`https://api.replicate.com/v1/predictions/${prediction_id}`, {
         headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
@@ -28,8 +28,7 @@ export default async function handler(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
 
-    // MODE B: Flux 2 Flex - Validation Fixed
-    // We ensure the aspect_ratio matches Replicate's specific enum list
+    // MODE B: Start a new Flux 2 Flex generation
     const normalized = (aspect_ratio || "1:1").replace("/", ":");
     const validAspectRatio = ["1:1", "16:9", "3:2", "2:3", "4:5", "5:4", "9:16", "3:4", "4:3"].includes(normalized)
       ? normalized
@@ -41,7 +40,7 @@ export default async function handler(req) {
         "Authorization": `Token ${REPLICATE_API_TOKEN}`,
         "Content-Type": "application/json",
       },
-     body: JSON.stringify({
+      body: JSON.stringify({
         model: "black-forest-labs/flux-2-flex",
         input: {
           prompt: prompt,
@@ -55,13 +54,12 @@ export default async function handler(req) {
       }),
     });
 
-const result = await response.json();
-    
+    const result = await response.json();
+
     if (!response.ok) {
       console.error("REPLICATE ERROR STATUS:", response.status);
       console.error("REPLICATE ERROR BODY:", JSON.stringify(result));
-      // Pass the actual error back to the browser so we can read it
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         error: result?.detail || result?.error || JSON.stringify(result),
         replicateStatus: response.status,
         fullResponse: result
@@ -69,6 +67,7 @@ const result = await response.json();
     }
 
     return new Response(JSON.stringify(result), { status: 200 });
+
   } catch (error) {
     console.error("CRITICAL API ERROR:", error.message);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
