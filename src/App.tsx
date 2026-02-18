@@ -165,7 +165,7 @@ function App() {
          // 2. Find the descriptive prompt in BRAND_DEFINITIONS
           let selectedScenePrompt = "";
           Object.values(BRAND_DEFINITIONS).forEach(brand => {
-            const foundScene = brand.sceneOptions.find(s => s.id === selectedBackgroundID || s.name === selectedBackgroundID);
+            const foundScene = brand.sceneOptions.find((s: any) => s.id === selectedBackgroundID || s.name === selectedBackgroundID);
             if (foundScene) {
               selectedScenePrompt = foundScene.prompt;
             }
