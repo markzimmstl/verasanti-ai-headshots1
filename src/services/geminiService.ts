@@ -217,7 +217,7 @@ const buildPrompt = (
         }
       }
 
-      framingInstruction = `
+    framingInstruction = `
        **COMPOSITION: MEDIUM CLOSE-UP (HEAD AND SHOULDERS)**
        - FRAMING: Capture head, neck, and full shoulders.
        - CRITICAL: DO NOT CUT OFF THE TOP OF THE HEAD.
@@ -238,10 +238,10 @@ const buildPrompt = (
        - Visual Anchor: Top of head to hips.
        - Crop Limit: CUT FRAME AT MID-THIGH or HIPS.
        - CRITICAL: Do NOT crop exactly at the belt line. Go slightly lower (mid-thigh).
-       - Hands: Hands should be visible if natural.
+       - Hands: Hands should be visible if natural. Never crop through the fingers.
      `;
       lensInstruction = "50mm Standard Lens";
-      negativeConstraints += "Do NOT create a full body shot. Do NOT show knees or shoes. Do NOT create a tight headshot.";
+      negativeConstraints += "Do NOT create a full body shot. Do NOT show knees or shoes. Do NOT create a tight headshot. Do NOT crop through fingers or hands.";
       break;
 
     case "Three-Quarter":
@@ -249,10 +249,10 @@ const buildPrompt = (
        **COMPOSITION: THREE-QUARTER (AMERICAN SHOT)**
        - Visual Anchor: Top of head to knees.
        - Crop Limit: CUT FRAME JUST ABOVE THE KNEES.
-       - CRITICAL: Do NOT show ankles or feet.
+       - CRITICAL: Do NOT show ankles or feet. Do NOT crop through fingers.
      `;
       lensInstruction = "50mm Standard Lens";
-      negativeConstraints += "Do NOT create a full body shot. Do NOT show shoes. Do NOT create a waist-up or headshot.";
+      negativeConstraints += "Do NOT create a full body shot. Do NOT show shoes. Do NOT create a waist-up or headshot. Do NOT crop through fingers or hands.";
       break;
 
     case "Full Body":
@@ -262,6 +262,7 @@ const buildPrompt = (
        - CRITICAL REQUIREMENT: YOU MUST GENERATE SHOES STANDING ON THE FLOOR.
        - Leave visible floor space BELOW the feet.
        - Leave visible air space ABOVE the head.
+       - All fingers must be fully within the frame if hands are visible.
      `;
 
       if (config.aspectRatio === '16:9') {
@@ -276,7 +277,7 @@ const buildPrompt = (
         lensInstruction = "35mm Wide Angle Lens (To capture full subject and environment)";
       }
 
-      negativeConstraints += "Do NOT cut off the feet. Do NOT cut off the head. Do NOT crop at knees or waist.";
+      negativeConstraints += "Do NOT cut off the feet. Do NOT cut off the head. Do NOT crop at knees or waist. Do NOT crop through fingers or toes.";
       break;
 
     default:
@@ -302,6 +303,7 @@ const buildPrompt = (
        - Shadows: Very subtle, open, and lifted. No harsh dark areas on the face.
        - Effect: "Magazine Cover" quality brightness.
        - IMPORTANT: The light source is invisible and off-camera.
+       - Short Lighting preferred: key light should favor the far cheek.
      `;
       break;
     case "Daylight":
@@ -312,6 +314,7 @@ const buildPrompt = (
        - Highlights: Natural sheen on skin.
        - Shadows: Cool-toned and open.
        - Effect: As if standing next to a large North-facing window.
+       - Short Lighting preferred where possible. If scene implies diffused/overcast light (cloudy sky, north window), even illumination is acceptable.
      `;
       break;
     case "Cinematic":
@@ -321,6 +324,7 @@ const buildPrompt = (
        - Pattern: Distinct triangle of light on the shadow-side cheek.
        - Atmosphere: Rich, moody, and serious.
        - Color: Warmer practical lights in background vs cooler foreground light.
+       - Short Lighting: ensure the Rembrandt triangle is on the shadow-side cheek (far from camera).
      `;
       break;
     case "Dark & Moody":
@@ -330,13 +334,15 @@ const buildPrompt = (
        - Background: Falls off into deep darkness/black.
        - Focus: Highlighting only the face and hands.
        - Vibe: Serious, executive authority, powerful.
+       - Short Lighting: key light from the far side only. Near side of face falls into shadow.
      `;
       break;
     default:
-      lightingInstruction = "Lighting: Soft professional lighting.";
+      lightingInstruction = "Lighting: Soft professional lighting with short lighting preferred.";
   }
 
-  const finalLightingDirection = lightingDirectionOverride || config.lighting || "Soft professional studio lighting";
+  const shortLightingDefault = `Short Lighting preferred (key light on the far side of the face from camera, shadow falls toward camera). Use this as the default unless the scene logically implies a different source.`;
+  const finalLightingDirection = lightingDirectionOverride || config.lighting || shortLightingDefault;
 
   let colorInstruction = "";
   if (config.brandColor) {
