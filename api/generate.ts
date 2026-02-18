@@ -11,7 +11,8 @@ export default async function handler(req) {
     data = req.body;
   }
 
-  const { prompt, image, aspect_ratio, prediction_id } = data;
+ const { prompt, image, aspect_ratio, prediction_id } = data;
+  console.log("API CALLED WITH:", { prompt: prompt?.slice(0,50), hasImage: !!image, aspect_ratio, prediction_id });
 
   if (!REPLICATE_API_TOKEN) {
     return new Response(JSON.stringify({ error: "API Token Missing" }), { status: 500 });
@@ -54,15 +55,20 @@ export default async function handler(req) {
       }),
     });
 
-    const result = await response.json();
+const result = await response.json();
     
-    if (response.status === 422) {
-      console.error("REPLICATE VALIDATION ERROR:", JSON.stringify(result));
-      return new Response(JSON.stringify(result), { status: 422 });
+    if (!response.ok) {
+      console.error("REPLICATE ERROR STATUS:", response.status);
+      console.error("REPLICATE ERROR BODY:", JSON.stringify(result));
+      // Pass the actual error back to the browser so we can read it
+      return new Response(JSON.stringify({ 
+        error: result?.detail || result?.error || JSON.stringify(result),
+        replicateStatus: response.status,
+        fullResponse: result
+      }), { status: response.status });
     }
 
     return new Response(JSON.stringify(result), { status: 200 });
-
   } catch (error) {
     console.error("CRITICAL API ERROR:", error.message);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
