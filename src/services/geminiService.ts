@@ -106,6 +106,8 @@ const buildPrompt = (
    - Do NOT show: octaboxes, softboxes, umbrellas, light stands, c-stands, reflectors, diffusers, grids, scrims, or flash heads.
    - Do NOT show reflections of lighting equipment in windows, glasses, or glossy surfaces.
    - BACKGROUND SEPARATION RULE: Do NOT allow vertical lines, window frames, trees, poles, or columns to appear directly behind the subject's head.
+   - CROPPING RULE: NEVER crop at a joint (knees, elbows, wrists, ankles). Always crop mid-limb or beyond.
+   - FINGERS: Never cut off fingers. If hands are visible, all fingers must be fully within the frame. Same rule applies to toes (full body shots) and the top of the head.
    - Avoid "mergers" where background objects look like they are growing out of the subject's head.
    - The background must be the ENVIRONMENT ONLY. 
    - NO GLASSES unless the reference image clearly shows the subject wearing glasses.
