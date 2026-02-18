@@ -477,12 +477,25 @@ export const generateBrandPhotoWithRefs = async (
   try {
     console.log(`Calling ${IMAGE_MODEL} with ${parts.length - 1} images (Global Index ${globalIndex})...`);
 
+ // Map app aspect ratios to Gemini imageConfig format
+    const aspectRatioMap: Record<string, string> = {
+      '1:1':  '1:1',
+      '4:5':  '4:5',
+      '9:16': '9:16',
+      '16:9': '16:9',
+      '3:1':  '3:1',
+      '4:1':  '4:1',
+    };
+    const geminiAspectRatio = aspectRatioMap[config.aspectRatio] || '1:1';
+
     const response = await ai.models.generateContent({
       model: IMAGE_MODEL,
       contents: [{ role: "user", parts }],
       config: {
-        // ✅ CRITICAL FIX: Must include TEXT alongside IMAGE for gemini-2.5-flash-image
         responseModalities: ["TEXT", "IMAGE"],
+        imageConfig: {
+          aspectRatio: geminiAspectRatio,
+        },
       },
     });
 
