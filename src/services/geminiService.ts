@@ -88,4 +88,45 @@ MOOD: Confident, approachable, and professional.
     });
 
     if (!response.ok) {
-      const errData =
+      const errData = await response.json().catch(() => ({}));
+      console.error("API Error response:", errData);
+      throw new Error(errData.error || "Failed to start AI engine");
+    }
+
+    let prediction = await response.json();
+    console.log("Prediction started:", prediction.id, "status:", prediction.status);
+
+    // 2. POLLING LOOP: Check every 3 seconds
+    let attempts = 0;
+    while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
+      if (attempts > 40) throw new Error("Generation timed out after 2 minutes");
+      attempts++;
+      console.log("VeraLooks Engine Status:", prediction.status, `(attempt ${attempts})`);
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const checkResponse = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prediction_id: prediction.id })
+      });
+
+      if (!checkResponse.ok) throw new Error("Failed to check AI status");
+      prediction = await checkResponse.json();
+    }
+
+    // 3. FINISH
+    if (prediction.status === 'succeeded') {
+      return Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+    } else {
+      throw new Error(prediction.error || "AI generation failed");
+    }
+
+  } catch (error) {
+    console.error("Generation Error:", error);
+    throw error;
+  }
+};
+
+export const generateBrandPhotoWithRefsSafe = generateBrandPhotoWithRefs;
+export const generateBrandPhoto = generateBrandPhotoWithRefs;
