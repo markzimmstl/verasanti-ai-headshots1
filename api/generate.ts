@@ -29,8 +29,9 @@ export default async function handler(req) {
 
     // MODE B: Flux 2 Flex - Validation Fixed
     // We ensure the aspect_ratio matches Replicate's specific enum list
-    const validAspectRatio = ["1:1", "16:9", "3:2", "2:3", "4:5", "5:4", "9:16", "3:4", "4:3"].includes(aspect_ratio) 
-      ? aspect_ratio 
+    const normalized = (aspect_ratio || "1:1").replace("/", ":");
+    const validAspectRatio = ["1:1", "16:9", "3:2", "2:3", "4:5", "5:4", "9:16", "3:4", "4:3"].includes(normalized)
+      ? normalized
       : "1:1";
 
     const response = await fetch("https://api.replicate.com/v1/predictions", {
