@@ -146,21 +146,9 @@ function App() {
        for (let i = 0; i < countForThisLook; i++) {
           setLoadingMessage(`Generating ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
           
-          const selectedClothing = config.clothing; 
-          const selectedBackgroundID = config.backgroundType;
+          const selectedClothing = finalConfigForThisLook.clothing;
+          const selectedScenePrompt = finalConfigForThisLook.backgroundType || "in a professional corporate setting";
 
-          let selectedScenePrompt = "";
-          Object.values(BRAND_DEFINITIONS).forEach(brand => {
-            const foundScene = brand.sceneOptions.find((s: any) => s.id === selectedBackgroundID || s.name === selectedBackgroundID);
-            if (foundScene) {
-              selectedScenePrompt = foundScene.prompt;
-            }
-          });
-
-          if (!selectedScenePrompt) {
-            selectedScenePrompt = "in a professional corporate setting";
-          }
-          
           const fullPrompt = `${selectedClothing}, ${selectedScenePrompt}`;
 
           const imageUrl = await generateBrandPhotoWithRefsSafe(
