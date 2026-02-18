@@ -21,7 +21,7 @@ export default async function handler(req) {
   try {
     // MODE A: Checking status of existing prediction
     if (prediction_id) {
-      const response = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-2-flex/predictions", {
+      const response = await fetch(`https://api.replicate.com/v1/predictions/${prediction_id}`, {
         headers: { "Authorization": `Token ${REPLICATE_API_TOKEN}` },
       });
       const result = await response.json();
@@ -34,14 +34,14 @@ export default async function handler(req) {
       ? normalized
       : "1:1";
 
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
+    const response = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-2-flex/predictions", {
       method: "POST",
       headers: {
         "Authorization": `Token ${REPLICATE_API_TOKEN}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-         input: {
+        input: {
           prompt: prompt,
           input_images: [image.trim()],
           aspect_ratio: validAspectRatio,
@@ -69,6 +69,4 @@ export default async function handler(req) {
 
   } catch (error) {
     console.error("CRITICAL API ERROR:", error.message);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-}
+    return new Response(JSON.stringify({ error: error.message }), { status: 500
