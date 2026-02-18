@@ -209,7 +209,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
                     onChange={(e) => setEditPrompt(e.target.value)}
                     placeholder="Or describe your own edit (e.g. 'Make the background a warm sunset outside a city skyline')..."
                     rows={3}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
                   />
 
                   {editError && (
