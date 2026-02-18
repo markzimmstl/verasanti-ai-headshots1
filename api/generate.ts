@@ -39,8 +39,8 @@ export default async function handler(req) {
         "Authorization": `Token ${REPLICATE_API_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        version: "black-forest-labs/flux-2-flex",
+     body: JSON.stringify({
+        model: "black-forest-labs/flux-2-flex",
         input: {
           prompt: prompt,
           input_images: [image.trim()],
