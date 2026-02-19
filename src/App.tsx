@@ -245,10 +245,10 @@ function App() {
             aria-label="VeraLooks Home"
           >
             <img 
-             src={VERALOOKS_LOGO}
-              alt="VeraLooks"
-              className="h-9 w-auto"
-            />
+                src={VERALOOKS_LOGO}
+                alt="VeraLooks"
+                className="h-9 w-auto"    
+              />
           </button>
           
           <div className="hidden md:flex items-center gap-2 text-xs font-medium bg-slate-900 p-1 rounded-lg border border-slate-800">
