@@ -45,18 +45,65 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
   const [isRefining, setIsRefining] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const downloadImage = async (url: string, format: 'png' | 'jpg') => {
+  const downloadImage = async (url: string, format: 'webp' | 'png') => {
     try {
       const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      const sourceBlob = await response.blob();
+
+      // Convert to target format via canvas
+      const bitmap = await createImageBitmap(sourceBlob);
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(bitmap, 0, 0);
+
+      const mimeType = format === 'webp' ? 'image/webp' : 'image/png';
+      const quality = format === 'webp' ? 0.85 : undefined;
+
+      const finalBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => b ? resolve(b) : reject(new Error('Canvas conversion failed')),
+          mimeType,
+          quality
+        );
+      });
+
+      const filename = `VeraLooks-Headshot.${format}`;
+
+      // Use File System Access API if available (shows folder picker)
+      if ('showSaveFilePicker' in window) {
+        try {
+          const fileHandle = await (window as any).showSaveFilePicker({
+            suggestedName: filename,
+            types: [
+              {
+                description: format === 'webp' ? 'WebP Image' : 'PNG Image',
+                accept: { [mimeType]: [`.${format}`] },
+              },
+            ],
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(finalBlob);
+          await writable.close();
+          return;
+        } catch (err: any) {
+          // User cancelled the picker — don't fall through to auto-download
+          if (err.name === 'AbortError') return;
+          // For other errors, fall through to legacy download
+        }
+      }
+
+      // Fallback for browsers without showSaveFilePicker
+      const blobUrl = window.URL.createObjectURL(finalBlob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `VeraLooks-Headshot.${format}`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
+
     } catch (error) {
       console.error('Download failed:', error);
       alert('Failed to download image. Please try right-clicking the image to save.');
@@ -258,15 +305,15 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
                 className="flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-100"
               >
                 <FileDown size={22} />
-                Download High-Res PNG
+                Download Hi-Res File
               </button>
               <button
-                onClick={() => selectedImage && downloadImage(selectedImage.imageUrl, 'jpg')}
+                onClick={() => selectedImage && downloadImage(selectedImage.imageUrl, 'webp')}
                 disabled={!selectedImage}
                 className="flex items-center justify-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download size={22} />
-                Download Print-Ready JPG
+                Download Web-Ready Image
               </button>
             </div>
             <p className="text-xs text-center text-gray-500 mt-4 leading-relaxed">
