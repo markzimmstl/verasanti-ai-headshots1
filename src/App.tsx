@@ -245,7 +245,7 @@ function App() {
             aria-label="VeraLooks Home"
           >
             <img 
-              src={`data:image/png;base64,${VERALOOKS_LOGO}`}
+             src={VERALOOKS_LOGO}
               alt="VeraLooks"
               className="h-9 w-auto"
             />
