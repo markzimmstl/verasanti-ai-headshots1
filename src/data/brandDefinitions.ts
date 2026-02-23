@@ -2,37 +2,33 @@ import { BrandData } from '../types.ts';
 
 export const BRAND_DEFINITIONS: Record<string, BrandData> = {
   Corporate: {
-    label: 'Corporate & Executive',
+    label: 'Corporate & Business',
     clothingOptions: [
       {
         category: 'Feminine Styles',
         items: [
-          'Business Suit',
-          'Professional Sheath Dress',
-          'Modern Blazer & Blouse',
-          'Tweed Jacket',
-          'Elegant Office Wear',
-          'Feminine Power Suit',
+          'Black Pantsuit Sharp – black tailored pantsuit, silk blouse, pointed-toe heels',
+          'Navy Skirt Suit – navy skirt suit, cream blouse, pearls, classic pumps',
+          'Modern Power Suit – charcoal pantsuit, bold blouse, sleek heels',
+          'Executive Sheath Dress – fitted navy sheath dress, matching blazer, nude heels',
         ],
       },
       {
         category: 'Masculine Styles',
         items: [
-          'Classic Navy Suit',
-          'Charcoal Suit & Tie',
-          'Modern Blazer & Chinos',
-          'Executive 3-Piece Suit',
-          'Business Formal',
-          'Power Suit',
-          'Executive Tweed Jacket',
+          'Charcoal Suit Classic – charcoal suit, white shirt, navy tie, black leather shoes',
+          'Navy Power Suit – navy pinstripe suit, French cuff shirt, burgundy tie, dark oxfords',
+          'Business Casual Blazer – gray blazer, white shirt, no tie, khakis, brown loafers',
+          'Executive Sharkskin – light gray sharkskin suit, pale blue shirt, cognac dress shoes',
         ],
       },
       {
-        category: 'Neutral / Unisex',
+        category: 'Neutral / Unisex Styles',
         items: [
-          'Crisp White Shirt',
-          'Professional Turtleneck',
-          'Smart Casual Blazer',
+          'Crisp White Shirt – white button shirt, gray trousers, black dress shoes',
+          'Modern Blazer Look – navy blazer, white shirt, slim trousers, leather loafers',
+          'Professional Polo – fitted white polo, chinos, clean white sneakers',
+          'Tailored Vest – gray vest, white shirt, trousers, dress shoes',
           'Keep Original Clothing (From Photo)',
         ],
       },
@@ -104,71 +100,73 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
     ],
   },
 
-  Tech: {
-    label: 'Tech & Startup',
+  Wellness: {
+    label: 'Wellness & Fitness',
     clothingOptions: [
       {
         category: 'Feminine Styles',
         items: [
-          'Smart Casual Blouse',
-          'Tech Company Tee (Fitted)',
-          'Modern Minimalist',
+          'Yoga Flow – cropped sports bra, fitted leggings, bare feet',
+          'Fitness Influencer – sports bra, high-waist leggings, trendy sneakers',
+          'Wellness Studio – layered studio wrap, yoga pants, yoga socks',
+          'Alternative Products Expert – ethereal yoga wear, loose linen pants, simple sandals',
         ],
       },
       {
         category: 'Masculine Styles',
         items: [
-          'Startup Hoodie & Jeans',
-          'Button-down & Vest',
-          'Tech CEO Casual',
+          'Yoga Instructor – fitted tank top, yoga pants, bare feet',
+          'Trainer Performance – athletic polo, athletic shorts, cross-training sneakers',
+          'Wellness Coach – hoodie, joggers, stylish sneakers',
+          'Health Products Expert – performance compression top, athletic shorts, running shoes',
         ],
       },
       {
-        category: 'Neutral / Unisex',
+        category: 'Neutral / Unisex Styles',
         items: [
-          'Minimalist Tech Wear',
-          'Smart Casual Shirt',
-          'Startup Casual',
-          'Tech Company T-Shirt',
+          'Studio Instructor – fitted athletic tee, leggings, athletic shoes',
+          'Wellness Casual – hoodie, joggers, lifestyle sneakers',
+          'Fitness Pro – performance polo, athletic pants, trainers',
+          'Group Class – solid tank, workout pants, gym shoes',
           'Keep Original Clothing (From Photo)',
         ],
       },
     ],
     sceneOptions: [
       {
-        id: 'coworking',
-        name: 'Co-working Space',
+        id: 'yoga-studio',
+        name: 'Yoga Studio',
         prompt:
-          'in a bustling modern co‑working space with open desks, laptops, sticky notes, and people collaborating; clearly a tech office environment, not a corporate boardroom or hospital corridor',
-        iconType: 'monitor',
+          'in a bright, airy yoga studio with hardwood floors, natural light, and yoga mats; clearly a wellness studio, not a gym or corporate office',
+        iconType: 'sparkles',
       },
       {
-        id: 'server-room',
-        name: 'Data Center / Server Room',
+        id: 'fitness-gym',
+        name: 'Modern Gym',
         prompt:
-          'inside a futuristic data center with racks of servers, blue LEDs, and reflective floors; this is a technical server room, not a photography studio or hospital',
-        iconType: 'monitor',
-      },
-      {
-        id: 'podcast',
-        name: 'Podcast Studio',
-        prompt:
-          'speaking into a high‑end microphone in a dedicated podcast studio with acoustic foam panels and warm colored lighting; this is an audio studio, not a corporate keynote stage or medical setting',
-        iconType: 'mic',
-      },
-      {
-        id: 'agile-office',
-        name: 'Agile Open Office',
-        prompt:
-          'in a modern open‑plan tech office with whiteboards, sticky notes, standing desks, and casual seating; clearly a startup workspace, not a formal boardroom or hospital clinic',
+          'in a clean, modern fitness gym with equipment, mirrors, and motivational branding in soft blur; unmistakably a fitness center, not an office or medical clinic',
         iconType: 'building',
       },
       {
-        id: 'hackathon',
-        name: 'Hackathon Environment',
+        id: 'outdoor-wellness',
+        name: 'Outdoor Park / Trail',
         prompt:
-          'in a busy hackathon scene with multiple screens, code on monitors, and teammates working late at shared tables; unmistakably a tech event, not a logistics warehouse or healthcare space',
-        iconType: 'monitor',
+          'outdoors on a scenic park path or trail with lush greenery and natural light; a healthy outdoor setting, not an urban street or industrial yard',
+        iconType: 'leaf',
+      },
+      {
+        id: 'wellness-studio',
+        name: 'Wellness Coaching Studio',
+        prompt:
+          'in a warmly lit wellness coaching studio with plants, natural textures, and calming decor; a holistic health space, not a corporate office or hospital',
+        iconType: 'heart',
+      },
+      {
+        id: 'rooftop-fitness',
+        name: 'Rooftop / Outdoor Gym',
+        prompt:
+          'on a rooftop or open-air fitness space with city or nature views in the background; an energetic outdoor fitness setting, not a studio backdrop',
+        iconType: 'building',
       },
     ],
   },
@@ -179,21 +177,28 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
       {
         category: 'Feminine Styles',
         items: [
-          'Colorful Blazer',
-          'Professional Dress',
-          'Smart Realtor Casual',
+          'Realtor Power Dress – fitted blazer dress, gold accessories, high heels',
+          'Open House Chic – cream blazer, black pants, stylish flats',
+          'Luxury Listing – wrap dress, statement necklace, strappy heels',
+          'Showing Ready – tailored trousers, silk shell top, pointed flats',
         ],
       },
       {
         category: 'Masculine Styles',
-        items: ['Suit (No Tie)', 'Sport Coat & Slacks', 'Modern Professional'],
+        items: [
+          'Top Producer Blazer – navy blazer, white shirt, no tie, dark chinos, brown leather boots',
+          'Luxury Agent Suit – charcoal suit, open collar shirt, black loafers',
+          'Field Agent Casual – sport coat, patterned shirt, dark wash denim, Chelsea boots',
+          'Broker Professional – gray suit, conservative tie, polished oxfords',
+        ],
       },
       {
-        category: 'Neutral / Unisex',
+        category: 'Neutral / Unisex Styles',
         items: [
-          'Professional Blazer',
-          'Smart Casual',
-          'Business Professional',
+          'Modern Realtor – white shirt, slim trousers, blazer, loafers',
+          'Professional Casual – polo shirt, khakis, leather sneakers',
+          'Approachable Agent – button shirt, dark jeans, casual boots',
+          'Listing Pro – crisp collared shirt, neutral pants, dress shoes',
           'Keep Original Clothing (From Photo)',
         ],
       },
@@ -243,25 +248,28 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
       {
         category: 'Feminine Styles',
         items: [
-          'Fitted Lab Coat & Blouse',
-          'Professional Clinic Wear',
-          'Scrubs (Clean)',
+          'Doctor Lab Coat – white lab coat, V-neck blouse, slacks, professional flats',
+          'Nurse Scrubs – teal scrubs, minimal earrings, athletic sneakers',
+          'Medical Admin – blouse, trousers, lab coat, comfortable flats',
+          'Therapist Professional – cardigan, slacks, loafers',
         ],
       },
       {
         category: 'Masculine Styles',
         items: [
-          'Lab Coat & Tie',
-          'Professional Scrubs (Navy)',
-          'Clinic Formal',
+          'Physician Lab Coat – white lab coat, dress shirt, slacks, leather shoes',
+          'Surgeon Scrubs – navy scrubs, stethoscope, athletic medical shoes',
+          'Clinic Manager – polo shirt, khakis, comfortable loafers',
+          'Dentist Professional – lab coat, collared shirt, trousers, non-slip shoes',
         ],
       },
       {
-        category: 'Neutral / Unisex',
+        category: 'Neutral / Unisex Styles',
         items: [
-          'White Lab Coat',
-          'Medical Scrubs (Blue/Teal)',
-          'Smart Casual',
+          'Clinical White – lab coat, neutral scrubs, stethoscope, white medical shoes',
+          'Medical Polo – solid polo, khaki pants, clean sneakers',
+          'Healthcare Casual – button shirt, neutral trousers, loafers',
+          'Clinic Professional – collared shirt, dark pants, dress shoes',
           'Keep Original Clothing (From Photo)',
         ],
       },
@@ -285,7 +293,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'consult-room',
         name: 'Consultation Room',
         prompt:
-          'in a private medical consultation room with exam table, medical equipment, and diplomas on the wall; obviously a doctor’s office, not a boardroom or podcast studio',
+          'in a private medical consultation room with exam table, medical equipment, and diplomas on the wall; obviously a doctor\'s office, not a boardroom or podcast studio',
         iconType: 'briefcase',
       },
       {
@@ -298,200 +306,35 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
     ],
   },
 
-  Transportation: {
-    label: 'Transportation & Logistics',
+  CreativeDesigner: {
+    label: 'Creative & Designer',
     clothingOptions: [
       {
         category: 'Feminine Styles',
         items: [
-          'Pilot Uniform (Fitted)',
-          'Professional Travel Wear',
-          'Logistics Manager Vest',
+          'Art Director – colorful blouse, wide-leg pants, platform heels',
+          'UX Designer – wrap top, cropped trousers, stylish mules',
+          'Photographer Studio – black mock neck, slim jeans, leather ankle boots',
+          'Graphic Designer – statement blouse, midi skirt, designer flats',
         ],
       },
       {
         category: 'Masculine Styles',
-        items: ['Pilot Uniform', 'Driver Suit', 'Captain Uniform'],
+        items: [
+          'Creative Director – patterned blazer, black tee, slim denim, leather boots',
+          'Web Designer – slim blazer, chambray shirt, dark trousers, clean sneakers',
+          'Photographer/Videographer – loose statement shirt, dark jeans, rugged boots',
+          'Interior Designer – linen shirt, chinos, suede loafers',
+        ],
       },
       {
-        category: 'Neutral / Unisex',
+        category: 'Neutral / Unisex Styles',
         items: [
-          'High-Vis Safety Vest (Clean)',
-          'Leather Jacket',
-          'Smart Travel Wear',
+          'Studio Creative – black tee, slim jeans, high-top sneakers',
+          'Designer Casual – chambray shirt, neutral pants, loafers',
+          'Artsy Professional – patterned shirt, dark trousers, desert boots',
+          'Creative Field – henley, dark jeans, work boots',
           'Keep Original Clothing (From Photo)',
-        ],
-      },
-    ],
-    sceneOptions: [
-      {
-        id: 'private-jet',
-        name: 'Private Jet Cabin',
-        prompt:
-          'seated comfortably in a luxury private jet cabin with leather seats, airplane windows, and overhead bins; clearly an aircraft interior, not an office, studio, or hospital',
-        iconType: 'plane',
-      },
-      {
-        id: 'luxury-car',
-        name: 'Luxury Car Interior',
-        prompt:
-          'sitting in the driver seat of a high‑end luxury vehicle with visible steering wheel and dashboard; unmistakably inside a car, not an office or clinic',
-        iconType: 'truck',
-      },
-      {
-        id: 'logistics-hub',
-        name: 'Logistics Warehouse',
-        prompt:
-          'standing confidently in front of a modern logistics warehouse with shipping containers, loading docks, and trucks; an industrial transport hub, not a tech office or hospital',
-        iconType: 'truck',
-      },
-      {
-        id: 'train-station',
-        name: 'Modern Station',
-        prompt:
-          'at a sleek, modern train or metro station platform with signage and a blurred train; clearly transit infrastructure, not a photography backdrop or office',
-        iconType: 'building',
-      },
-    ],
-  },
-
-  Industrial: {
-    label: 'Industrial & Manufacturing',
-    clothingOptions: [
-      {
-        category: 'Feminine Styles',
-        items: ['Fitted Work Shirt', 'Executive Site Wear', 'Safety Manager Gear'],
-      },
-      {
-        category: 'Masculine Styles',
-        items: ['Engineer Button-Up', 'Construction Gear', 'Site Manager Vest'],
-      },
-      {
-        category: 'Neutral / Unisex',
-        items: [
-          'Safety Gear (Hard Hat/Vest)',
-          'Smart Coveralls',
-          'Keep Original Clothing (From Photo)',
-        ],
-      },
-    ],
-    sceneOptions: [
-      {
-        id: 'factory-floor',
-        name: 'Smart Factory',
-        prompt:
-          'on a clean, high‑tech factory floor with industrial machines and robots; clearly a manufacturing environment, not an office, studio, or hospital',
-        iconType: 'factory',
-      },
-      {
-        id: 'blueprint-table',
-        name: 'Blueprint Table',
-        prompt:
-          'leaning over a table with blueprints and tools in a bright industrial workspace; this is an engineering or construction office, not a corporate boardroom',
-        iconType: 'briefcase',
-      },
-      {
-        id: 'construction-site',
-        name: 'Construction Site',
-        prompt:
-          'on a construction site with cranes, scaffolding, and partially built structures; clearly outdoors industrial, not a city sidewalk or hospital',
-        iconType: 'building',
-      },
-      {
-        id: 'solar-farm',
-        name: 'Green Energy Field',
-        prompt:
-          'standing firmly on a gravel maintenance path between rows of solar panels in a solar farm, realistic perspective with feet on the ground; clearly an energy installation, not an office or studio',
-        iconType: 'sun',
-      },
-    ],
-  },
-
-  NonProfit: {
-    label: 'Non-Profit & Community',
-    clothingOptions: [
-      {
-        category: 'Feminine Styles',
-        items: [
-          'Friendly Cardigan',
-          'Volunteer Tee (Fitted)',
-          'Smart Casual',
-        ],
-      },
-      {
-        category: 'Masculine Styles',
-        items: ['Casual Button-down', 'Volunteer Tee', 'Polished Casual'],
-      },
-      {
-        category: 'Neutral / Unisex',
-        items: [
-          'Branded Volunteer T-Shirt',
-          'Business Casual',
-          'Friendly Vest/Jacket',
-          'Keep Original Clothing (From Photo)',
-        ],
-      },
-    ],
-    sceneOptions: [
-      {
-        id: 'community-center',
-        name: 'Community Center',
-        prompt:
-          'in a welcoming, busy community center with diverse people, posters, and activity in the background; clearly a community space, not a corporate office or hospital',
-        iconType: 'heart',
-      },
-      {
-        id: 'fundraiser',
-        name: 'Gala Event',
-        prompt:
-          'at a fundraising gala with soft event lighting, round tables, and guests mingling; a charity event atmosphere, not a corporate awards gala or studio',
-        iconType: 'sparkles',
-      },
-      {
-        id: 'outdoors-group',
-        name: 'Community Garden',
-        prompt:
-          'outdoors in a community garden or park with plants, raised beds, and volunteers; clearly an outdoor community setting, not an office or industrial site',
-        iconType: 'leaf',
-      },
-      {
-        id: 'podium',
-        name: 'Speaking at Podium',
-        prompt:
-          'speaking at a podium at a nonprofit or community event with banners or signage related to a cause; not a corporate keynote or podcast studio',
-        iconType: 'mic',
-      },
-    ],
-  },
-
-  CreativeProfessional: {
-    label: 'Creative Professional',
-    clothingOptions: [
-      {
-        category: 'Feminine Styles',
-        items: [
-          'Statement Blazer & Simple Top',
-          'Casual Dress with Denim Jacket',
-          'Black Turtleneck & High-Waist Pants',
-          'Simple Top with Bold Accessories',
-        ],
-      },
-      {
-        category: 'Masculine Styles',
-        items: [
-          'Black Crewneck Tee & Dark Jeans',
-          'Denim Jacket over Neutral Tee',
-          'Relaxed Button-down & Tapered Pants',
-          'Casual Blazer with Graphic Tee',
-        ],
-      },
-      {
-        category: 'Neutral / Unisex',
-        items: [
-          'All-Black Creative Outfit',
-          'Neutral Tee & Relaxed Trousers',
-          'Overshirt over Plain Tee',
-          'Minimal Monochrome Look',
         ],
       },
     ],
@@ -537,6 +380,205 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         prompt:
           'in an outdoor urban setting with murals or textured walls in soft focus, flattering overcast light, subtle arts‑district atmosphere; clearly a creative neighborhood, not a generic city street or industrial yard',
         iconType: 'building',
+      },
+    ],
+  },
+
+  CreatorBrand: {
+    label: 'Creator & Personal Brand',
+    clothingOptions: [
+      {
+        category: 'Feminine Styles',
+        items: [
+          'Content Creator – fitted top, high-waist jeans, ankle boots',
+          'Vlogger Bright – colorful blouse, skirt, stylish flats',
+          'Membership Owner – wrap dress, bold earrings, heels',
+          'TikTok Star – trend-forward knit top, statement pants, chunky sneakers',
+        ],
+      },
+      {
+        category: 'Masculine Styles',
+        items: [
+          'YouTube Ready – solid premium tee, dark jeans, trendy sneakers',
+          'Podcast Host – button shirt, casual blazer, chinos, loafers',
+          'Course Creator – polo, chinos, leather sneakers',
+          'Influencer Pop – graphic tee, slim pants, designer sneakers',
+        ],
+      },
+      {
+        category: 'Neutral / Unisex Styles',
+        items: [
+          'Thumbnail Ready – solid vibrant tee, dark pants, clean sneakers',
+          'Video Call Pro – collared shirt, neutral bottoms, loafers',
+          'Social Media Pop – solid vibrant tee, slim jeans, trendy sneakers',
+          'Creator Casual – henley, dark trousers, boots',
+          'Keep Original Clothing (From Photo)',
+        ],
+      },
+    ],
+    sceneOptions: [
+      {
+        id: 'podcast-studio',
+        name: 'Podcast Studio',
+        prompt:
+          'speaking into a high‑end microphone in a dedicated podcast studio with acoustic foam panels and warm colored lighting; this is an audio studio, not a corporate keynote stage or medical setting',
+        iconType: 'mic',
+      },
+      {
+        id: 'creator-desk',
+        name: 'Creator Desk Setup',
+        prompt:
+          'at a well-lit content creator desk with a ring light, microphone, large monitor, and a clean aesthetic; clearly a home studio or creator workspace, not a corporate office',
+        iconType: 'monitor',
+      },
+      {
+        id: 'coworking',
+        name: 'Co-working Space',
+        prompt:
+          'in a vibrant modern co‑working space with open desks, laptops, and a creative atmosphere; a relaxed professional setting, not a formal boardroom',
+        iconType: 'building',
+      },
+      {
+        id: 'creator-urban',
+        name: 'Urban Lifestyle Setting',
+        prompt:
+          'in a trendy urban neighborhood with cafés, murals, or street art in soft focus; a lifestyle creator vibe, not a corporate plaza or industrial yard',
+        iconType: 'building',
+      },
+      {
+        id: 'creator-stage',
+        name: 'Conference / Speaker Stage',
+        prompt:
+          'on a modern conference or event stage with branded screens and a live audience in soft blur; a personal brand speaking moment, not a formal corporate keynote',
+        iconType: 'mic',
+      },
+    ],
+  },
+
+  LocalService: {
+    label: 'Local Service Pro',
+    clothingOptions: [
+      {
+        category: 'Feminine Styles',
+        items: [
+          'Hair Stylist – black stylist apron over blouse, slim pants, comfortable flats',
+          'Salon Manager – blouse, trousers, stylish loafers',
+          'Nail Tech – fun printed top, dark pants, clean sneakers',
+          'Spa Owner – flowy blouse, wide pants, sandals',
+        ],
+      },
+      {
+        category: 'Masculine Styles',
+        items: [
+          'Salon Owner – high-end button shirt, dark jeans, fashionable boots',
+          'Barber – fitted black tee, work pants, sturdy sneakers',
+          'Stylist Professional – statement collared shirt, dark pants, leather shoes',
+          'Shop Owner – button-up shirt, neutral pants, casual shoes',
+        ],
+      },
+      {
+        category: 'Neutral / Unisex Styles',
+        items: [
+          'Service Business – polo, khakis, work shoes',
+          'Local Pro – collared shirt, work pants, boots',
+          'Shop Professional – button shirt, neutral bottoms, loafers',
+          'Trade Service – quarter-zip pullover, work pants, utility boots',
+          'Keep Original Clothing (From Photo)',
+        ],
+      },
+    ],
+    sceneOptions: [
+      {
+        id: 'salon-interior',
+        name: 'Salon Interior',
+        prompt:
+          'inside a modern, upscale hair salon with styling chairs, mirrors, and product shelves in soft blur; clearly a beauty salon, not a corporate office or medical clinic',
+        iconType: 'sparkles',
+      },
+      {
+        id: 'boutique-shop',
+        name: 'Boutique / Shop Front',
+        prompt:
+          'in front of or inside a stylish local boutique or small business storefront with clean branding and window displays; clearly a local retail setting, not a warehouse or office tower',
+        iconType: 'building',
+      },
+      {
+        id: 'community-space',
+        name: 'Community Center / Studio',
+        prompt:
+          'in a welcoming community studio or service space with warm lighting, branded signage, and a friendly atmosphere; a local business environment, not a corporate boardroom',
+        iconType: 'heart',
+      },
+      {
+        id: 'outdoor-local',
+        name: 'Local Neighborhood Street',
+        prompt:
+          'on a friendly, walkable neighborhood commercial street with local businesses and storefronts in soft blur; a small business community feel, not a downtown corporate district',
+        iconType: 'building',
+      },
+    ],
+  },
+
+  Industrial: {
+    label: 'Industrial & Logistics',
+    clothingOptions: [
+      {
+        category: 'Feminine Styles',
+        items: [
+          'Logistics Coordinator – polo shirt, work pants, comfortable sneakers',
+          'Warehouse Lead – tee, cargo pants, work boots',
+          'Field Service – work shirt, sturdy pants, utility boots',
+          'Operations Manager – blouse, neutral trousers, professional flats',
+        ],
+      },
+      {
+        category: 'Masculine Styles',
+        items: [
+          'Warehouse Supervisor – solid polo, work pants, safety boots',
+          'Driver Professional – solid utility shirt, cargo pants, sturdy shoes',
+          'Factory Tech – safety vest over work shirt, work pants, steel-toe boots',
+          'Plant Manager – collared shirt, khakis, leather work shoes',
+        ],
+      },
+      {
+        category: 'Neutral / Unisex Styles',
+        items: [
+          'Industrial Pro – polo, cargo pants, work boots',
+          'Warehouse Standard – solid utility shirt, work pants, sneakers',
+          'Field Operations – safety vest over collared shirt, cargo pants, boots',
+          'Logistics Team – performance polo, neutral pants, clean work shoes',
+          'Keep Original Clothing (From Photo)',
+        ],
+      },
+    ],
+    sceneOptions: [
+      {
+        id: 'factory-floor',
+        name: 'Smart Factory',
+        prompt:
+          'on a clean, high‑tech factory floor with industrial machines and robots; clearly a manufacturing environment, not an office, studio, or hospital',
+        iconType: 'factory',
+      },
+      {
+        id: 'blueprint-table',
+        name: 'Blueprint Table',
+        prompt:
+          'leaning over a table with blueprints and tools in a bright industrial workspace; this is an engineering or construction office, not a corporate boardroom',
+        iconType: 'briefcase',
+      },
+      {
+        id: 'construction-site',
+        name: 'Construction Site',
+        prompt:
+          'on a construction site with cranes, scaffolding, and partially built structures; clearly outdoors industrial, not a city sidewalk or hospital',
+        iconType: 'building',
+      },
+      {
+        id: 'solar-farm',
+        name: 'Green Energy Field',
+        prompt:
+          'standing firmly on a gravel maintenance path between rows of solar panels in a solar farm, realistic perspective with feet on the ground; clearly an energy installation, not an office or studio',
+        iconType: 'sun',
       },
     ],
   },
