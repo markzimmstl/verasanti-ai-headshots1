@@ -750,6 +750,11 @@ export const generateConfirmationPhoto = async (
 // Composites the white VeraLooks logo onto the generated shirt
 // ============================================================
 
+// ============================================================
+// REPLACE the existing overlayLogoOnConfirmationPhoto function
+// in geminiService.ts with this version.
+// ============================================================
+
 export const overlayLogoOnConfirmationPhoto = async (
   photoBase64: string,
   logoUrl: string = '/VeraLooks_logo_white.png'
@@ -769,21 +774,19 @@ export const overlayLogoOnConfirmationPhoto = async (
 
       const logo = new Image();
       logo.onload = () => {
-        // Logo target width = 38% of photo width, centered horizontally
-        const logoTargetW = canvas.width * 0.38;
+        // Large watermark: 85% of the canvas width
+        const logoTargetW = canvas.width * 0.85;
         const logoTargetH = (logo.naturalHeight / logo.naturalWidth) * logoTargetW;
 
-        // Center horizontally
+        // Centered horizontally and vertically
         const logoX = (canvas.width - logoTargetW) / 2;
+        const logoY = (canvas.height - logoTargetH) / 2;
 
-        // Vertical position: ~58% down the image puts it on the chest
-        // for both waist-up and full-body shots
-        const logoY = canvas.height * 0.58 - logoTargetH / 2;
-
-        // Use 'screen' blend mode to knock out any residual dark
-        // background pixels, leaving only the white text visible
+        // Semi-transparent white watermark — obvious and intentional
+        // 'screen' blend mode knocks out any residual dark background
+        // pixels from the PNG, leaving only the white lettering
         ctx.globalCompositeOperation = 'screen';
-        ctx.globalAlpha = 0.92;
+        ctx.globalAlpha = 0.55;
         ctx.drawImage(logo, logoX, logoY, logoTargetW, logoTargetH);
 
         // Reset
@@ -793,8 +796,8 @@ export const overlayLogoOnConfirmationPhoto = async (
         resolve(canvas.toDataURL('image/png'));
       };
       logo.onerror = () => {
-        // If logo fails to load, just return the photo without overlay
-        console.warn('Logo overlay failed — returning photo without logo.');
+        // If logo fails to load just return the plain photo
+        console.warn('Logo watermark failed to load — returning photo without overlay.');
         resolve(photoBase64);
       };
       logo.src = logoUrl;
