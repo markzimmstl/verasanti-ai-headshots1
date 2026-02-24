@@ -635,3 +635,172 @@ export const refineGeneratedImage = async (
     throw error;
   }
 };
+
+// ============================================================
+// ADD THIS FUNCTION to the bottom of geminiService.ts
+// (before the final closing of the file)
+// ============================================================
+
+export const generateConfirmationPhoto = async (
+  refs: MultiReferenceSet
+): Promise<string> => {
+
+  const framing = refs.fullBody ? 'Full Body' : 'Waist Up';
+  const framingPrompt = refs.fullBody
+    ? `**COMPOSITION: FULL BODY WIDE SHOT**
+       - Visual Anchor: Head to Toe.
+       - CRITICAL: YOU MUST GENERATE SHOES STANDING ON THE FLOOR.
+       - Leave visible floor space BELOW the feet.
+       - Leave visible air space ABOVE the head.`
+    : `**COMPOSITION: MEDIUM SHOT (WAIST UP)**
+       - Visual Anchor: Top of head to hips.
+       - Crop Limit: CUT FRAME AT MID-THIGH or HIPS.
+       - CRITICAL: Do NOT crop exactly at the belt line. Go slightly lower.
+       - Hands should be visible if natural. Never crop through fingers.`;
+
+  const prompt = `
+    Create a high-fidelity photorealistic confirmation portrait photo.
+
+    *** CRITICAL INSTRUCTION: OVERRIDE REFERENCE IMAGE FRAMING ***
+    The Reference Image is provided ONLY for facial identity and hair color.
+    IGNORE the pose and framing of the reference image.
+    Construct a NEW body and pose based on the instructions below.
+
+    1. SUBJECT: EXACTLY ONE PERSON. No clones. No group photos.
+    2. LENS: 50mm standard lens.
+
+    COMPOSITION & FRAMING:
+    ${framingPrompt}
+
+    CLOTHING (CRITICAL):
+    - The subject MUST wear a DARK PURPLE crew-neck t-shirt.
+    - Hex color of shirt: #3B1F6B
+    - The shirt must be SOLID COLOR with NO text, NO logos, NO graphics, NO patterns.
+    - Keep it clean — we will overlay the logo separately.
+
+    BACKGROUND:
+    - Clean, neutral light gray studio backdrop.
+    - Soft, even studio lighting. No harsh shadows.
+    - Professional headshot studio feel.
+
+    LIGHTING:
+    - Soft, wrapping studio light. Flattering and clean.
+    - Short lighting preferred: key light on the far cheek.
+    - No visible lighting equipment.
+
+    NEGATIVE PROMPT:
+    - Do NOT put any text, logos, or graphics on the shirt.
+    - Do NOT show lighting equipment.
+    - Do NOT crop at joints.
+    - Do NOT generate multiple people.
+    - NO glasses unless reference photo clearly shows them.
+  `;
+
+  const ai = getAiClient();
+
+  const parts: any[] = [{ text: prompt }];
+
+  parts.push({
+    inlineData: {
+      mimeType: 'image/jpeg',
+      data: cleanBase64(refs.main?.base64 || ''),
+    },
+  });
+
+  if (refs.sideLeft) {
+    parts.push({
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: cleanBase64(refs.sideLeft.base64),
+      },
+    });
+  }
+
+  if (refs.sideRight) {
+    parts.push({
+      inlineData: {
+        mimeType: 'image/jpeg',
+        data: cleanBase64(refs.sideRight.base64),
+      },
+    });
+  }
+
+  const response = await ai.models.generateContent({
+    model: IMAGE_MODEL,
+    contents: [{ role: 'user', parts }],
+    config: {
+      responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: { aspectRatio: '1:1' },
+    },
+  });
+
+  const outputParts = response.candidates?.[0]?.content?.parts;
+  const images = extractImagesFromParts(outputParts || []);
+
+  if (images.length === 0) {
+    throw new Error('Confirmation photo generation returned no image.');
+  }
+
+  return images[0];
+};
+
+
+// ============================================================
+// ADD THIS FUNCTION below generateConfirmationPhoto
+// Composites the white VeraLooks logo onto the generated shirt
+// ============================================================
+
+export const overlayLogoOnConfirmationPhoto = async (
+  photoBase64: string,
+  logoUrl: string = '/VeraLooks_logo_white.png'
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+
+    const photo = new Image();
+    photo.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = photo.width;
+      canvas.height = photo.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve(photoBase64); return; }
+
+      // Draw the base photo
+      ctx.drawImage(photo, 0, 0);
+
+      const logo = new Image();
+      logo.onload = () => {
+        // Logo target width = 38% of photo width, centered horizontally
+        const logoTargetW = canvas.width * 0.38;
+        const logoTargetH = (logo.naturalHeight / logo.naturalWidth) * logoTargetW;
+
+        // Center horizontally
+        const logoX = (canvas.width - logoTargetW) / 2;
+
+        // Vertical position: ~58% down the image puts it on the chest
+        // for both waist-up and full-body shots
+        const logoY = canvas.height * 0.58 - logoTargetH / 2;
+
+        // Use 'screen' blend mode to knock out any residual dark
+        // background pixels, leaving only the white text visible
+        ctx.globalCompositeOperation = 'screen';
+        ctx.globalAlpha = 0.92;
+        ctx.drawImage(logo, logoX, logoY, logoTargetW, logoTargetH);
+
+        // Reset
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1.0;
+
+        resolve(canvas.toDataURL('image/png'));
+      };
+      logo.onerror = () => {
+        // If logo fails to load, just return the photo without overlay
+        console.warn('Logo overlay failed — returning photo without logo.');
+        resolve(photoBase64);
+      };
+      logo.src = logoUrl;
+    };
+
+    photo.onerror = () => reject(new Error('Failed to load confirmation photo for compositing.'));
+    photo.src = photoBase64;
+  });
+};
