@@ -44,7 +44,6 @@ const cropToTargetSize = async (
 ): Promise<string> => {
   let targetW = 2048;
   let targetH = 2048;
-
   switch (aspectRatio) {
     case "1:1":  targetW = 2048; targetH = 2048; break;
     case "4:5":  targetW = 1638; targetH = 2048; break;
@@ -53,7 +52,6 @@ const cropToTargetSize = async (
     case "3:1":  targetW = 2048; targetH = 682;  break;
     case "4:1":  targetW = 2048; targetH = 512;  break;
   }
-
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -62,23 +60,52 @@ const cropToTargetSize = async (
       canvas.height = targetH;
       const ctx = canvas.getContext("2d");
       if (!ctx) { resolve(base64Image); return; }
-
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
-
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = canvas.width / 2 - (img.width / 2) * scale;
       const y = canvas.height / 2 - (img.height / 2) * scale;
-
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       resolve(canvas.toDataURL("image/png"));
     };
-    img.onerror = () => { console.error("Image load failed for cropping"); resolve(base64Image); };
+    img.onerror = () => { resolve(base64Image); };
     img.src = base64Image;
   });
 };
 
-// --- BUILD PROMPT ---
+// Rule of Thirds composition variants, cycled by globalIndex
+const getRuleOfThirdsVariant = (globalIndex: number): {
+  placement: string;
+  bodyAngle: string;
+  gaze: string;
+  negativeAddition: string;
+} => {
+  const variant = globalIndex % 3;
+  if (variant === 0) {
+    return {
+      placement: "Position the subject on the LEFT THIRD of the frame. The subject occupies the left 40% of the image. The right 60% shows the scene/background with depth.",
+      bodyAngle: "Body angled 30-45 degrees toward the RIGHT (toward center of frame). Feet and hips point left, shoulders and chest open toward the right/center.",
+      gaze: "Eyes looking directly into the camera lens. Head turned slightly back toward camera from the body angle.",
+      negativeAddition: " Do NOT center the subject in the frame. Do NOT have the subject face square-on to the camera.",
+    };
+  } else if (variant === 1) {
+    return {
+      placement: "Position the subject on the RIGHT THIRD of the frame. The subject occupies the right 40% of the image. The left 60% shows the scene/background with depth.",
+      bodyAngle: "Body angled 30-45 degrees toward the LEFT (toward center of frame). Feet and hips point right, shoulders and chest open toward the left/center.",
+      gaze: "Eyes looking directly into the camera lens. Head turned slightly back toward camera from the body angle.",
+      negativeAddition: " Do NOT center the subject in the frame. Do NOT have the subject face square-on to the camera.",
+    };
+  } else {
+    return {
+      placement: "Position the subject SLIGHTLY LEFT OF CENTER — not fully centered, not on the far third. Create an asymmetric, editorial composition with more negative space on the right side.",
+      bodyAngle: "Body at a 20-30 degree angle to the camera, creating a dynamic lean. Weight on one foot, slight hip shift. Not square to the camera.",
+      gaze: "Eyes looking directly into the camera with confident, engaged expression.",
+      negativeAddition: " Do NOT place the subject dead-center in the frame. Do NOT have the subject stand perfectly square and symmetrical to the camera.",
+    };
+  }
+};
+
+// BUILD PROMPT
 const buildPrompt = (
   stylePrompt: string,
   config: GenerationConfig,
@@ -105,27 +132,18 @@ const buildPrompt = (
  `;
 
   let textureInstruction = "";
-
   if (config.retouchLevel === 'None') {
     textureInstruction = `
       ** CRITICAL TEXTURE & REALISM INSTRUCTION (NO RETOUCHING) **
       - CAPTURE AUTHENTIC SKIN TEXTURE: Visible natural pores, fine lines, vellus hair (peach fuzz), and subtle skin variation.
       - HIGH-FREQUENCY DETAIL: Preserve micro-contrast and organic tonal variation across the face.
-      - OPTICAL REALISM: Skin must appear naturally imperfect, realistic, and optically true, as photographed with a professional full-frame camera and 85mm portrait lens.
+      - OPTICAL REALISM: Skin must appear naturally imperfect, realistic, and optically true.
       - NO SMOOTHING: Absolutely NO beauty filters, NO plastic skin, NO airbrushed effect, NO blurred pores.
-      - LIGHTING INTERACTION: Show realistic specular highlights on skin texture, not just flat color.
-      ** CRITICAL: RAW SENSOR DATA LOOK (ZERO RETOUCHING) **
-      - TEXTURE PRIORITY: You MUST render deep, sharp high-frequency skin details (pores, micro-wrinkles, uneven skin tone).
-      - IMPERFECTIONS: Do not hide age lines, sun spots, or texture. The skin must look "uncomfortably real".
+      - TEXTURE PRIORITY: You MUST render deep, sharp high-frequency skin details.
       - SENSOR NOISE: Allow subtle luminance noise to prevent the "plastic AI look".
-      - SUBSURFACE SCATTERING: Ensure light penetrates the skin surface to create fleshy, organic translucency.
       - PROHIBITED: Do not apply any "glamour glow" or "soft skin" filters.
-      - REFERENCE: Think "Phase One 100MP Raw File" zoomed in 100%.
    `;
-    negativeConstraints += `
-      - plastic skin, waxy skin, airbrushed face, beauty filter, over-smoothed skin, blurred pores, CGI skin, hyper-perfect complexion, synthetic texture.
-      - beauty filter, smoothing, airbrush, wax, plastic, blurred pores, foundation, perfect skin, doll-like, denoised, soft glow.
-   `;
+    negativeConstraints += " plastic skin, waxy skin, airbrushed face, beauty filter, over-smoothed skin, blurred pores, CGI skin, hyper-perfect complexion, synthetic texture.";
   } else if (config.retouchLevel === 'Natural') {
     textureInstruction = "Skin should look healthy and clean but maintain natural texture. Slight retouching allowed but keep it realistic.";
   } else if (config.retouchLevel === 'Polished') {
@@ -134,7 +152,6 @@ const buildPrompt = (
     textureInstruction = "High-fashion magazine retouching. Very smooth, flawless complexion, perfected features.";
   }
 
-  // --- BOARDROOM MONITOR ERADICATION ---
   const lowerPrompt = (stylePrompt + (config.backgroundType || '')).toLowerCase();
   const isBoardroomContext = lowerPrompt.includes('boardroom') || lowerPrompt.includes('meeting room') || lowerPrompt.includes('conference room');
   const userRequestedScreen = lowerPrompt.match(/screen|monitor|tv|projector|display|presentation|slide/);
@@ -143,38 +160,16 @@ const buildPrompt = (
   let cameraReorientation = "";
 
   if (isBoardroomContext && !userRequestedScreen) {
-    negativeConstraints += `
-     CRITICAL BACKGROUND RULE: NO RECTANGULAR OBJECTS ON WALLS.
-     - ABSOLUTELY NO televisions, computer monitors, projector screens (pull-down or fixed), whiteboards, smartboards, or LED walls.
-     - Do not render black, white, or gray rectangles on the wall.
-     - Do not render any framed rectangles that look like screens.
-   `;
-    sceneOverride = `
-     ** BACKGROUND OVERRIDE FOR BOARDROOM (NO SCREENS) **
-     - The background must be architecturally dense and analog.
-     - CHOOSE ONE replacement for the background wall: 
-       1. A large, framed abstract canvas art piece flanked by tall potted fiddle-leaf fig plants.
-       2. A "Green Wall" (living plants) integrated with dark wood paneling.
-       3. 3D textured acoustic wood slats (vertical lines) covering the entire wall.
-       4. Floor-to-ceiling bookshelves filled with books and curated artifacts.
-   `;
+    negativeConstraints += ` CRITICAL BACKGROUND RULE: NO RECTANGULAR OBJECTS ON WALLS. ABSOLUTELY NO televisions, computer monitors, projector screens, whiteboards, smartboards, or LED walls.`;
+    sceneOverride = `** BACKGROUND OVERRIDE FOR BOARDROOM (NO SCREENS) ** The background must be architecturally dense and analog. CHOOSE ONE: 1. Large framed abstract canvas art flanked by tall fiddle-leaf fig plants. 2. Green Wall (living plants) with dark wood paneling. 3. 3D textured acoustic wood slats. 4. Floor-to-ceiling bookshelves.`;
     cameraReorientation = "Compose the shot angled slightly into the room depth or towards windows, avoiding flat back walls.";
   }
 
-  // --- SOLID COLOR CLAMPING ---
   const hexMatch = stylePrompt.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
   let solidColorInstruction = "";
-
   if (hexMatch) {
     const hex = hexMatch[0];
-    solidColorInstruction = `
-     ** CRITICAL BACKGROUND INSTRUCTION: SOLID COLOR CLAMP **
-     - The background must be a SOLID, SEAMLESS STUDIO PAPER BACKDROP.
-     - Exact Color: ${hex}
-     - NO TEXTURE. NO GRADIENTS. NO PATTERNS. NO SHADOWS ON WALL.
-     - The background lighting must be FLAT and UNIFORM to ensure the color hex code matches exactly.
-     - Do not simulate a room; simulate a photography studio with a paper roll.
-   `;
+    solidColorInstruction = `** CRITICAL BACKGROUND INSTRUCTION: SOLID COLOR CLAMP ** The background must be a SOLID, SEAMLESS STUDIO PAPER BACKDROP. Exact Color: ${hex}. NO TEXTURE. NO GRADIENTS. NO PATTERNS. NO SHADOWS ON WALL.`;
     negativeConstraints = negativeConstraints.replace("The background must be the ENVIRONMENT ONLY.", "");
   }
 
@@ -186,233 +181,150 @@ const buildPrompt = (
       let poseInstruction = "";
       if (globalIndex < 2) {
         if (globalIndex % 2 === 0) {
-          poseInstruction = "Standard Portrait Pose: Body turned slightly (approx 30 degrees) to camera RIGHT. One shoulder closer to lens. Face turned back to center.";
-          lightingDirectionOverride = "Side Lighting from RIGHT (creating flattering Short Lighting on face shadow side).";
+          poseInstruction = "Body turned slightly (30 degrees) to camera RIGHT. Face turned back to center.";
+          lightingDirectionOverride = "Side Lighting from RIGHT (Short Lighting on face shadow side).";
         } else {
-          poseInstruction = "Standard Portrait Pose: Body turned slightly (approx 30 degrees) to camera LEFT. One shoulder closer to lens. Face turned back to center.";
-          lightingDirectionOverride = "Side Lighting from LEFT (creating flattering Short Lighting on face shadow side).";
+          poseInstruction = "Body turned slightly (30 degrees) to camera LEFT. Face turned back to center.";
+          lightingDirectionOverride = "Side Lighting from LEFT (Short Lighting on face shadow side).";
         }
       } else {
-        const varietyMod = globalIndex % 3;
-        if (varietyMod === 0) {
-          poseInstruction = "Shoulders square to camera, head straight on. Direct, confident connection.";
-          lightingDirectionOverride = "Slightly off-center frontal lighting.";
-        } else if (varietyMod === 1) {
-          poseInstruction = "Body turned slightly (30 degrees) to camera RIGHT. Face center.";
-          lightingDirectionOverride = "Side Lighting from RIGHT (Short Lighting).";
-        } else {
-          poseInstruction = "Body turned slightly (30 degrees) to camera LEFT. Face center.";
-          lightingDirectionOverride = "Side Lighting from LEFT (Short Lighting).";
-        }
+        const v = globalIndex % 3;
+        if (v === 0) { poseInstruction = "Shoulders square to camera, head straight on."; lightingDirectionOverride = "Slightly off-center frontal lighting."; }
+        else if (v === 1) { poseInstruction = "Body turned (30 degrees) to camera RIGHT. Face center."; lightingDirectionOverride = "Side Lighting from RIGHT (Short Lighting)."; }
+        else { poseInstruction = "Body turned (30 degrees) to camera LEFT. Face center."; lightingDirectionOverride = "Side Lighting from LEFT (Short Lighting)."; }
       }
-      framingInstruction = `
-       **COMPOSITION: MEDIUM CLOSE-UP (HEAD AND SHOULDERS)**
-       - FRAMING: Capture head, neck, and full shoulders.
-       - CRITICAL: DO NOT CUT OFF THE TOP OF THE HEAD.
-       - Leave "headroom" (empty space) above the hair.
-       - Show upper chest and shirt collar.
-       - Visual Anchor: Mid-Chest to slightly above top of head.
-       - Pose: ${poseInstruction}
-       - Expression: "Listening carefully", engaged, slight forward lean.
-     `;
-      lensInstruction = "85mm Telephoto Portrait Lens (Compresses background, flattering for faces)";
-      negativeConstraints += "Do NOT create a three-quarter shot. Do NOT show the belt. Do NOT show hands. Do NOT create a full body shot.";
+      framingInstruction = `**COMPOSITION: MEDIUM CLOSE-UP (HEAD AND SHOULDERS)** - FRAMING: Capture head, neck, and full shoulders. CRITICAL: DO NOT CUT OFF THE TOP OF THE HEAD. Leave headroom above hair. Show upper chest and shirt collar. - Pose: ${poseInstruction} - Expression: Engaged, slight forward lean.`;
+      lensInstruction = "85mm Telephoto Portrait Lens";
+      negativeConstraints += " Do NOT create a three-quarter shot. Do NOT show the belt. Do NOT show hands. Do NOT create a full body shot.";
       break;
     }
 
-    case "Waist Up":
-      framingInstruction = `
-       **COMPOSITION: MEDIUM SHOT (WAIST UP)**
-       - Visual Anchor: Top of head to hips.
-       - Crop Limit: CUT FRAME AT MID-THIGH or HIPS.
-       - CRITICAL: Do NOT crop exactly at the belt line. Go slightly lower (mid-thigh).
-       - Hands: Hands should be visible if natural. Never crop through the fingers.
-     `;
+    case "Waist Up": {
+      const rot = getRuleOfThirdsVariant(globalIndex);
+      negativeConstraints += rot.negativeAddition;
+      framingInstruction = `**COMPOSITION: MEDIUM SHOT (WAIST UP) - RULE OF THIRDS**
+       - Visual Anchor: Top of head to hips/mid-thigh. Crop at mid-thigh, NOT at the belt line.
+       - Hands visible if natural. Never crop through fingers.
+       RULE OF THIRDS PLACEMENT:
+       - ${rot.placement}
+       - Body angle: ${rot.bodyAngle}
+       - Gaze: ${rot.gaze}
+       - This is a PROFESSIONAL EDITORIAL PORTRAIT. The composition must feel intentional and dynamic.`;
       lensInstruction = "50mm Standard Lens";
-      negativeConstraints += "Do NOT create a full body shot. Do NOT show knees or shoes. Do NOT create a tight headshot. Do NOT crop through fingers or hands.";
+      negativeConstraints += " Do NOT create a full body shot. Do NOT show knees or shoes. Do NOT create a tight headshot.";
       break;
+    }
 
-    case "Three-Quarter":
-      framingInstruction = `
-       **COMPOSITION: THREE-QUARTER (AMERICAN SHOT)**
-       - Visual Anchor: Top of head to knees.
-       - Crop Limit: CUT FRAME JUST ABOVE THE KNEES.
-       - CRITICAL: Do NOT show ankles or feet. Do NOT crop through fingers.
-     `;
+    case "Three-Quarter": {
+      const rot = getRuleOfThirdsVariant(globalIndex);
+      negativeConstraints += rot.negativeAddition;
+      framingInstruction = `**COMPOSITION: THREE-QUARTER (AMERICAN SHOT) - RULE OF THIRDS**
+       - Visual Anchor: Top of head to just above knees. CRITICAL: Do NOT show ankles or feet. Do NOT crop through fingers.
+       RULE OF THIRDS PLACEMENT:
+       - ${rot.placement}
+       - Body angle: ${rot.bodyAngle}
+       - Gaze: ${rot.gaze}
+       - This is a PROFESSIONAL EDITORIAL PORTRAIT. The composition must feel intentional and dynamic.`;
       lensInstruction = "50mm Standard Lens";
-      negativeConstraints += "Do NOT create a full body shot. Do NOT show shoes. Do NOT create a waist-up or headshot. Do NOT crop through fingers or hands.";
+      negativeConstraints += " Do NOT create a full body shot. Do NOT show shoes. Do NOT create a waist-up or headshot.";
       break;
+    }
 
-    case "Full Body":
-      framingInstruction = `
-       **COMPOSITION: FULL BODY WIDE SHOT**
-       - Visual Anchor: Head to Toe.
-       - CRITICAL REQUIREMENT: YOU MUST GENERATE SHOES STANDING ON THE FLOOR.
-       - Leave visible floor space BELOW the feet.
-       - Leave visible air space ABOVE the head.
-       - All fingers must be fully within the frame if hands are visible.
-     `;
+    case "Full Body": {
+      const rot = getRuleOfThirdsVariant(globalIndex);
+      negativeConstraints += rot.negativeAddition;
+      let widescreenOverride = "";
       if (config.aspectRatio === '16:9') {
-        framingInstruction += `
-        \n\n*** WIDE ASPECT RATIO OVERRIDE ***
-        - Since the frame is wide (16:9) and short, you MUST ZOOM OUT SIGNIFICANTLY.
-        - The subject should be smaller in the frame to ensure their head and feet fit comfortably within the shallow vertical space.
-        - Create a wide environmental portrait. Ample space above head and below feet is MANDATORY.
-        `;
-        lensInstruction = "24mm Wide Angle Lens (Environmental portrait, subject smaller in frame)";
+        widescreenOverride = `*** WIDE ASPECT RATIO OVERRIDE *** You MUST ZOOM OUT SIGNIFICANTLY. Subject smaller in frame, ample space above head and below feet is MANDATORY.`;
+        lensInstruction = "24mm Wide Angle Lens";
       } else {
-        lensInstruction = "35mm Wide Angle Lens (To capture full subject and environment)";
+        lensInstruction = "35mm Wide Angle Lens";
       }
-      negativeConstraints += "Do NOT cut off the feet. Do NOT cut off the head. Do NOT crop at knees or waist. Do NOT crop through fingers or toes.";
+      framingInstruction = `**COMPOSITION: FULL BODY WIDE SHOT - RULE OF THIRDS**
+       - Visual Anchor: Head to Toe. CRITICAL: YOU MUST GENERATE SHOES STANDING ON THE FLOOR.
+       - Leave visible floor space BELOW the feet. Leave visible air space ABOVE the head.
+       ${widescreenOverride}
+       RULE OF THIRDS PLACEMENT:
+       - ${rot.placement}
+       - Body angle: ${rot.bodyAngle}
+       - Gaze: ${rot.gaze}
+       - This is a PROFESSIONAL EDITORIAL PORTRAIT. The composition must feel intentional and dynamic.`;
+      negativeConstraints += " Do NOT cut off the feet. Do NOT cut off the head. Do NOT crop at knees or waist.";
       break;
+    }
 
     default:
       framingInstruction = "Medium Shot (Waist Up). Crop at hips.";
   }
 
-  let angleInstruction = config.cameraAngle || "Eye Level";
-  if (angleInstruction === "Low Angle (Power)") {
-    angleInstruction = "Low Angle. Camera at waist height looking slightly up. Heroic/Power stance.";
-  } else if (angleInstruction === "High Angle") {
-    angleInstruction = "High Angle. Camera slightly above eye level looking down. Approachable.";
-  } else {
-    angleInstruction = "Eye Level. Neutral, direct connection.";
-  }
+  let angleInstruction = "Eye Level. Neutral, direct connection.";
+  if (config.cameraAngle === "Low Angle (Power)") angleInstruction = "Low Angle. Camera at waist height looking slightly up. Heroic/Power stance.";
+  else if (config.cameraAngle === "High Angle") angleInstruction = "High Angle. Camera slightly above eye level looking down. Approachable.";
 
   let lightingInstruction = "";
   switch (config.mood) {
-    case "Polished Professional":
-      lightingInstruction = `
-       LIGHTING STYLE: COMMERCIAL & CLEAN (HIGH KEY)
-       - Light Quality: Ultra-soft, wrapping illumination. Flattering and smooth.
-       - Contrast: Medium-Low. Bright and optimistic atmosphere.
-       - Shadows: Very subtle, open, and lifted. No harsh dark areas on the face.
-       - Effect: "Magazine Cover" quality brightness.
-       - IMPORTANT: The light source is invisible and off-camera.
-       - Short Lighting preferred: key light should favor the far cheek.
-     `;
-      break;
-    case "Daylight":
-      lightingInstruction = `
-       LIGHTING STYLE: NATURAL WINDOW AMBIANCE
-       - Light Quality: Organic, directional daylight coming from the side.
-       - Atmosphere: Airy, diffused, and real.
-       - Highlights: Natural sheen on skin.
-       - Shadows: Cool-toned and open.
-       - Effect: As if standing next to a large North-facing window.
-       - Short Lighting preferred where possible.
-     `;
-      break;
-    case "Cinematic":
-      lightingInstruction = `
-       LIGHTING STYLE: DRAMATIC & TEXTURED
-       - Light Quality: High contrast "Rembrandt" style.
-       - Pattern: Distinct triangle of light on the shadow-side cheek.
-       - Atmosphere: Rich, moody, and serious.
-       - Color: Warmer practical lights in background vs cooler foreground light.
-       - Short Lighting: ensure the Rembrandt triangle is on the shadow-side cheek (far from camera).
-     `;
-      break;
-    case "Dark & Moody":
-      lightingInstruction = `
-       LIGHTING STYLE: LOW KEY & INTENSE
-       - Light Quality: Minimalist lighting. Subject emerges from shadow.
-       - Background: Falls off into deep darkness/black.
-       - Focus: Highlighting only the face and hands.
-       - Vibe: Serious, executive authority, powerful.
-       - Short Lighting: key light from the far side only. Near side of face falls into shadow.
-     `;
-      break;
-    default:
-      lightingInstruction = "Lighting: Soft professional lighting with short lighting preferred.";
+    case "Polished Professional": lightingInstruction = "LIGHTING STYLE: COMMERCIAL & CLEAN (HIGH KEY). Ultra-soft wrapping illumination. Medium-Low contrast. Very subtle shadows. Magazine Cover quality brightness. Short Lighting preferred: key light on far cheek."; break;
+    case "Daylight": lightingInstruction = "LIGHTING STYLE: NATURAL WINDOW AMBIANCE. Organic directional daylight from the side. Airy, diffused, real. As if standing next to a large North-facing window. Short Lighting preferred."; break;
+    case "Cinematic": lightingInstruction = "LIGHTING STYLE: DRAMATIC & TEXTURED. High contrast Rembrandt style. Distinct triangle of light on shadow-side cheek. Rich, moody, serious. Short Lighting: Rembrandt triangle on shadow-side cheek."; break;
+    case "Dark & Moody": lightingInstruction = "LIGHTING STYLE: LOW KEY & INTENSE. Subject emerges from shadow. Background falls to deep darkness. Key light from far side only. Serious, executive authority."; break;
+    default: lightingInstruction = "Lighting: Soft professional lighting with short lighting preferred.";
   }
 
-  const shortLightingDefault = `Short Lighting preferred (key light on the far side of the face from camera, shadow falls toward camera). Use this as the default unless the scene logically implies a different source.`;
-  const finalLightingDirection = lightingDirectionOverride || config.lighting || shortLightingDefault;
+  const finalLightingDirection = lightingDirectionOverride || config.lighting || "Short Lighting preferred (key light on the far side of the face from camera).";
 
   let colorInstruction = "";
-  if (config.brandColor) {
-    colorInstruction += `Primary Brand Accent Color: ${config.brandColor} (Use subtly in background or props). `;
-  }
-  if (config.secondaryBrandColor) {
-    colorInstruction += `Secondary Brand Accent Color: ${config.secondaryBrandColor}. `;
-  }
+  if (config.brandColor) colorInstruction += `Primary Brand Accent Color: ${config.brandColor} (Use subtly in background or props). `;
+  if (config.secondaryBrandColor) colorInstruction += `Secondary Brand Accent Color: ${config.secondaryBrandColor}. `;
 
-  const clothingLogic = `
-   CLOTHING LOGIC:
-   - If the subject is Female and wearing a "Suit", use a feminine cut blazer with a blouse or open collar. DO NOT GENERATE A MENS NECKTIE ON A WOMAN.
-   - If the subject is Male and wearing a "Suit", a tie is appropriate unless specified otherwise.
-   - TEETH: Natural teeth — preserve the exact appearance from the reference photo. Do not over-whiten or straighten beyond what is visible in the reference.
- `;
+  const clothingLogic = `CLOTHING LOGIC: If the subject is Female and wearing a "Suit", use a feminine cut blazer with a blouse or open collar. DO NOT GENERATE A MENS NECKTIE ON A WOMAN. If the subject is Male and wearing a "Suit", a tie is appropriate unless specified. TEETH: Natural teeth, preserve exact appearance from reference photo.`;
 
   let bodyInstruction = "";
   const bodyOffset = config.bodySizeOffset ?? 0;
-  if (bodyOffset !== 0) {
-    if (bodyOffset === -3) { bodyInstruction = "BODY BUILD: EXTREMELY THIN. Skinny, very slender, underweight appearance. Narrow frame."; negativeConstraints += "Do NOT generate fat or overweight subjects. "; }
-    if (bodyOffset === -2) bodyInstruction = "BODY BUILD: VERY SLIM. Lean, slight frame, lanky.";
-    if (bodyOffset === -1) bodyInstruction = "BODY BUILD: SLIM/TRIM. Toned, athletic, fit, narrow waist.";
-    if (bodyOffset === 1)  bodyInstruction = "BODY BUILD: CURVY / STOCKY. Fuller figure, softer build, broader frame.";
-    if (bodyOffset === 2)  bodyInstruction = "BODY BUILD: OVERWEIGHT. Heavy set, thick midsection, plus size, broad.";
-    if (bodyOffset === 3)  { bodyInstruction = "BODY BUILD: OBESE. Very heavy set, large frame, round features, significant weight."; negativeConstraints += "Do NOT generate skinny or thin subjects. "; }
-  }
+  if (bodyOffset === -3) { bodyInstruction = "BODY BUILD: EXTREMELY THIN. Skinny, very slender, underweight, narrow frame."; negativeConstraints += " Do NOT generate fat or overweight subjects."; }
+  else if (bodyOffset === -2) bodyInstruction = "BODY BUILD: VERY SLIM. Lean, slight frame, lanky.";
+  else if (bodyOffset === -1) bodyInstruction = "BODY BUILD: SLIM/TRIM. Toned, athletic, fit, narrow waist.";
+  else if (bodyOffset === 1)  bodyInstruction = "BODY BUILD: CURVY / STOCKY. Fuller figure, softer build, broader frame.";
+  else if (bodyOffset === 2)  bodyInstruction = "BODY BUILD: OVERWEIGHT. Heavy set, thick midsection, plus size, broad.";
+  else if (bodyOffset === 3)  { bodyInstruction = "BODY BUILD: OBESE. Very heavy set, large frame, round features, significant weight."; negativeConstraints += " Do NOT generate skinny or thin subjects."; }
 
-  // --- ABOUT YOU: Gender, Age, Hair, Ring ---
   let aboutYouInstruction = "";
-
   if (config.genderPresentation) {
     const genderMap: Record<string, string> = {
-      woman:     "The subject is a WOMAN. Use feminine clothing cuts, styling, and presentation.",
-      man:       "The subject is a MAN. Use masculine clothing cuts and styling.",
+      woman: "The subject is a WOMAN. Use feminine clothing cuts, styling, and presentation.",
+      man: "The subject is a MAN. Use masculine clothing cuts and styling.",
       nonbinary: "The subject presents as NON-BINARY or gender-neutral. Use neutral, ungendered styling.",
     };
     aboutYouInstruction += (genderMap[config.genderPresentation] || "") + "\n";
   }
-
   if (config.ageRange) {
     const ageMap: Record<string, string> = {
-      "18–29": "Age appearance: young adult, 18–29 years old.",
-      "30–44": "Age appearance: professional adult, 30–44 years old.",
-      "45–59": "Age appearance: experienced professional, 45–59 years old.",
-      "60+":   "Age appearance: senior professional, 60 years or older.",
+      "18-29": "Age appearance: young adult, 18-29 years old.",
+      "30-44": "Age appearance: professional adult, 30-44 years old.",
+      "45-59": "Age appearance: experienced professional, 45-59 years old.",
+      "60+": "Age appearance: senior professional, 60 years or older.",
     };
     aboutYouInstruction += (ageMap[config.ageRange] || "") + "\n";
   }
-
   if (config.hairColor) {
     if (config.hairColor === "Bald") {
-      aboutYouInstruction += "HAIR: The subject is completely BALD with no hair on top of the head. Do not add hair.\n";
-      negativeConstraints += " Do NOT add hair to a bald subject. No hair, no stubble on the scalp unless reference photo shows it.";
+      aboutYouInstruction += "HAIR: The subject is completely BALD. Do not add hair.\n";
+      negativeConstraints += " Do NOT add hair to a bald subject.";
     } else {
       aboutYouInstruction += `HAIR COLOR: ${config.hairColor}. Match this hair color accurately.\n`;
     }
   }
-
   if (config.includeRing) {
     const ringMap: Record<string, string> = {
-      woman:     "RING: The subject is wearing a diamond solitaire engagement ring and thin gold wedding band on the left ring finger.",
-      man:       "RING: The subject is wearing a classic polished gold wedding band on the left ring finger.",
-      nonbinary: "RING: The subject is wearing a simple elegant commitment band on the left ring finger.",
+      woman: "RING: Diamond solitaire engagement ring and thin gold wedding band on left ring finger.",
+      man: "RING: Classic polished gold wedding band on left ring finger.",
+      nonbinary: "RING: Simple elegant commitment band on left ring finger.",
     };
     if (config.genderPresentation && ringMap[config.genderPresentation]) {
       aboutYouInstruction += ringMap[config.genderPresentation] + "\n";
     }
   } else {
-    // Default: suppress rings
     negativeConstraints += " NO rings on any fingers. Bare hands with no jewelry on fingers.";
   }
-
-  const fourthWallLogic = `
-   CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE.
-   - This is NOT a behind-the-scenes shot.
-   - The camera frame MUST NOT reveal the production environment.
-   - Focus strictly on the subject and the simulated location.
- `;
-
-  const mergerLogic = `
-   COMPOSITION SAFETY:
-   - Ensure clean figure-ground separation behind the head.
-   - SHIFT THE CAMERA ANGLE if necessary to avoid poles, frames, or lines intersecting the head.
- `;
 
   return `
    Create a high-fidelity photorealistic personal brand photo.
@@ -424,14 +336,15 @@ const buildPrompt = (
 
    1. SUBJECT: EXACTLY ONE PERSON.
    2. LENS CHOICE: ${lensInstruction}
-   3. CROPPING GUARDRAIL: NEVER crop exactly at a joint (knees, elbows, waist). Crop mid-limb.
+   3. CROPPING GUARDRAIL: NEVER crop exactly at a joint. Crop mid-limb.
 
    SUBJECT DETAILS:
    ${aboutYouInstruction}
    ${clothingLogic}
    ${bodyInstruction}
-   ${fourthWallLogic}
-   ${mergerLogic}
+
+   CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
+   COMPOSITION SAFETY: Ensure clean figure-ground separation behind the head. Shift camera angle if needed.
    ${textureInstruction}
 
    COMPOSITION & FRAMING:
@@ -474,68 +387,27 @@ export const generateBrandPhotoWithRefs = async (
   const ai = getAiClient();
   const roleExplanation = buildRoleExplanation(refs);
   const prompt = roleExplanation + "\n\n" + buildPrompt(stylePrompt, config, globalIndex);
-
   const parts: any[] = [{ text: prompt }];
-
-  parts.push({
-    inlineData: {
-      mimeType: "image/jpeg",
-      data: cleanBase64(refs.main?.base64 || ''),
-    },
-  });
-
+  parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.main?.base64 || '') } });
   let extraImagesAdded = 0;
-
-  if (refs.sideLeft && extraImagesAdded < 2) {
-    parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideLeft.base64) } });
-    extraImagesAdded++;
-  }
-  if (refs.sideRight && extraImagesAdded < 2) {
-    parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideRight.base64) } });
-    extraImagesAdded++;
-  }
-  if (refs.fullBody && extraImagesAdded < 2) {
-    parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.fullBody.base64) } });
-    extraImagesAdded++;
-  }
-
+  if (refs.sideLeft && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideLeft.base64) } }); extraImagesAdded++; }
+  if (refs.sideRight && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideRight.base64) } }); extraImagesAdded++; }
+  if (refs.fullBody && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.fullBody.base64) } }); extraImagesAdded++; }
   const bgImage = config.customBackground || customBackgroundBase64;
-  if (bgImage && extraImagesAdded < 2) {
-    parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(bgImage) } });
-  }
+  if (bgImage && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(bgImage) } }); }
 
   try {
-    console.log(`Calling ${IMAGE_MODEL} with ${parts.length - 1} images (Global Index ${globalIndex})...`);
-
-    const aspectRatioMap: Record<string, string> = {
-      '1:1':  '1:1',
-      '4:5':  '4:5',
-      '9:16': '9:16',
-      '16:9': '16:9',
-      '3:1':  '3:1',
-      '4:1':  '4:1',
-    };
+    const aspectRatioMap: Record<string, string> = { '1:1': '1:1', '4:5': '4:5', '9:16': '9:16', '16:9': '16:9', '3:1': '3:1', '4:1': '4:1' };
     const geminiAspectRatio = aspectRatioMap[config.aspectRatio] || '1:1';
-
     const response = await ai.models.generateContent({
       model: IMAGE_MODEL,
       contents: [{ role: "user", parts }],
-      config: {
-        responseModalities: ["TEXT", "IMAGE"],
-        imageConfig: { aspectRatio: geminiAspectRatio },
-      },
+      config: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: geminiAspectRatio } },
     });
-
     const outputParts = response.candidates?.[0]?.content?.parts;
     const images = extractImagesFromParts(outputParts || []);
-
-    if (images.length === 0) {
-      console.error("Full API Response:", JSON.stringify(response, null, 2));
-      throw new Error("No image generated. The model may have refused the request — check console for details.");
-    }
-
+    if (images.length === 0) throw new Error("No image generated.");
     return await cropToTargetSize(images[0], config.aspectRatio);
-
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     throw error;
@@ -549,17 +421,14 @@ export const generateBrandPhotoWithRefsSafe = async (
   customBackgroundBase64?: string,
   globalIndex: number = 0
 ): Promise<string> => {
-
   let generatedImageBase64: string;
   try {
     generatedImageBase64 = await generateBrandPhotoWithRefs(refs, stylePrompt, config, customBackgroundBase64, globalIndex);
   } catch (e: any) {
-    console.warn("Attempt 1 failed. Retrying with simplified inputs...", e);
+    console.warn("Attempt 1 failed. Retrying...", e);
     const hasExtras = refs.sideLeft || refs.sideRight || refs.fullBody;
     if (hasExtras) {
-      const simpleRefs: MultiReferenceSet = { main: refs.main };
-      console.log("Fallback: Retrying with MAIN reference image only.");
-      generatedImageBase64 = await generateBrandPhotoWithRefs(simpleRefs, stylePrompt, config, customBackgroundBase64, globalIndex);
+      generatedImageBase64 = await generateBrandPhotoWithRefs({ main: refs.main }, stylePrompt, config, customBackgroundBase64, globalIndex);
     } else {
       generatedImageBase64 = await generateBrandPhotoWithRefs(refs, stylePrompt, config, customBackgroundBase64, globalIndex);
     }
@@ -570,20 +439,12 @@ export const generateBrandPhotoWithRefsSafe = async (
   const userRequestedScreen = lowerPrompt.match(/screen|monitor|tv|projector|display|presentation|slide/);
 
   if (isBoardroomContext && !userRequestedScreen) {
-    console.log("Boardroom detected — initiating auto-refinement to clean background...");
     try {
-      const refinedImage = await refineGeneratedImage(
-        generatedImageBase64,
-        "Based on this image, remove any digital screens, monitors, TVs, whiteboards, or projector screens from the background walls. Replace them with continuous architectural wall material like wood paneling, textured stone, or glass, matching the existing scene. Ensure no glowing or blank rectangles remain on the walls. Add a large potted plant or framed abstract art if the wall feels too empty.",
-        config.aspectRatio
-      );
-      return refinedImage;
-    } catch (refinementError) {
-      console.error("Auto-refinement failed, returning initial generation:", refinementError);
+      return await refineGeneratedImage(generatedImageBase64, "Remove any digital screens, monitors, TVs, whiteboards, or projector screens from the background walls. Replace with wood paneling, textured stone, or art matching the existing scene.", config.aspectRatio);
+    } catch {
       return generatedImageBase64;
     }
   }
-
   return generatedImageBase64;
 };
 
@@ -593,15 +454,7 @@ export const generateBrandPhoto = async (
   config: GenerationConfig,
   customBackgroundBase64?: string
 ): Promise<string> => {
-  const refs: MultiReferenceSet = {
-    main: {
-      id: "legacy-main",
-      fileName: "legacy-main.jpg",
-      base64: referenceImageBase64,
-      createdAt: Date.now(),
-      role: "main",
-    },
-  };
+  const refs: MultiReferenceSet = { main: { id: "legacy-main", fileName: "legacy-main.jpg", base64: referenceImageBase64, createdAt: Date.now(), role: "main" } };
   return generateBrandPhotoWithRefsSafe(refs, stylePrompt, config, customBackgroundBase64, 0);
 };
 
@@ -611,134 +464,96 @@ export const refineGeneratedImage = async (
   aspectRatio: AspectRatio = "1:1"
 ): Promise<string> => {
   const ai = getAiClient();
-
-  let mimeType = "image/jpeg";
-  if (currentImageBase64.includes("image/png")) mimeType = "image/png";
-
+  const mimeType = currentImageBase64.includes("image/png") ? "image/png" : "image/jpeg";
   try {
-    console.log(`Refining with ${IMAGE_MODEL}...`);
     const response = await ai.models.generateContent({
       model: IMAGE_MODEL,
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: { mimeType, data: cleanBase64(currentImageBase64) } },
-            { text: `Edit this image: ${refinementPrompt}.` },
-          ],
-        },
-      ],
-      config: {
-        responseModalities: ["TEXT", "IMAGE"],
-        imageConfig: { aspectRatio: aspectRatio.replace('/', ':') },
-      },
+      contents: [{ role: "user", parts: [
+        { inlineData: { mimeType, data: cleanBase64(currentImageBase64) } },
+        { text: `Edit this image: ${refinementPrompt}.` },
+      ]}],
+      config: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: aspectRatio.replace('/', ':') } },
     });
-
     const outputParts = response.candidates?.[0]?.content?.parts;
     const images = extractImagesFromParts(outputParts || []);
-
     if (images.length === 0) throw new Error("Refinement returned no images.");
-
     return images[0];
   } catch (error: any) {
     console.error("Refinement Error:", error);
-    if (!refinementPrompt.includes("remove any digital screens")) {
-      alert(`Refinement Failed: ${error.message}`);
-    }
+    if (!refinementPrompt.includes("remove any digital screens")) alert(`Refinement Failed: ${error.message}`);
     throw error;
   }
 };
 
-// --- CONFIRMATION PHOTO ---
-export const generateConfirmationPhoto = async (
-  refs: MultiReferenceSet
+// MAGIC ERASER
+export const magicErase = async (
+  imageBase64: string,
+  maskBase64: string,
+  aspectRatio: AspectRatio = "1:1"
 ): Promise<string> => {
+  const ai = getAiClient();
+  const mimeType = imageBase64.includes("image/png") ? "image/png" : "image/jpeg";
+  const prompt = `I am providing two images:
+1. The ORIGINAL photo
+2. A MASK image with RED brush strokes painted over areas to be removed
 
-  const framing = refs.fullBody ? 'Full Body' : 'Waist Up';
+Your task:
+- Identify where the RED brush strokes appear in the mask image.
+- Those red-painted areas in the original photo are the objects to REMOVE ENTIRELY.
+- Fill the removed areas seamlessly with the surrounding background, matching the lighting, texture, color, and perspective of the scene.
+- The result must look like a real photograph where those objects never existed.
+- Do NOT alter any other part of the image. Only fill the red-brushed areas.
+- Preserve the subject's face, clothing, pose, and all unmasked areas exactly.`;
+  try {
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL,
+      contents: [{ role: "user", parts: [
+        { text: prompt },
+        { inlineData: { mimeType, data: cleanBase64(imageBase64) } },
+        { inlineData: { mimeType: "image/png", data: cleanBase64(maskBase64) } },
+      ]}],
+      config: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: aspectRatio.replace('/', ':') } },
+    });
+    const outputParts = response.candidates?.[0]?.content?.parts;
+    const images = extractImagesFromParts(outputParts || []);
+    if (images.length === 0) throw new Error("Magic Eraser returned no image.");
+    return images[0];
+  } catch (error: any) {
+    console.error("Magic Eraser Error:", error);
+    throw error;
+  }
+};
+
+// CONFIRMATION PHOTO
+export const generateConfirmationPhoto = async (refs: MultiReferenceSet): Promise<string> => {
   const framingPrompt = refs.fullBody
-    ? `**COMPOSITION: FULL BODY WIDE SHOT**
-       - Visual Anchor: Head to Toe.
-       - CRITICAL: YOU MUST GENERATE SHOES STANDING ON THE FLOOR.
-       - Leave visible floor space BELOW the feet.
-       - Leave visible air space ABOVE the head.`
-    : `**COMPOSITION: MEDIUM SHOT (WAIST UP)**
-       - Visual Anchor: Top of head to hips.
-       - Crop Limit: CUT FRAME AT MID-THIGH or HIPS.
-       - CRITICAL: Do NOT crop exactly at the belt line. Go slightly lower.
-       - Hands should be visible if natural. Never crop through fingers.`;
-
-  const prompt = `
-    Create a high-fidelity photorealistic confirmation portrait photo.
-
-    *** CRITICAL INSTRUCTION: OVERRIDE REFERENCE IMAGE FRAMING ***
-    The Reference Image is provided ONLY for facial identity and hair color.
-    IGNORE the pose and framing of the reference image.
-    Construct a NEW body and pose based on the instructions below.
-
-    1. SUBJECT: EXACTLY ONE PERSON. No clones. No group photos.
+    ? `**COMPOSITION: FULL BODY** - Head to Toe. SHOES ON FLOOR. Floor space below feet, air above head.`
+    : `**COMPOSITION: WAIST UP** - Top of head to hips. Crop at mid-thigh. Hands visible if natural.`;
+  const prompt = `Create a high-fidelity photorealistic confirmation portrait.
+    *** Reference Image ONLY for facial identity and hair color. IGNORE pose/framing. ***
+    1. SUBJECT: EXACTLY ONE PERSON.
     2. LENS: 50mm standard lens.
-
-    COMPOSITION & FRAMING:
-    ${framingPrompt}
-
-    CLOTHING (CRITICAL):
-    - The subject MUST wear a DARK PURPLE crew-neck t-shirt.
-    - Hex color of shirt: #3B1F6B
-    - The shirt must be SOLID COLOR with NO text, NO logos, NO graphics, NO patterns.
-
-    BACKGROUND:
-    - Clean, neutral light gray studio backdrop.
-    - Soft, even studio lighting. No harsh shadows.
-
-    LIGHTING:
-    - Soft, wrapping studio light. Flattering and clean.
-    - Short lighting preferred: key light on the far cheek.
-    - No visible lighting equipment.
-
-    NEGATIVE PROMPT:
-    - Do NOT put any text, logos, or graphics on the shirt.
-    - Do NOT show lighting equipment.
-    - Do NOT crop at joints.
-    - Do NOT generate multiple people.
-    - NO glasses unless reference photo clearly shows them.
-    - NO rings on any fingers.
-  `;
-
+    COMPOSITION: ${framingPrompt}
+    CLOTHING: DARK PURPLE crew-neck t-shirt, hex #3B1F6B, SOLID COLOR, NO text/logos/graphics.
+    BACKGROUND: Clean neutral light gray studio backdrop. Soft even studio lighting.
+    NEGATIVE: No text/logos on shirt. No lighting equipment. No cropping at joints. No multiple people. NO rings on any fingers.`;
   const ai = getAiClient();
   const parts: any[] = [{ text: prompt }];
-
-  parts.push({
-    inlineData: {
-      mimeType: 'image/jpeg',
-      data: cleanBase64(refs.main?.base64 || ''),
-    },
-  });
-
-  if (refs.sideLeft) {
-    parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.sideLeft.base64) } });
-  }
-  if (refs.sideRight) {
-    parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.sideRight.base64) } });
-  }
-
+  parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.main?.base64 || '') } });
+  if (refs.sideLeft) parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.sideLeft.base64) } });
+  if (refs.sideRight) parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.sideRight.base64) } });
   const response = await ai.models.generateContent({
     model: IMAGE_MODEL,
     contents: [{ role: 'user', parts }],
-    config: {
-      responseModalities: ['TEXT', 'IMAGE'],
-      imageConfig: { aspectRatio: '1:1' },
-    },
+    config: { responseModalities: ['TEXT', 'IMAGE'], imageConfig: { aspectRatio: '1:1' } },
   });
-
   const outputParts = response.candidates?.[0]?.content?.parts;
   const images = extractImagesFromParts(outputParts || []);
-
   if (images.length === 0) throw new Error('Confirmation photo generation returned no image.');
-
   return images[0];
 };
 
-// --- LOGO WATERMARK OVERLAY ---
+// LOGO WATERMARK
 export const overlayLogoOnConfirmationPhoto = async (
   photoBase64: string,
   logoUrl: string = '/VeraLooks_logo_white.png'
@@ -747,89 +562,57 @@ export const overlayLogoOnConfirmationPhoto = async (
     const photo = new Image();
     photo.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = photo.width;
-      canvas.height = photo.height;
+      canvas.width = photo.width; canvas.height = photo.height;
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve(photoBase64); return; }
-
       ctx.drawImage(photo, 0, 0);
-
       const logo = new Image();
       logo.onload = () => {
         const logoTargetW = canvas.width * 0.85;
         const logoTargetH = (logo.naturalHeight / logo.naturalWidth) * logoTargetW;
         const logoX = (canvas.width - logoTargetW) / 2;
         const logoY = (canvas.height - logoTargetH) / 2;
-
         ctx.globalCompositeOperation = 'screen';
         ctx.globalAlpha = 0.55;
         ctx.drawImage(logo, logoX, logoY, logoTargetW, logoTargetH);
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1.0;
-
         resolve(canvas.toDataURL('image/png'));
       };
-      logo.onerror = () => {
-        console.warn('Logo watermark failed to load — returning photo without overlay.');
-        resolve(photoBase64);
-      };
+      logo.onerror = () => { console.warn('Logo load failed'); resolve(photoBase64); };
       logo.src = logoUrl;
     };
-    photo.onerror = () => reject(new Error('Failed to load confirmation photo for compositing.'));
+    photo.onerror = () => reject(new Error('Failed to load photo for compositing.'));
     photo.src = photoBase64;
   });
 };
 
-// --- PHOTO QUALITY PRE-SCREENING ---
-export interface PhotoQualityResult {
-  passed: boolean;
-  warnings: string[];
-}
+// PHOTO QUALITY PRE-SCREENING
+export interface PhotoQualityResult { passed: boolean; warnings: string[]; }
 
 export const checkPhotoQuality = (base64: string): Promise<PhotoQualityResult> => {
   return new Promise((resolve) => {
     const warnings: string[] = [];
     const img = new Image();
-
     img.onload = () => {
-      // Resolution check
       if (img.width < 400 || img.height < 400) {
-        warnings.push(`Image resolution is low (${img.width}×${img.height}px). For best results, use a photo that is at least 800×800px.`);
+        warnings.push(`Image resolution is low (${img.width}x${img.height}px). For best results, use a photo at least 800x800px.`);
       }
-
-      // Brightness check via canvas center-crop sampling
       const canvas = document.createElement("canvas");
       const sampleSize = 100;
-      canvas.width = sampleSize;
-      canvas.height = sampleSize;
+      canvas.width = sampleSize; canvas.height = sampleSize;
       const ctx = canvas.getContext("2d");
-
       if (ctx) {
-        const srcX = (img.width - sampleSize) / 2;
-        const srcY = (img.height - sampleSize) / 2;
-        ctx.drawImage(img, srcX, srcY, sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
-
-        const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
-        const pixels = imageData.data;
-        let totalBrightness = 0;
-        const pixelCount = pixels.length / 4;
-
-        for (let i = 0; i < pixels.length; i += 4) {
-          totalBrightness += (0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]);
-        }
-
-        const avgBrightness = totalBrightness / pixelCount;
-
-        if (avgBrightness < 40) {
-          warnings.push("This photo looks very dark. The AI works best with well-lit photos where the face is clearly visible.");
-        } else if (avgBrightness > 230) {
-          warnings.push("This photo looks overexposed or very bright. Make sure your face isn't washed out by strong backlighting.");
-        }
+        ctx.drawImage(img, (img.width - sampleSize) / 2, (img.height - sampleSize) / 2, sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
+        const pixels = ctx.getImageData(0, 0, sampleSize, sampleSize).data;
+        let total = 0;
+        for (let i = 0; i < pixels.length; i += 4) total += (0.299 * pixels[i] + 0.587 * pixels[i+1] + 0.114 * pixels[i+2]);
+        const avg = total / (pixels.length / 4);
+        if (avg < 40) warnings.push("This photo looks very dark. The AI works best with well-lit photos where the face is clearly visible.");
+        else if (avg > 230) warnings.push("This photo looks overexposed. Make sure your face isn't washed out by backlighting.");
       }
-
       resolve({ passed: warnings.length === 0, warnings });
     };
-
     img.onerror = () => resolve({ passed: true, warnings: [] });
     img.src = base64;
   });
