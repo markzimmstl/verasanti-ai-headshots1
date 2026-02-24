@@ -229,8 +229,16 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           subLabel="Optional — head to toe, camera at chest height, upright." 
         />
 
-        {/* Spacer slot to fill the 2×2 grid on the right */}
-        <div className="hidden md:block" />
+        {/* Next button — sits below full-body, aligned with the right column */}
+        <div className="hidden md:flex items-end justify-stretch">
+          <Button 
+            onClick={onNext}
+            disabled={!referenceImages.main}
+            className="w-full"
+          >
+            Next: Design Photoshoot
+          </Button>
+        </div>
 
         {/* Side views — Your Left and Your Right */}
         <UploadSlot 
@@ -246,8 +254,8 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
       </div>
 
-      {/* Action Bar */}
-      <div className="flex justify-end pt-6 border-t border-slate-800">
+      {/* Mobile-only action bar (button hidden in grid on small screens) */}
+      <div className="flex justify-end pt-6 border-t border-slate-800 md:hidden">
         <Button 
           onClick={onNext}
           disabled={!referenceImages.main}
