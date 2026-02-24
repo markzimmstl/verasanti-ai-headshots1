@@ -84,14 +84,14 @@ export const SelectBestStep: React.FC<SelectBestStepProps> = ({
           Option to add additional Reference Photos
         </h2>
         <p className="text-slate-400 text-sm max-w-2xl mx-auto">
-          You’ll get strong results from your Main Photo alone. These extra photos are
+          You'll get strong results from your Main Photo alone. These extra photos are
           completely optional, but they can help the AI better understand your face
           from different angles and your overall body proportions.
         </p>
       </div>
 
       {/* 1. Main Photo (required, but already chosen) */}
-      <div className="mb-10 border border-slate-800 rounded-2xl p-4 bg-slate-950/60">
+      <div className="mb-6 border border-slate-800 rounded-2xl p-4 bg-slate-950/60">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
           <div>
             <h3 className="text-base font-semibold text-white mb-1">
@@ -152,123 +152,11 @@ export const SelectBestStep: React.FC<SelectBestStepProps> = ({
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {/* Side view */}
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col items-stretch">
-            <h4 className="text-sm font-semibold text-slate-100 mb-1">
-              Side view (optional)
-            </h4>
-            <p className="text-xs text-slate-400 mb-3">
-              Show one side of your face with good lighting. Helps the AI understand your face shape
-              for angled photos.
-            </p>
+        {/* Full-body + Design Photoshoot button — above the fold */}
+        <div className="flex flex-col md:flex-row gap-4 mb-4 items-stretch">
 
-            <div
-              className="flex-1 border-2 border-dashed border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-900/60 transition-colors"
-              onClick={() => sideLeftInputRef.current?.click()}
-            >
-              {sideLeft ? (
-                <>
-                  <div className="w-full h-28 rounded-md overflow-hidden border border-slate-700 mb-2">
-                    <img
-                      src={sideLeft.base64}
-                      alt="Side view"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <p className="text-[11px] text-slate-400 truncate w-full">
-                    {sideLeft.fileName}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-6 h-6 text-indigo-400 mb-2" />
-                  <p className="text-xs text-slate-200">
-                    Click to upload side view
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    JPG or PNG
-                  </p>
-                </>
-              )}
-            </div>
-            {sideLeft && (
-              <button
-                type="button"
-                className="mt-2 text-[11px] text-slate-400 hover:text-slate-200 underline self-start"
-                onClick={() => setSideLeft(undefined)}
-              >
-                Remove side view
-              </button>
-            )}
-            <input
-              type="file"
-              ref={sideLeftInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={(e) => handleExtraUpload(e, setSideLeft)}
-            />
-          </div>
-
-          {/* Other side */}
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col items-stretch">
-            <h4 className="text-sm font-semibold text-slate-100 mb-1">
-              Other side (optional)
-            </h4>
-            <p className="text-xs text-slate-400 mb-3">
-              If you have a photo from the other side of your face, add it here for even
-              better 3D understanding.
-            </p>
-
-            <div
-              className="flex-1 border-2 border-dashed border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-900/60 transition-colors"
-              onClick={() => sideRightInputRef.current?.click()}
-            >
-              {sideRight ? (
-                <>
-                  <div className="w-full h-28 rounded-md overflow-hidden border border-slate-700 mb-2">
-                    <img
-                      src={sideRight.base64}
-                      alt="Other side view"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <p className="text-[11px] text-slate-400 truncate w-full">
-                    {sideRight.fileName}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-6 h-6 text-indigo-400 mb-2" />
-                  <p className="text-xs text-slate-200">
-                    Click to upload other side
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    JPG or PNG
-                  </p>
-                </>
-              )}
-            </div>
-            {sideRight && (
-              <button
-                type="button"
-                className="mt-2 text-[11px] text-slate-400 hover:text-slate-200 underline self-start"
-                onClick={() => setSideRight(undefined)}
-              >
-                Remove other side
-              </button>
-            )}
-            <input
-              type="file"
-              ref={sideRightInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={(e) => handleExtraUpload(e, setSideRight)}
-            />
-          </div>
-
-          {/* Full body */}
-          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col items-stretch">
+          {/* Full body upload */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col items-stretch flex-1">
             <h4 className="text-sm font-semibold text-slate-100 mb-1">
               Full‑body photo (optional)
             </h4>
@@ -323,15 +211,147 @@ export const SelectBestStep: React.FC<SelectBestStepProps> = ({
               onChange={(e) => handleExtraUpload(e, setFullBody)}
             />
           </div>
+
+          {/* Design Photoshoot CTA */}
+          <div className="bg-indigo-950/60 border border-indigo-700 rounded-xl p-4 flex flex-col items-center justify-center text-center flex-1 gap-3">
+            <p className="text-sm font-semibold text-white">
+              Ready to design your photoshoot?
+            </p>
+            <p className="text-xs text-slate-300">
+              Once your photos are uploaded, move on to choose your style, background, and clothing.
+            </p>
+            <Button onClick={handleNext} disabled={!main} className="mt-2 w-full">
+              Design Photoshoot →
+            </Button>
+          </div>
+        </div>
+
+        {/* Side views — Your Left and Your Right */}
+        <div className="grid gap-4 md:grid-cols-2">
+
+          {/* Your Left */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col items-stretch">
+            <h4 className="text-sm font-semibold text-slate-100 mb-1">
+              Your Left side (optional)
+            </h4>
+            <p className="text-xs text-slate-400 mb-3">
+              Turn so your left side faces the camera. Good lighting helps the AI understand
+              your face shape from this angle.
+            </p>
+
+            <div
+              className="flex-1 border-2 border-dashed border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-900/60 transition-colors"
+              onClick={() => sideLeftInputRef.current?.click()}
+            >
+              {sideLeft ? (
+                <>
+                  <div className="w-full h-28 rounded-md overflow-hidden border border-slate-700 mb-2">
+                    <img
+                      src={sideLeft.base64}
+                      alt="Your left side"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate w-full">
+                    {sideLeft.fileName}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-6 h-6 text-indigo-400 mb-2" />
+                  <p className="text-xs text-slate-200">
+                    Click to upload your left side
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    JPG or PNG
+                  </p>
+                </>
+              )}
+            </div>
+            {sideLeft && (
+              <button
+                type="button"
+                className="mt-2 text-[11px] text-slate-400 hover:text-slate-200 underline self-start"
+                onClick={() => setSideLeft(undefined)}
+              >
+                Remove your left side
+              </button>
+            )}
+            <input
+              type="file"
+              ref={sideLeftInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => handleExtraUpload(e, setSideLeft)}
+            />
+          </div>
+
+          {/* Your Right */}
+          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 flex flex-col items-stretch">
+            <h4 className="text-sm font-semibold text-slate-100 mb-1">
+              Your Right side (optional)
+            </h4>
+            <p className="text-xs text-slate-400 mb-3">
+              Turn so your right side faces the camera. Adding both sides gives the AI the
+              best 3D understanding of your features.
+            </p>
+
+            <div
+              className="flex-1 border-2 border-dashed border-slate-700 rounded-lg p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-400 hover:bg-slate-900/60 transition-colors"
+              onClick={() => sideRightInputRef.current?.click()}
+            >
+              {sideRight ? (
+                <>
+                  <div className="w-full h-28 rounded-md overflow-hidden border border-slate-700 mb-2">
+                    <img
+                      src={sideRight.base64}
+                      alt="Your right side"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 truncate w-full">
+                    {sideRight.fileName}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="w-6 h-6 text-indigo-400 mb-2" />
+                  <p className="text-xs text-slate-200">
+                    Click to upload your right side
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    JPG or PNG
+                  </p>
+                </>
+              )}
+            </div>
+            {sideRight && (
+              <button
+                type="button"
+                className="mt-2 text-[11px] text-slate-400 hover:text-slate-200 underline self-start"
+                onClick={() => setSideRight(undefined)}
+              >
+                Remove your right side
+              </button>
+            )}
+            <input
+              type="file"
+              ref={sideRightInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => handleExtraUpload(e, setSideRight)}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Bottom nav */}
       <div className="flex justify-between pt-6 border-t border-slate-800">
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
         <Button onClick={handleNext} disabled={!main}>
-          Continue
+          Design Photoshoot →
         </Button>
       </div>
     </div>
