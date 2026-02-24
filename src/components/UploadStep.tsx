@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Upload, X, AlertCircle, Check, Info, Camera, Sun, Maximize2, ArrowUpDown } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, X, AlertCircle, Check, Info, Camera, Sun, Maximize2, ArrowUpDown, Loader2, RefreshCw } from 'lucide-react';
 import { ReferenceImage, MultiReferenceSet } from '../types.ts';
 import { Button } from './Button.tsx';
+import { generateConfirmationPhoto, overlayLogoOnConfirmationPhoto } from '../services/geminiService.ts';
 
 interface UploadStepProps {
   referenceImages: MultiReferenceSet;
@@ -17,6 +18,36 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   onNext 
 }) => {
   const [error, setError] = useState<string | null>(null);
+
+  // Confirmation photo state
+  const [confirmationPhoto, setConfirmationPhoto] = useState<string | null>(null);
+  const [isGeneratingConfirmation, setIsGeneratingConfirmation] = useState(false);
+  const [confirmationError, setConfirmationError] = useState<string | null>(null);
+
+  // Auto-trigger confirmation photo when main photo is uploaded
+  useEffect(() => {
+    if (referenceImages.main && !confirmationPhoto && !isGeneratingConfirmation) {
+      handleGenerateConfirmation();
+    }
+  }, [referenceImages.main]);
+
+  const handleGenerateConfirmation = async () => {
+    if (!referenceImages.main) return;
+    setIsGeneratingConfirmation(true);
+    setConfirmationError(null);
+    setConfirmationPhoto(null);
+
+    try {
+      const rawPhoto = await generateConfirmationPhoto(referenceImages);
+      const composited = await overlayLogoOnConfirmationPhoto(rawPhoto, '/VeraLooks_logo_white.png');
+      setConfirmationPhoto(composited);
+    } catch (err: any) {
+      console.error('Confirmation photo failed:', err);
+      setConfirmationError('Preview generation failed. You can still continue.');
+    } finally {
+      setIsGeneratingConfirmation(false);
+    }
+  };
 
   const processFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -58,6 +89,12 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     const newSet = { ...referenceImages };
     delete newSet[role];
     onUpdate(newSet);
+
+    // Clear confirmation photo if main photo is removed
+    if (role === 'main') {
+      setConfirmationPhoto(null);
+      setConfirmationError(null);
+    }
   };
 
   const UploadSlot = ({ role, label, subLabel }: { role: keyof MultiReferenceSet, label: string, subLabel?: string }) => {
@@ -204,7 +241,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
       )}
 
       {/* Upload Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
 
         {/* Main Photo — large, spans 2 cols */}
         <div className="sm:col-span-2 sm:row-span-2 relative">
@@ -222,14 +259,14 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           )}
         </div>
 
-        {/* Full Body — moved up to second most prominent */}
+        {/* Full Body */}
         <UploadSlot 
           role="fullBody" 
           label="Full-Body Photo" 
           subLabel="Optional — head to toe, camera at chest height, upright." 
         />
 
-        {/* Next button — sits below full-body, aligned with the right column */}
+        {/* Next button */}
         <div className="hidden md:flex items-end justify-stretch">
           <Button 
             onClick={onNext}
@@ -240,7 +277,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           </Button>
         </div>
 
-        {/* Side views — Your Left and Your Right */}
+        {/* Side views */}
         <UploadSlot 
           role="sideLeft" 
           label="Your Left Side" 
@@ -254,7 +291,90 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
       </div>
 
-      {/* Mobile-only action bar (button hidden in grid on small screens) */}
+      {/* Confirmation Photo Panel — appears after main photo is uploaded */}
+      {referenceImages.main && (
+        <div className="mb-8 border border-slate-700 rounded-2xl overflow-hidden bg-slate-900/60">
+          
+          {/* Panel header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700 bg-slate-900/80">
+            <div>
+              <h3 className="text-sm font-semibold text-white">AI Confirmation Preview</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                A quick preview of how the AI reads your photo — before you design your full shoot.
+              </p>
+            </div>
+            {!isGeneratingConfirmation && (
+              <button
+                onClick={handleGenerateConfirmation}
+                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white border border-slate-700 hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Regenerate
+              </button>
+            )}
+          </div>
+
+          {/* Panel body */}
+          <div className="flex flex-col md:flex-row gap-6 p-5">
+
+            {/* Uploaded main photo for comparison */}
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Your Photo</p>
+              <div className="rounded-xl overflow-hidden border border-slate-700 aspect-square w-full">
+                <img
+                  src={referenceImages.main.base64}
+                  alt="Your uploaded photo"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* AI confirmation photo */}
+            <div className="flex flex-col gap-2 flex-1">
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">AI Preview</p>
+              <div className="rounded-xl overflow-hidden border border-slate-700 aspect-square w-full bg-slate-800 flex items-center justify-center">
+                {isGeneratingConfirmation && (
+                  <div className="flex flex-col items-center gap-3 text-center px-4">
+                    <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+                    <p className="text-xs text-slate-400">Generating your preview…</p>
+                  </div>
+                )}
+                {confirmationPhoto && !isGeneratingConfirmation && (
+                  <img
+                    src={confirmationPhoto}
+                    alt="AI confirmation preview"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                {confirmationError && !isGeneratingConfirmation && (
+                  <div className="flex flex-col items-center gap-2 text-center px-4">
+                    <AlertCircle className="w-6 h-6 text-slate-500" />
+                    <p className="text-xs text-slate-500">{confirmationError}</p>
+                    <button
+                      onClick={handleGenerateConfirmation}
+                      className="text-xs text-indigo-400 hover:text-indigo-300 underline mt-1"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Helpful note */}
+          <div className="px-5 pb-4">
+            <p className="text-xs text-slate-500">
+              This preview uses a standard dark purple VeraLooks t-shirt and neutral studio background. 
+              Your actual generated photos will reflect the style, clothing, and scene you choose on the next screen.
+            </p>
+          </div>
+
+        </div>
+      )}
+
+      {/* Mobile action bar */}
       <div className="flex justify-end pt-6 border-t border-slate-800 md:hidden">
         <Button 
           onClick={onNext}
@@ -264,6 +384,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           Next: Design Photoshoot
         </Button>
       </div>
+
     </div>
   );
 };
