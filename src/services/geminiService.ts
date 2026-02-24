@@ -17,7 +17,6 @@ export const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-// ✅ UPDATED: gemini-2.5-flash-image is the current stable model (Aug 2025)
 const IMAGE_MODEL = "gemini-2.5-flash-image";
 
 const cleanBase64 = (dataUrl: string) => {
@@ -29,7 +28,6 @@ const cleanBase64 = (dataUrl: string) => {
 const extractImagesFromParts = (parts: any[]): string[] => {
   console.log("Extracting images from parts:", parts);
   const images: string[] = [];
-
   for (const part of parts) {
     if (part.inlineData?.data) {
       const mimeType = part.inlineData.mimeType || "image/jpeg";
@@ -63,33 +61,24 @@ const cropToTargetSize = async (
       canvas.width = targetW;
       canvas.height = targetH;
       const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        resolve(base64Image);
-        return;
-      }
+      if (!ctx) { resolve(base64Image); return; }
 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      const scale = Math.max(
-        canvas.width / img.width,
-        canvas.height / img.height
-      );
+      const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = canvas.width / 2 - (img.width / 2) * scale;
       const y = canvas.height / 2 - (img.height / 2) * scale;
 
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       resolve(canvas.toDataURL("image/png"));
     };
-    img.onerror = () => {
-      console.error("Image load failed for cropping");
-      resolve(base64Image);
-    };
+    img.onerror = () => { console.error("Image load failed for cropping"); resolve(base64Image); };
     img.src = base64Image;
   });
 };
 
-// --- PHOTOGRAPHER LOGIC: BUILD PROMPT ---
+// --- BUILD PROMPT ---
 const buildPrompt = (
   stylePrompt: string,
   config: GenerationConfig,
@@ -216,8 +205,7 @@ const buildPrompt = (
           lightingDirectionOverride = "Side Lighting from LEFT (Short Lighting).";
         }
       }
-
-    framingInstruction = `
+      framingInstruction = `
        **COMPOSITION: MEDIUM CLOSE-UP (HEAD AND SHOULDERS)**
        - FRAMING: Capture head, neck, and full shoulders.
        - CRITICAL: DO NOT CUT OFF THE TOP OF THE HEAD.
@@ -264,7 +252,6 @@ const buildPrompt = (
        - Leave visible air space ABOVE the head.
        - All fingers must be fully within the frame if hands are visible.
      `;
-
       if (config.aspectRatio === '16:9') {
         framingInstruction += `
         \n\n*** WIDE ASPECT RATIO OVERRIDE ***
@@ -276,7 +263,6 @@ const buildPrompt = (
       } else {
         lensInstruction = "35mm Wide Angle Lens (To capture full subject and environment)";
       }
-
       negativeConstraints += "Do NOT cut off the feet. Do NOT cut off the head. Do NOT crop at knees or waist. Do NOT crop through fingers or toes.";
       break;
 
@@ -314,7 +300,7 @@ const buildPrompt = (
        - Highlights: Natural sheen on skin.
        - Shadows: Cool-toned and open.
        - Effect: As if standing next to a large North-facing window.
-       - Short Lighting preferred where possible. If scene implies diffused/overcast light (cloudy sky, north window), even illumination is acceptable.
+       - Short Lighting preferred where possible.
      `;
       break;
     case "Cinematic":
@@ -361,20 +347,58 @@ const buildPrompt = (
 
   let bodyInstruction = "";
   const bodyOffset = config.bodySizeOffset ?? 0;
-
   if (bodyOffset !== 0) {
-    if (bodyOffset === -3) {
-      bodyInstruction = "BODY BUILD: EXTREMELY THIN. Skinny, very slender, underweight appearance. Narrow frame.";
-      negativeConstraints += "Do NOT generate fat or overweight subjects. ";
-    }
+    if (bodyOffset === -3) { bodyInstruction = "BODY BUILD: EXTREMELY THIN. Skinny, very slender, underweight appearance. Narrow frame."; negativeConstraints += "Do NOT generate fat or overweight subjects. "; }
     if (bodyOffset === -2) bodyInstruction = "BODY BUILD: VERY SLIM. Lean, slight frame, lanky.";
     if (bodyOffset === -1) bodyInstruction = "BODY BUILD: SLIM/TRIM. Toned, athletic, fit, narrow waist.";
     if (bodyOffset === 1)  bodyInstruction = "BODY BUILD: CURVY / STOCKY. Fuller figure, softer build, broader frame.";
     if (bodyOffset === 2)  bodyInstruction = "BODY BUILD: OVERWEIGHT. Heavy set, thick midsection, plus size, broad.";
-    if (bodyOffset === 3) {
-      bodyInstruction = "BODY BUILD: OBESE. Very heavy set, large frame, round features, significant weight.";
-      negativeConstraints += "Do NOT generate skinny or thin subjects. ";
+    if (bodyOffset === 3)  { bodyInstruction = "BODY BUILD: OBESE. Very heavy set, large frame, round features, significant weight."; negativeConstraints += "Do NOT generate skinny or thin subjects. "; }
+  }
+
+  // --- ABOUT YOU: Gender, Age, Hair, Ring ---
+  let aboutYouInstruction = "";
+
+  if (config.genderPresentation) {
+    const genderMap: Record<string, string> = {
+      woman:     "The subject is a WOMAN. Use feminine clothing cuts, styling, and presentation.",
+      man:       "The subject is a MAN. Use masculine clothing cuts and styling.",
+      nonbinary: "The subject presents as NON-BINARY or gender-neutral. Use neutral, ungendered styling.",
+    };
+    aboutYouInstruction += (genderMap[config.genderPresentation] || "") + "\n";
+  }
+
+  if (config.ageRange) {
+    const ageMap: Record<string, string> = {
+      "18–29": "Age appearance: young adult, 18–29 years old.",
+      "30–44": "Age appearance: professional adult, 30–44 years old.",
+      "45–59": "Age appearance: experienced professional, 45–59 years old.",
+      "60+":   "Age appearance: senior professional, 60 years or older.",
+    };
+    aboutYouInstruction += (ageMap[config.ageRange] || "") + "\n";
+  }
+
+  if (config.hairColor) {
+    if (config.hairColor === "Bald") {
+      aboutYouInstruction += "HAIR: The subject is completely BALD with no hair on top of the head. Do not add hair.\n";
+      negativeConstraints += " Do NOT add hair to a bald subject. No hair, no stubble on the scalp unless reference photo shows it.";
+    } else {
+      aboutYouInstruction += `HAIR COLOR: ${config.hairColor}. Match this hair color accurately.\n`;
     }
+  }
+
+  if (config.includeRing) {
+    const ringMap: Record<string, string> = {
+      woman:     "RING: The subject is wearing a diamond solitaire engagement ring and thin gold wedding band on the left ring finger.",
+      man:       "RING: The subject is wearing a classic polished gold wedding band on the left ring finger.",
+      nonbinary: "RING: The subject is wearing a simple elegant commitment band on the left ring finger.",
+    };
+    if (config.genderPresentation && ringMap[config.genderPresentation]) {
+      aboutYouInstruction += ringMap[config.genderPresentation] + "\n";
+    }
+  } else {
+    // Default: suppress rings
+    negativeConstraints += " NO rings on any fingers. Bare hands with no jewelry on fingers.";
   }
 
   const fourthWallLogic = `
@@ -402,6 +426,8 @@ const buildPrompt = (
    2. LENS CHOICE: ${lensInstruction}
    3. CROPPING GUARDRAIL: NEVER crop exactly at a joint (knees, elbows, waist). Crop mid-limb.
 
+   SUBJECT DETAILS:
+   ${aboutYouInstruction}
    ${clothingLogic}
    ${bodyInstruction}
    ${fourthWallLogic}
@@ -451,7 +477,6 @@ export const generateBrandPhotoWithRefs = async (
 
   const parts: any[] = [{ text: prompt }];
 
-  // Main reference image
   parts.push({
     inlineData: {
       mimeType: "image/jpeg",
@@ -459,19 +484,16 @@ export const generateBrandPhotoWithRefs = async (
     },
   });
 
-  // Extra reference images (max 2 additional)
   let extraImagesAdded = 0;
 
   if (refs.sideLeft && extraImagesAdded < 2) {
     parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideLeft.base64) } });
     extraImagesAdded++;
   }
-
   if (refs.sideRight && extraImagesAdded < 2) {
     parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideRight.base64) } });
     extraImagesAdded++;
   }
-
   if (refs.fullBody && extraImagesAdded < 2) {
     parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.fullBody.base64) } });
     extraImagesAdded++;
@@ -485,7 +507,6 @@ export const generateBrandPhotoWithRefs = async (
   try {
     console.log(`Calling ${IMAGE_MODEL} with ${parts.length - 1} images (Global Index ${globalIndex})...`);
 
- // Map app aspect ratios to Gemini imageConfig format
     const aspectRatioMap: Record<string, string> = {
       '1:1':  '1:1',
       '4:5':  '4:5',
@@ -501,9 +522,7 @@ export const generateBrandPhotoWithRefs = async (
       contents: [{ role: "user", parts }],
       config: {
         responseModalities: ["TEXT", "IMAGE"],
-        imageConfig: {
-          aspectRatio: geminiAspectRatio,
-        },
+        imageConfig: { aspectRatio: geminiAspectRatio },
       },
     });
 
@@ -546,7 +565,6 @@ export const generateBrandPhotoWithRefsSafe = async (
     }
   }
 
-  // Auto-refinement for boardroom scenes (remove screens)
   const lowerPrompt = (stylePrompt + (config.backgroundType || '')).toLowerCase();
   const isBoardroomContext = lowerPrompt.includes('boardroom') || lowerPrompt.includes('meeting room') || lowerPrompt.includes('conference room');
   const userRequestedScreen = lowerPrompt.match(/screen|monitor|tv|projector|display|presentation|slide/);
@@ -569,7 +587,6 @@ export const generateBrandPhotoWithRefsSafe = async (
   return generatedImageBase64;
 };
 
-// Legacy single-image entry point
 export const generateBrandPhoto = async (
   referenceImageBase64: string,
   stylePrompt: string,
@@ -613,18 +630,14 @@ export const refineGeneratedImage = async (
       ],
       config: {
         responseModalities: ["TEXT", "IMAGE"],
-        imageConfig: {
-          aspectRatio: aspectRatio.replace('/', ':'),
-        },
+        imageConfig: { aspectRatio: aspectRatio.replace('/', ':') },
       },
     });
-    
+
     const outputParts = response.candidates?.[0]?.content?.parts;
     const images = extractImagesFromParts(outputParts || []);
 
-    if (images.length === 0) {
-      throw new Error("Refinement returned no images.");
-    }
+    if (images.length === 0) throw new Error("Refinement returned no images.");
 
     return images[0];
   } catch (error: any) {
@@ -636,11 +649,7 @@ export const refineGeneratedImage = async (
   }
 };
 
-// ============================================================
-// ADD THIS FUNCTION to the bottom of geminiService.ts
-// (before the final closing of the file)
-// ============================================================
-
+// --- CONFIRMATION PHOTO ---
 export const generateConfirmationPhoto = async (
   refs: MultiReferenceSet
 ): Promise<string> => {
@@ -676,12 +685,10 @@ export const generateConfirmationPhoto = async (
     - The subject MUST wear a DARK PURPLE crew-neck t-shirt.
     - Hex color of shirt: #3B1F6B
     - The shirt must be SOLID COLOR with NO text, NO logos, NO graphics, NO patterns.
-    - Keep it clean — we will overlay the logo separately.
 
     BACKGROUND:
     - Clean, neutral light gray studio backdrop.
     - Soft, even studio lighting. No harsh shadows.
-    - Professional headshot studio feel.
 
     LIGHTING:
     - Soft, wrapping studio light. Flattering and clean.
@@ -694,10 +701,10 @@ export const generateConfirmationPhoto = async (
     - Do NOT crop at joints.
     - Do NOT generate multiple people.
     - NO glasses unless reference photo clearly shows them.
+    - NO rings on any fingers.
   `;
 
   const ai = getAiClient();
-
   const parts: any[] = [{ text: prompt }];
 
   parts.push({
@@ -708,21 +715,10 @@ export const generateConfirmationPhoto = async (
   });
 
   if (refs.sideLeft) {
-    parts.push({
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: cleanBase64(refs.sideLeft.base64),
-      },
-    });
+    parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.sideLeft.base64) } });
   }
-
   if (refs.sideRight) {
-    parts.push({
-      inlineData: {
-        mimeType: 'image/jpeg',
-        data: cleanBase64(refs.sideRight.base64),
-      },
-    });
+    parts.push({ inlineData: { mimeType: 'image/jpeg', data: cleanBase64(refs.sideRight.base64) } });
   }
 
   const response = await ai.models.generateContent({
@@ -737,30 +733,17 @@ export const generateConfirmationPhoto = async (
   const outputParts = response.candidates?.[0]?.content?.parts;
   const images = extractImagesFromParts(outputParts || []);
 
-  if (images.length === 0) {
-    throw new Error('Confirmation photo generation returned no image.');
-  }
+  if (images.length === 0) throw new Error('Confirmation photo generation returned no image.');
 
   return images[0];
 };
 
-
-// ============================================================
-// ADD THIS FUNCTION below generateConfirmationPhoto
-// Composites the white VeraLooks logo onto the generated shirt
-// ============================================================
-
-// ============================================================
-// REPLACE the existing overlayLogoOnConfirmationPhoto function
-// in geminiService.ts with this version.
-// ============================================================
-
+// --- LOGO WATERMARK OVERLAY ---
 export const overlayLogoOnConfirmationPhoto = async (
   photoBase64: string,
   logoUrl: string = '/VeraLooks_logo_white.png'
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
-
     const photo = new Image();
     photo.onload = () => {
       const canvas = document.createElement('canvas');
@@ -769,41 +752,85 @@ export const overlayLogoOnConfirmationPhoto = async (
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve(photoBase64); return; }
 
-      // Draw the base photo
       ctx.drawImage(photo, 0, 0);
 
       const logo = new Image();
       logo.onload = () => {
-        // Large watermark: 85% of the canvas width
         const logoTargetW = canvas.width * 0.85;
         const logoTargetH = (logo.naturalHeight / logo.naturalWidth) * logoTargetW;
-
-        // Centered horizontally and vertically
         const logoX = (canvas.width - logoTargetW) / 2;
         const logoY = (canvas.height - logoTargetH) / 2;
 
-        // Semi-transparent white watermark — obvious and intentional
-        // 'screen' blend mode knocks out any residual dark background
-        // pixels from the PNG, leaving only the white lettering
         ctx.globalCompositeOperation = 'screen';
         ctx.globalAlpha = 0.55;
         ctx.drawImage(logo, logoX, logoY, logoTargetW, logoTargetH);
-
-        // Reset
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1.0;
 
         resolve(canvas.toDataURL('image/png'));
       };
       logo.onerror = () => {
-        // If logo fails to load just return the plain photo
         console.warn('Logo watermark failed to load — returning photo without overlay.');
         resolve(photoBase64);
       };
       logo.src = logoUrl;
     };
-
     photo.onerror = () => reject(new Error('Failed to load confirmation photo for compositing.'));
     photo.src = photoBase64;
+  });
+};
+
+// --- PHOTO QUALITY PRE-SCREENING ---
+export interface PhotoQualityResult {
+  passed: boolean;
+  warnings: string[];
+}
+
+export const checkPhotoQuality = (base64: string): Promise<PhotoQualityResult> => {
+  return new Promise((resolve) => {
+    const warnings: string[] = [];
+    const img = new Image();
+
+    img.onload = () => {
+      // Resolution check
+      if (img.width < 400 || img.height < 400) {
+        warnings.push(`Image resolution is low (${img.width}×${img.height}px). For best results, use a photo that is at least 800×800px.`);
+      }
+
+      // Brightness check via canvas center-crop sampling
+      const canvas = document.createElement("canvas");
+      const sampleSize = 100;
+      canvas.width = sampleSize;
+      canvas.height = sampleSize;
+      const ctx = canvas.getContext("2d");
+
+      if (ctx) {
+        const srcX = (img.width - sampleSize) / 2;
+        const srcY = (img.height - sampleSize) / 2;
+        ctx.drawImage(img, srcX, srcY, sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
+
+        const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+        const pixels = imageData.data;
+        let totalBrightness = 0;
+        const pixelCount = pixels.length / 4;
+
+        for (let i = 0; i < pixels.length; i += 4) {
+          totalBrightness += (0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]);
+        }
+
+        const avgBrightness = totalBrightness / pixelCount;
+
+        if (avgBrightness < 40) {
+          warnings.push("This photo looks very dark. The AI works best with well-lit photos where the face is clearly visible.");
+        } else if (avgBrightness > 230) {
+          warnings.push("This photo looks overexposed or very bright. Make sure your face isn't washed out by strong backlighting.");
+        }
+      }
+
+      resolve({ passed: warnings.length === 0, warnings });
+    };
+
+    img.onerror = () => resolve({ passed: true, warnings: [] });
+    img.src = base64;
   });
 };
