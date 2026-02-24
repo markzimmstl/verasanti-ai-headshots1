@@ -46,6 +46,10 @@ export interface StyleOption {
   bodySizeOffset?: number;
   // This allows each Look to carry its own unique settings (Lighting, Mood, Body, etc.)
   overrides?: Partial<GenerationConfig>; 
+  genderPresentation?: 'woman' | 'man' | 'nonbinary';
+  ageRange?: '18-29' | '30-44' | '45-59' | '60+';
+  hairColor?: string;
+  includeRing?: boolean;
 }
 
 export interface ReferenceImage {
