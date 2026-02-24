@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, X, AlertCircle, Check, Info, Camera, Sun, Maximize2, ArrowUpDown, Loader2, RefreshCw } from 'lucide-react';
+import { Upload, X, AlertCircle, Check, Info, Camera, Sun, Maximize2, ArrowUpDown, Loader2, RefreshCw, Sparkles, ChevronDown } from 'lucide-react';
 import { ReferenceImage, MultiReferenceSet } from '../types.ts';
 import { Button } from './Button.tsx';
 import { generateConfirmationPhoto, overlayLogoOnConfirmationPhoto } from '../services/geminiService.ts';
@@ -23,6 +23,9 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   const [confirmationPhoto, setConfirmationPhoto] = useState<string | null>(null);
   const [isGeneratingConfirmation, setIsGeneratingConfirmation] = useState(false);
   const [confirmationError, setConfirmationError] = useState<string | null>(null);
+
+  // Ref for scrolling to the confirmation panel
+  const confirmationRef = useRef<HTMLDivElement>(null);
 
   // Auto-trigger confirmation photo when main photo is uploaded
   useEffect(() => {
@@ -49,6 +52,10 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     }
   };
 
+  const scrollToConfirmation = () => {
+    confirmationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const processFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -60,12 +67,10 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
   const handleFileSelect = async (file: File, role: keyof MultiReferenceSet) => {
     setError(null);
-    
     if (file.size > MAX_FILE_SIZE) {
       setError('File is too large. Max 10MB.');
       return;
     }
-
     try {
       const base64 = await processFile(file);
       const newImage: ReferenceImage = {
@@ -75,11 +80,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         createdAt: Date.now(),
         role: role as any,
       };
-
-      onUpdate({
-        ...referenceImages,
-        [role]: newImage
-      });
+      onUpdate({ ...referenceImages, [role]: newImage });
     } catch (err) {
       setError('Failed to process image. Please try again.');
     }
@@ -89,8 +90,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     const newSet = { ...referenceImages };
     delete newSet[role];
     onUpdate(newSet);
-
-    // Clear confirmation photo if main photo is removed
     if (role === 'main') {
       setConfirmationPhoto(null);
       setConfirmationError(null);
@@ -121,14 +120,9 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           {label}
           {subLabel && <span className="text-xs text-slate-500 font-normal">{subLabel}</span>}
         </label>
-        
         {image ? (
           <div className="relative group aspect-[3/4] w-full bg-slate-900 rounded-xl overflow-hidden border border-slate-700">
-            <img 
-              src={image.base64} 
-              alt={label} 
-              className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" 
-            />
+            <img src={image.base64} alt={label} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
             <button
               onClick={(e) => { e.stopPropagation(); removeImage(role); }}
               className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-red-500/80 text-white rounded-full backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
@@ -146,18 +140,10 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             className={`aspect-[3/4] w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center p-4 cursor-pointer transition-all ${
-              isDragOver 
-                ? 'border-indigo-500 bg-indigo-500/10' 
-                : 'border-slate-800 bg-slate-900/50 hover:border-slate-600 hover:bg-slate-900'
+              isDragOver ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-900/50 hover:border-slate-600 hover:bg-slate-900'
             }`}
           >
-            <input 
-              type="file" 
-              ref={inputRef}
-              onChange={onChange} 
-              className="hidden" 
-              accept="image/jpeg, image/png, image/webp"
-            />
+            <input type="file" ref={inputRef} onChange={onChange} className="hidden" accept="image/jpeg, image/png, image/webp" />
             <div className="p-3 bg-slate-800 rounded-full mb-3 text-slate-400">
               <Upload className="w-6 h-6" />
             </div>
@@ -189,7 +175,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           Quick Tips for Best Results
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center">
               <ArrowUpDown className="w-3 h-3 text-red-400" />
@@ -199,7 +184,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
               <p className="text-xs text-slate-400 mt-0.5">A tilted or angled camera causes distortion the AI can't correct.</p>
             </div>
           </div>
-
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
               <Maximize2 className="w-3 h-3 text-indigo-400" />
@@ -209,7 +193,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
               <p className="text-xs text-slate-400 mt-0.5">Your face should be the clear subject — not too distant, not too cropped.</p>
             </div>
           </div>
-
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
               <Upload className="w-3 h-3 text-indigo-400" />
@@ -219,7 +202,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
               <p className="text-xs text-slate-400 mt-0.5">Keep the camera upright — just lower it so your whole body fits in frame.</p>
             </div>
           </div>
-
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
               <Sun className="w-3 h-3 text-indigo-400" />
@@ -229,7 +211,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
               <p className="text-xs text-slate-400 mt-0.5">Avoid backlighting. Even, natural light on your face works best — not too dark, not too bright.</p>
             </div>
           </div>
-
         </div>
       </div>
 
@@ -242,14 +223,8 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
       {/* Upload Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-
-        {/* Main Photo — large, spans 2 cols */}
         <div className="sm:col-span-2 sm:row-span-2 relative">
-          <UploadSlot 
-            role="main" 
-            label="Main Photo (Required)"
-            subLabel="Face the camera, good lighting, no heavy filters."
-          />
+          <UploadSlot role="main" label="Main Photo (Required)" subLabel="Face the camera, good lighting, no heavy filters." />
           {!referenceImages.main && (
             <div className="absolute -bottom-8 left-0 right-0 text-center">
               <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wide font-bold text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-full border border-indigo-500/20">
@@ -258,43 +233,48 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             </div>
           )}
         </div>
-
-        {/* Full Body */}
-        <UploadSlot 
-          role="fullBody" 
-          label="Full-Body Photo" 
-          subLabel="Optional — head to toe, camera at chest height, upright." 
-        />
-
-        {/* Next button */}
+        <UploadSlot role="fullBody" label="Full-Body Photo" subLabel="Optional — head to toe, camera at chest height, upright." />
         <div className="hidden md:flex items-end justify-stretch">
-          <Button 
-            onClick={onNext}
-            disabled={!referenceImages.main}
-            className="w-full"
-          >
+          <Button onClick={onNext} disabled={!referenceImages.main} className="w-full">
             Next: Design Photoshoot
           </Button>
         </div>
-
-        {/* Side views */}
-        <UploadSlot 
-          role="sideLeft" 
-          label="Your Left Side" 
-          subLabel="Optional — turn so your left faces the camera." 
-        />
-        <UploadSlot 
-          role="sideRight" 
-          label="Your Right Side" 
-          subLabel="Optional — turn so your right faces the camera." 
-        />
-
+        <UploadSlot role="sideLeft" label="Your Left Side" subLabel="Optional — turn so your left faces the camera." />
+        <UploadSlot role="sideRight" label="Your Right Side" subLabel="Optional — turn so your right faces the camera." />
       </div>
 
-      {/* Confirmation Photo Panel — appears after main photo is uploaded */}
+      {/* Preview alert banner — shown as soon as main photo is uploaded */}
       {referenceImages.main && (
-        <div className="mb-8 border border-slate-700 rounded-2xl overflow-hidden bg-slate-900/60">
-          
+        <button
+          onClick={scrollToConfirmation}
+          className="w-full mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors text-left group"
+        >
+          <div className="flex items-center gap-3">
+            {isGeneratingConfirmation ? (
+              <Loader2 className="w-4 h-4 text-indigo-400 animate-spin flex-shrink-0" />
+            ) : confirmationPhoto ? (
+              <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            )}
+            <span className="text-sm text-indigo-200">
+              {isGeneratingConfirmation
+                ? 'Your AI confirmation preview is being generated below…'
+                : confirmationPhoto
+                ? 'Your AI confirmation preview is ready — scroll down to see it.'
+                : confirmationError
+                ? 'Preview generation failed — tap to scroll down and try again.'
+                : 'Preparing your AI confirmation preview…'}
+            </span>
+          </div>
+          <ChevronDown className="w-4 h-4 text-indigo-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" />
+        </button>
+      )}
+
+      {/* Confirmation Photo Panel */}
+      {referenceImages.main && (
+        <div ref={confirmationRef} className="mb-8 border border-slate-700 rounded-2xl overflow-hidden bg-slate-900/60">
+
           {/* Panel header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700 bg-slate-900/80">
             <div>
@@ -317,15 +297,11 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           {/* Panel body */}
           <div className="flex flex-col md:flex-row gap-6 p-5">
 
-            {/* Uploaded main photo for comparison */}
+            {/* Uploaded main photo */}
             <div className="flex flex-col gap-2 flex-1">
               <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">Your Photo</p>
               <div className="rounded-xl overflow-hidden border border-slate-700 aspect-square w-full">
-                <img
-                  src={referenceImages.main.base64}
-                  alt="Your uploaded photo"
-                  className="w-full h-full object-cover"
-                />
+                <img src={referenceImages.main.base64} alt="Your uploaded photo" className="w-full h-full object-cover" />
               </div>
             </div>
 
@@ -340,20 +316,13 @@ export const UploadStep: React.FC<UploadStepProps> = ({
                   </div>
                 )}
                 {confirmationPhoto && !isGeneratingConfirmation && (
-                  <img
-                    src={confirmationPhoto}
-                    alt="AI confirmation preview"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={confirmationPhoto} alt="AI confirmation preview" className="w-full h-full object-cover" />
                 )}
                 {confirmationError && !isGeneratingConfirmation && (
                   <div className="flex flex-col items-center gap-2 text-center px-4">
                     <AlertCircle className="w-6 h-6 text-slate-500" />
                     <p className="text-xs text-slate-500">{confirmationError}</p>
-                    <button
-                      onClick={handleGenerateConfirmation}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 underline mt-1"
-                    >
+                    <button onClick={handleGenerateConfirmation} className="text-xs text-indigo-400 hover:text-indigo-300 underline mt-1">
                       Try again
                     </button>
                   </div>
@@ -363,11 +332,10 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
           </div>
 
-          {/* Helpful note */}
+          {/* Note */}
           <div className="px-5 pb-4">
             <p className="text-xs text-slate-500">
-              This preview uses a standard dark purple VeraLooks t-shirt and neutral studio background. 
-              Your actual generated photos will reflect the style, clothing, and scene you choose on the next screen.
+              This preview uses a standard VeraLooks studio setup. Your actual generated photos will reflect the style, clothing, and scene you choose on the next screen.
             </p>
           </div>
 
@@ -376,11 +344,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
       {/* Mobile action bar */}
       <div className="flex justify-end pt-6 border-t border-slate-800 md:hidden">
-        <Button 
-          onClick={onNext}
-          disabled={!referenceImages.main}
-          className="px-8"
-        >
+        <Button onClick={onNext} disabled={!referenceImages.main} className="px-8">
           Next: Design Photoshoot
         </Button>
       </div>
