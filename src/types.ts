@@ -11,12 +11,16 @@ export interface GenerationConfig {
   retouchLevel: 'None' | 'Natural' | 'Polished' | 'Airbrushed';
   variationsCount: number;
   clothingColor: string;
-  brandColor?: string;     // Primary Hex Code
+  brandColor?: string;          // Primary Hex Code
   secondaryBrandColor?: string; // Secondary Hex Code
-  keepGlasses?: boolean;   // Explicit control for glasses
-  expertPrompt?: string;   // For expert mode
-  bodySizeOffset?: number; // -3 (Very Thin) to +3 (Heavy)
-  customBackground?: string; // New: Base64 of uploaded background image
+  keepGlasses?: boolean;        // Explicit control for glasses
+  expertPrompt?: string;        // For expert mode
+  bodySizeOffset?: number;      // -3 (Very Thin) to +3 (Heavy)
+  customBackground?: string;    // Base64 of uploaded background image
+  genderPresentation?: 'woman' | 'man' | 'nonbinary';
+  ageRange?: '18-29' | '30-44' | '45-59' | '60+';
+  hairColor?: string;
+  includeRing?: boolean;
 }
 
 export interface LookConfig {
@@ -29,7 +33,7 @@ export interface LookConfig {
   scenePrompt: string;
   imageCount: number;
   variationLevel?: 'low' | 'medium' | 'high';
-  bodySizeOffset?: number; 
+  bodySizeOffset?: number;
   config: GenerationConfig; // Stores the full config for this specific look
   isSurprise: boolean;
 }
@@ -44,12 +48,7 @@ export interface StyleOption {
   clothingDescription?: string;
   variationLevel?: 'low' | 'medium' | 'high';
   bodySizeOffset?: number;
-  // This allows each Look to carry its own unique settings (Lighting, Mood, Body, etc.)
-  overrides?: Partial<GenerationConfig>; 
-  genderPresentation?: 'woman' | 'man' | 'nonbinary';
-  ageRange?: '18-29' | '30-44' | '45-59' | '60+';
-  hairColor?: string;
-  includeRing?: boolean;
+  overrides?: Partial<GenerationConfig>;
 }
 
 export interface ReferenceImage {
@@ -76,17 +75,17 @@ export interface GeneratedImage {
   createdAt: number;
   aspectRatio: AspectRatio;
 }
+
 export interface UploadedImage {
   id?: string;
   fileName?: string;
   mimeType: string;
   base64: string;
   data?: string;
-  createdAt?: number; // <--- This fixes the error!
+  createdAt?: number;
 }
 
 export interface BrandData {
-  // We add '?' to make these optional, fixing the brandDefinitions errors
   brandColor?: string;
   secondaryBrandColor?: string;
   fontFamily?: string;
