@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Download, ChevronLeft, Image as ImageIcon, CheckCircle, FileDown, Wand2, X, Loader2 } from 'lucide-react';
+import {
+  Download, ChevronLeft, Image as ImageIcon, CheckCircle, FileDown,
+  Wand2, X, Loader2, RefreshCw, ChevronDown, ChevronUp
+} from 'lucide-react';
 import { GeneratedImage } from '../types';
 import { refineGeneratedImage } from '../services/geminiService';
 
@@ -8,17 +11,145 @@ interface ResultsStepProps {
   onRestart: () => void;
 }
 
-const SUGGESTED_EDITS = [
-  "Zoom out to show more of the scene",
-  "Make the background more blurred (shallower depth of field)",
-  "Improve skin texture — less airbrushed, more natural",
-  "Brighten the face with more flattering light",
-  "Fix any cropped or cut-off body parts",
-  "Remove glasses",
-  "Make the expression more natural and confident",
-  "Adjust clothing color to be more professional",
-  "Add more environmental depth to the background",
-  "Sharpen overall image clarity and detail",
+// ─── Structured Edit Presets ─────────────────────────────────────────────────
+// Each preset has a user-facing label and a proven, specific prompt that
+// actually works with Gemini's image editing behavior.
+// "mode" controls which button fires:
+//   'edit'        → standard refineGeneratedImage (surface/texture/color fixes)
+//   'regenerate'  → caller should re-run full generation (body structure changes)
+
+interface EditPreset {
+  label: string;
+  prompt: string;
+  mode: 'edit' | 'regenerate';
+}
+
+const EDIT_CATEGORIES: { category: string; presets: EditPreset[] }[] = [
+  {
+    category: 'Body & Build',
+    presets: [
+      {
+        label: 'Slimmer build',
+        prompt: 'Slim the shoulders, reduce upper arm width, narrow the chest, softer torso silhouette — lean and toned but not muscular.',
+        mode: 'regenerate',
+      },
+      {
+        label: 'Fuller build',
+        prompt: 'Fuller figure, broader shoulders, softer midsection, more substantial body frame.',
+        mode: 'regenerate',
+      },
+      {
+        label: 'Less muscular',
+        prompt: 'Reduce visible muscle definition significantly. Slim the upper arms, narrow the shoulders, soften the chest. The subject should look like an average professional, not an athlete.',
+        mode: 'regenerate',
+      },
+      {
+        label: 'Fix cut-off body parts',
+        prompt: 'Extend the image to show the complete subject — ensure feet are fully visible with floor below them, head is fully visible with air above, and no fingers or limbs are cropped.',
+        mode: 'edit',
+      },
+    ],
+  },
+  {
+    category: 'Face & Expression',
+    presets: [
+      {
+        label: 'More natural smile',
+        prompt: 'Adjust the facial expression to a warm, natural, relaxed smile — genuine and approachable, not forced or overly posed.',
+        mode: 'edit',
+      },
+      {
+        label: 'More confident look',
+        prompt: 'Adjust the expression to look more confident and authoritative — direct eye contact, slight jaw set, composed and powerful.',
+        mode: 'edit',
+      },
+      {
+        label: 'Remove glasses',
+        prompt: 'Remove the glasses from the subject\'s face entirely. Replace with natural skin and eyebrows matching the existing face.',
+        mode: 'edit',
+      },
+      {
+        label: 'Natural skin texture',
+        prompt: 'Remove all beauty filter effects. Restore natural skin texture with visible pores, subtle lines, and realistic skin variation. The skin should look like a high-resolution photograph, not digitally smoothed.',
+        mode: 'edit',
+      },
+      {
+        label: 'Brighter, more flattering light on face',
+        prompt: 'Increase the brightness and lift on the face only. Open up the shadows under the eyes and chin. Keep the background unchanged.',
+        mode: 'edit',
+      },
+    ],
+  },
+  {
+    category: 'Background & Scene',
+    presets: [
+      {
+        label: 'Zoom out — show more scene',
+        prompt: 'Zoom out significantly to reveal more of the surrounding environment. Keep the subject centered but smaller in the frame with more background visible on all sides.',
+        mode: 'edit',
+      },
+      {
+        label: 'Blur background more',
+        prompt: 'Apply a stronger, more pronounced lens blur (shallow depth of field / bokeh effect) to the background. The subject must remain in sharp focus. The background should be significantly more out of focus than it currently is.',
+        mode: 'edit',
+      },
+      {
+        label: 'Remove distracting objects',
+        prompt: 'Remove any distracting background objects, poles, signs, or clutter from behind the subject. Replace with clean, neutral background material that matches the existing scene.',
+        mode: 'edit',
+      },
+      {
+        label: 'Remove screen / monitor from background',
+        prompt: 'Remove any television screens, computer monitors, projector screens, whiteboards, or smartboards from the background walls. Replace with continuous architectural wall material — wood paneling, textured stone, or art — that matches the existing scene.',
+        mode: 'edit',
+      },
+      {
+        label: 'Brighter, more airy scene',
+        prompt: 'Increase overall brightness and lift the shadows throughout the entire image. Make the scene feel more airy, open, and optimistic without overexposing the subject.',
+        mode: 'edit',
+      },
+      {
+        label: 'Moodier, darker atmosphere',
+        prompt: 'Reduce overall brightness. Deepen shadows and increase contrast throughout the scene. Make the atmosphere feel more dramatic, serious, and cinematic.',
+        mode: 'edit',
+      },
+    ],
+  },
+  {
+    category: 'Clothing & Color',
+    presets: [
+      {
+        label: 'Make clothing more professional',
+        prompt: 'Replace the current clothing with a more polished, professional option appropriate for a corporate headshot — a well-tailored blazer or suit jacket in a neutral color.',
+        mode: 'edit',
+      },
+      {
+        label: 'Remove tie',
+        prompt: 'Remove the necktie from the subject. Replace with a clean, open-collar shirt look that matches the existing shirt style and color.',
+        mode: 'edit',
+      },
+      {
+        label: 'Fix clothing color',
+        prompt: 'Adjust the clothing color to be a more neutral, professional tone — navy, charcoal, or dark grey. Keep the clothing style and cut identical.',
+        mode: 'edit',
+      },
+    ],
+  },
+  {
+    category: 'Overall Quality',
+    presets: [
+      {
+        label: 'Sharpen overall detail',
+        prompt: 'Increase overall image sharpness and micro-contrast. Enhance fine detail in the face, clothing, and background. The result should look like a higher-resolution, crisper photograph.',
+        mode: 'edit',
+      },
+      {
+        label: 'Fix unnatural AI artifacts',
+        prompt: 'Fix any unnatural AI artifacts — incorrect finger counts, asymmetrical facial features, distorted clothing seams, or unrealistic skin patterns. Make the image look like a real photograph.',
+        mode: 'edit',
+      },
+    ],
+  },
 ];
 
 const getAspectClass = (ratio?: string): string => {
@@ -42,15 +173,15 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
   // Edit state
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
   const [editPrompt, setEditPrompt] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState<EditPreset | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>('Body & Build');
 
   const downloadImage = async (url: string, format: 'webp' | 'png') => {
     try {
       const response = await fetch(url);
       const sourceBlob = await response.blob();
-
-      // Convert to target format via canvas
       const bitmap = await createImageBitmap(sourceBlob);
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width;
@@ -71,30 +202,21 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
 
       const filename = `VeraLooks-Headshot.${format}`;
 
-      // Use File System Access API if available (shows folder picker)
       if ('showSaveFilePicker' in window) {
         try {
           const fileHandle = await (window as any).showSaveFilePicker({
             suggestedName: filename,
-            types: [
-              {
-                description: format === 'webp' ? 'WebP Image' : 'PNG Image',
-                accept: { [mimeType]: [`.${format}`] },
-              },
-            ],
+            types: [{ description: format === 'webp' ? 'WebP Image' : 'PNG Image', accept: { [mimeType]: [`.${format}`] } }],
           });
           const writable = await fileHandle.createWritable();
           await writable.write(finalBlob);
           await writable.close();
           return;
         } catch (err: any) {
-          // User cancelled the picker — don't fall through to auto-download
           if (err.name === 'AbortError') return;
-          // For other errors, fall through to legacy download
         }
       }
 
-      // Fallback for browsers without showSaveFilePicker
       const blobUrl = window.URL.createObjectURL(finalBlob);
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -103,18 +225,18 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-
     } catch (error) {
       console.error('Download failed:', error);
       alert('Failed to download image. Please try right-clicking the image to save.');
     }
   };
 
-  const handleEditPreset = (preset: string) => {
-    setEditPrompt(preset);
+  const handleSelectPreset = (preset: EditPreset) => {
+    setSelectedPreset(preset);
+    setEditPrompt(preset.prompt);
   };
 
-  const handleApplyEdit = async () => {
+  const handleApplyEdit = async (mode: 'edit' | 'regenerate') => {
     if (!selectedImage || !editPrompt.trim()) return;
 
     setIsRefining(true);
@@ -122,11 +244,24 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
 
     try {
       const aspectRatio = (selectedImage.aspectRatio || '1:1') as any;
-      const refinedUrl = await refineGeneratedImage(
-        selectedImage.imageUrl,
-        editPrompt,
-        aspectRatio
-      );
+
+      let refinedUrl: string;
+
+      if (mode === 'regenerate') {
+        // For body/structure changes: re-run generation with the edit prompt
+        // injected as an additional instruction on top of the original
+        refinedUrl = await refineGeneratedImage(
+          selectedImage.imageUrl,
+          `BODY STRUCTURE CHANGE — treat this as a full re-render, not a surface edit. ${editPrompt}. Preserve the subject's face, clothing style, scene, and lighting exactly. Only change the body proportions as described.`,
+          aspectRatio
+        );
+      } else {
+        refinedUrl = await refineGeneratedImage(
+          selectedImage.imageUrl,
+          editPrompt,
+          aspectRatio
+        );
+      }
 
       const newImage: GeneratedImage = {
         id: Date.now().toString() + Math.random().toString(),
@@ -138,7 +273,6 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
         aspectRatio: selectedImage.aspectRatio,
       };
 
-      // Insert edited image right after the original in the list
       setDisplayImages(prev => {
         const idx = prev.findIndex(img => img.id === selectedImage.id);
         if (idx === -1) return [...prev, newImage];
@@ -149,21 +283,25 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
 
       setSelectedImage(newImage);
       setEditPrompt('');
+      setSelectedPreset(null);
       setIsEditPanelOpen(false);
+
     } catch (err: any) {
       console.error('Edit failed:', err);
       setEditError(
-        'Sometimes edits don\'t take. You can try again here or click "Create a New Look" and use "Add Your Own Outfit" or "Add Your Own Background" to get better results.'
+        'This edit didn\'t take. For body structure changes, try "Regenerate with changes" instead — it\'s more reliable for those. For everything else, try rephrasing your instruction with more specific anatomical detail.'
       );
     } finally {
       setIsRefining(false);
     }
   };
 
+  const activeMode = selectedPreset?.mode ?? 'edit';
   const aspectClass = getAspectClass(selectedImage?.aspectRatio);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
@@ -185,6 +323,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
         {/* Large Preview */}
         <div className="lg:col-span-8">
           <div className="bg-white rounded-3xl p-4 shadow-xl border border-gray-100 overflow-hidden group">
@@ -215,49 +354,92 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
                   Edit This Image
                 </button>
               ) : (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-5 space-y-4">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-5 space-y-5">
+
+                  {/* Panel header */}
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-gray-900 flex items-center gap-2">
                       <Wand2 size={16} className="text-indigo-600" />
                       Edit Image
                     </h3>
                     <button
-                      onClick={() => { setIsEditPanelOpen(false); setEditError(null); setEditPrompt(''); }}
+                      onClick={() => { setIsEditPanelOpen(false); setEditError(null); setEditPrompt(''); setSelectedPreset(null); }}
                       className="text-gray-400 hover:text-gray-600"
                     >
                       <X size={18} />
                     </button>
                   </div>
 
-                  <p className="text-xs text-gray-800">
-                    Choose a preset or write your own instruction. Each edit uses 1 credit and adds the result next to the original.
-                  </p>
+                  {/* How-it-works note */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-600 leading-relaxed">
+                    <span className="font-semibold text-slate-800">How edits work:</span> Surface edits (lighting, background, clothing color) work well directly. Body structure changes (muscle, weight, proportions) use a deeper regeneration pass — use the <span className="font-semibold text-indigo-600">Regenerate with changes</span> button for those. Each edit uses 1 credit.
+                  </div>
 
-                  {/* Preset chips */}
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTED_EDITS.map((preset) => (
-                      <button
-                        key={preset}
-                        onClick={() => handleEditPreset(preset)}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
-                          editPrompt === preset
-                            ? 'bg-indigo-600 border-indigo-600 text-white'
-                            : 'bg-white border-gray-300 text-gray-800 hover:border-indigo-400 hover:text-indigo-600'
-                        }`}
-                      >
-                        {preset}
-                      </button>
+                  {/* Categorized presets */}
+                  <div className="space-y-2">
+                    {EDIT_CATEGORIES.map((cat) => (
+                      <div key={cat.category} className="border border-gray-200 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => setExpandedCategory(expandedCategory === cat.category ? null : cat.category)}
+                          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                        >
+                          <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">{cat.category}</span>
+                          {expandedCategory === cat.category
+                            ? <ChevronUp size={14} className="text-gray-400" />
+                            : <ChevronDown size={14} className="text-gray-400" />}
+                        </button>
+                        {expandedCategory === cat.category && (
+                          <div className="px-4 pb-3 pt-2 flex flex-wrap gap-2">
+                            {cat.presets.map((preset) => (
+                              <button
+                                key={preset.label}
+                                onClick={() => handleSelectPreset(preset)}
+                                className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${
+                                  selectedPreset?.label === preset.label
+                                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 hover:text-indigo-600'
+                                }`}
+                              >
+                                {preset.mode === 'regenerate' && (
+                                  <RefreshCw size={10} className={selectedPreset?.label === preset.label ? 'text-white' : 'text-indigo-400'} />
+                                )}
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
 
-                  {/* Custom prompt */}
-                  <textarea
-                    value={editPrompt}
-                    onChange={(e) => setEditPrompt(e.target.value)}
-                    placeholder="Or describe your own edit (e.g. 'Make the background a warm sunset outside a city skyline')..."
-                    rows={3}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
-                  />
+                  {/* Selected preset indicator */}
+                  {selectedPreset && (
+                    <div className={`rounded-xl px-4 py-3 text-xs leading-relaxed border ${
+                      selectedPreset.mode === 'regenerate'
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-800'
+                        : 'bg-green-50 border-green-200 text-green-800'
+                    }`}>
+                      {selectedPreset.mode === 'regenerate' ? (
+                        <><span className="font-semibold">⚡ Deep regeneration preset selected.</span> This change affects body structure — use "Regenerate with changes" below for best results.</>
+                      ) : (
+                        <><span className="font-semibold">✓ Surface edit preset selected.</span> Use "Apply Edit" below.</>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Custom prompt textarea */}
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">
+                      Custom instruction (or edit the preset above)
+                    </label>
+                    <textarea
+                      value={editPrompt}
+                      onChange={(e) => { setEditPrompt(e.target.value); setSelectedPreset(null); }}
+                      placeholder="Describe your edit in specific anatomical or visual terms (e.g. 'Slim the upper arms and narrow the shoulders, keep everything else identical')..."
+                      rows={3}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                    />
+                  </div>
 
                   {editError && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 leading-relaxed">
@@ -265,25 +447,39 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
                     </div>
                   )}
 
+                  {/* Action buttons */}
                   <div className="flex gap-3">
+                    {/* Standard edit — best for surface changes */}
                     <button
-                      onClick={handleApplyEdit}
+                      onClick={() => handleApplyEdit('edit')}
                       disabled={!editPrompt.trim() || isRefining}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-900 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm"
                     >
                       {isRefining ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Applying Edit...
-                        </>
+                        <><Loader2 size={15} className="animate-spin" />Working...</>
                       ) : (
-                        <>
-                          <Wand2 size={16} />
-                          Apply Edit (1 credit)
-                        </>
+                        <><Wand2 size={15} />Apply Edit</>
+                      )}
+                    </button>
+
+                    {/* Regeneration — best for body/structure changes */}
+                    <button
+                      onClick={() => handleApplyEdit('regenerate')}
+                      disabled={!editPrompt.trim() || isRefining}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                    >
+                      {isRefining ? (
+                        <><Loader2 size={15} className="animate-spin" />Working...</>
+                      ) : (
+                        <><RefreshCw size={15} />Regenerate with changes</>
                       )}
                     </button>
                   </div>
+
+                  <p className="text-[11px] text-gray-400 text-center">
+                    Not sure which to use? Use <strong>Apply Edit</strong> for background, lighting, and clothing changes. Use <strong>Regenerate</strong> for body shape, muscle, or weight changes.
+                  </p>
+
                 </div>
               )}
             </div>
@@ -292,6 +488,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
 
         {/* Sidebar */}
         <div className="lg:col-span-4 space-y-6">
+
           {/* Download */}
           <div className="bg-white rounded-3xl p-6 shadow-lg border border-gray-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -351,6 +548,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart }) => {
               ))}
             </div>
           </div>
+
         </div>
       </div>
     </div>
