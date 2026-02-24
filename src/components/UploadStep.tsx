@@ -234,7 +234,34 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           )}
         </div>
         <UploadSlot role="fullBody" label="Full-Body Photo" subLabel="Optional — head to toe, camera at chest height, upright." />
-        <div className="hidden md:flex items-end justify-stretch">
+        <div className="hidden md:flex flex-col justify-end gap-2">
+          {/* Preview alert banner — lives just above the Next button */}
+          {referenceImages.main && (
+            <button
+              onClick={scrollToConfirmation}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors text-left group"
+            >
+              <div className="flex items-center gap-2">
+                {isGeneratingConfirmation ? (
+                  <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin flex-shrink-0" />
+                ) : confirmationPhoto ? (
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                )}
+                <span className="text-xs text-indigo-200 leading-snug">
+                  {isGeneratingConfirmation
+                    ? 'Generating your AI preview below…'
+                    : confirmationPhoto
+                    ? 'AI preview ready — scroll down to see it.'
+                    : confirmationError
+                    ? 'Preview failed — scroll down to retry.'
+                    : 'Preparing your AI preview…'}
+                </span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" />
+            </button>
+          )}
           <Button onClick={onNext} disabled={!referenceImages.main} className="w-full">
             Next: Design Photoshoot
           </Button>
@@ -243,33 +270,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         <UploadSlot role="sideRight" label="Your Right Side" subLabel="Optional — turn so your right faces the camera." />
       </div>
 
-      {/* Preview alert banner — shown as soon as main photo is uploaded */}
-      {referenceImages.main && (
-        <button
-          onClick={scrollToConfirmation}
-          className="w-full mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors text-left group"
-        >
-          <div className="flex items-center gap-3">
-            {isGeneratingConfirmation ? (
-              <Loader2 className="w-4 h-4 text-indigo-400 animate-spin flex-shrink-0" />
-            ) : confirmationPhoto ? (
-              <Sparkles className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
-            )}
-            <span className="text-sm text-indigo-200">
-              {isGeneratingConfirmation
-                ? 'Your AI confirmation preview is being generated below…'
-                : confirmationPhoto
-                ? 'Your AI confirmation preview is ready — scroll down to see it.'
-                : confirmationError
-                ? 'Preview generation failed — tap to scroll down and try again.'
-                : 'Preparing your AI confirmation preview…'}
-            </span>
-          </div>
-          <ChevronDown className="w-4 h-4 text-indigo-400 flex-shrink-0 group-hover:translate-y-0.5 transition-transform" />
-        </button>
-      )}
+
 
       {/* Confirmation Photo Panel */}
       {referenceImages.main && (
