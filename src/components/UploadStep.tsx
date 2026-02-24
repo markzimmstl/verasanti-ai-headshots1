@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, AlertCircle, Check, Info, Camera, Sun, Maximize2, ArrowUpDown, Loader2, RefreshCw, Sparkles, ChevronDown } from 'lucide-react';
 import { ReferenceImage, MultiReferenceSet } from '../types.ts';
 import { Button } from './Button.tsx';
-import { generateConfirmationPhoto, overlayLogoOnConfirmationPhoto } from '../services/geminiService.ts';
+import { generateConfirmationPhoto, overlayLogoOnConfirmationPhoto, checkPhotoQuality, PhotoQualityResult } from '../services/geminiService.ts';
 
 interface UploadStepProps {
   referenceImages: MultiReferenceSet;
@@ -23,6 +23,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   const [confirmationPhoto, setConfirmationPhoto] = useState<string | null>(null);
   const [isGeneratingConfirmation, setIsGeneratingConfirmation] = useState(false);
   const [confirmationError, setConfirmationError] = useState<string | null>(null);
+  const [qualityWarnings, setQualityWarnings] = useState<string[]>([]);
 
   // Ref for scrolling to the confirmation panel
   const confirmationRef = useRef<HTMLDivElement>(null);
@@ -81,6 +82,15 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         role: role as any,
       };
       onUpdate({ ...referenceImages, [role]: newImage });
+
+      // Run quality check on main photo
+      if (role === 'main') {
+        setQualityWarnings([]);
+        const quality = await checkPhotoQuality(base64);
+        if (!quality.passed) {
+          setQualityWarnings(quality.warnings);
+        }
+      }
     } catch (err) {
       setError('Failed to process image. Please try again.');
     }
@@ -218,6 +228,20 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-200 text-sm">
           <AlertCircle className="w-5 h-5 shrink-0" />
           {error}
+        </div>
+      )}
+
+      {/* Photo Quality Warning */}
+      {qualityWarnings.length > 0 && (
+        <div className="mb-6 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <p className="text-xs font-semibold text-amber-300">Photo Quality Notice</p>
+          </div>
+          {qualityWarnings.map((w, i) => (
+            <p key={i} className="text-xs text-amber-200 ml-6">{w}</p>
+          ))}
+          <p className="text-xs text-slate-400 ml-6">You can still continue — but better quality photos produce better results.</p>
         </div>
       )}
 
