@@ -54,10 +54,10 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>(() => {
-    const saved = localStorage.getItem('veralooks_refs');
-    return saved ? JSON.parse(saved) : {};
-  });
+  // FIX: Reference images are kept in memory only — not persisted to localStorage.
+  // Base64 images are too large (~10MB for 4 photos) and exceed the 5MB localStorage limit.
+  // Users simply re-upload if they refresh the page, which is the expected behavior.
+  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
 
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -73,7 +73,7 @@ function App() {
     if (pendingGeneration) localStorage.setItem('veralooks_pending', JSON.stringify(pendingGeneration));
     else localStorage.removeItem('veralooks_pending');
   }, [pendingGeneration]);
-  useEffect(() => { localStorage.setItem('veralooks_refs', JSON.stringify(referenceImages)); }, [referenceImages]);
+  // FIX: Removed the useEffect that wrote referenceImages to localStorage — caused QuotaExceededError.
 
   useEffect(() => {
     let interval: any;
@@ -233,11 +233,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-indigo-500/30 flex flex-col">
-      {/* Navbar */}
       <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 shrink-0">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           
-          {/* VERALOOKS LOGO - CLICKABLE */}
           <button 
             onClick={handleGoHome}
             className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
