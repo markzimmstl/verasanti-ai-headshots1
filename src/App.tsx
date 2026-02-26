@@ -136,17 +136,16 @@ function App() {
       for (const style of styles) {
         const countForThisLook = style.imageCount || 1;
 
-        const finalConfigForThisLook = {
-            ...config,
-            ...(style.overrides || {}) 
+        const finalConfigForThisLook: GenerationConfig = {
+          ...config,
+          ...(style.overrides || {}),
         };
 
-       for (let i = 0; i < countForThisLook; i++) {
+        for (let i = 0; i < countForThisLook; i++) {
           setLoadingMessage(`Generating ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
           
           const selectedClothing = finalConfigForThisLook.clothing;
           const selectedScenePrompt = finalConfigForThisLook.backgroundType || "in a professional corporate setting";
-
           const fullPrompt = `${selectedClothing}, ${selectedScenePrompt}`;
 
           const imageUrl = await generateBrandPhotoWithRefsSafe(
@@ -159,14 +158,18 @@ function App() {
 
           if (!imageUrl) throw new Error("Failed to generate image");
 
+          // Store stylePrompt and originalConfig on each image so ResultsStep
+          // can re-run the full generation pipeline for Regenerate edits.
           newImages.push({
             id: Date.now().toString() + Math.random().toString(),
             originalUrl: imageUrl,
-            imageUrl: imageUrl, 
+            imageUrl: imageUrl,
             styleName: `${style.name} ${i + 1}`,
             styleId: style.id,
             createdAt: Date.now(),
-            aspectRatio: finalConfigForThisLook.aspectRatio || '1:1'
+            aspectRatio: finalConfigForThisLook.aspectRatio || '1:1',
+            stylePrompt: fullPrompt,
+            originalConfig: { ...finalConfigForThisLook },
           });
           
           globalImageIndex++;
@@ -332,6 +335,8 @@ function App() {
               <ResultsStep 
                 images={generatedImages}
                 onRestart={handleReset}
+                refs={referenceImages}
+                baseConfig={generationConfig}
               />
             )}
           </div>
