@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Download, ChevronLeft, Image as ImageIcon, CheckCircle, FileDown,
   Wand2, X, Loader2, RefreshCw, ChevronDown, ChevronUp, Eraser,
-  Archive, Info
+  Archive, Info, Zap
 } from 'lucide-react';
 import { GeneratedImage, GenerationConfig, MultiReferenceSet } from '../types';
 import { refineGeneratedImage, magicErase, generateBrandPhotoWithRefsSafe } from '../services/geminiService';
@@ -10,7 +10,6 @@ import { refineGeneratedImage, magicErase, generateBrandPhotoWithRefsSafe } from
 interface ResultsStepProps {
   images: GeneratedImage[];
   onRestart: () => void;
-  // NEW: needed for full-pipeline regeneration
   refs: MultiReferenceSet;
   baseConfig: GenerationConfig;
 }
@@ -19,7 +18,6 @@ interface EditPreset {
   label: string;
   prompt: string;
   mode: 'edit' | 'regenerate';
-  // For regenerate mode, these override the base config before re-running the pipeline
   configOverride?: Partial<GenerationConfig>;
 }
 
@@ -164,6 +162,11 @@ const EDIT_CATEGORIES: { category: string; presets: EditPreset[] }[] = [
   },
 ];
 
+// Only body/structural presets make sense for Regenerate All
+const REGEN_ALL_PRESETS: EditPreset[] = EDIT_CATEGORIES
+  .flatMap(cat => cat.presets)
+  .filter(p => p.mode === 'regenerate');
+
 const getAspectClass = (ratio?: string): string => {
   switch (ratio) {
     case '16:9': return 'aspect-video';
@@ -175,7 +178,6 @@ const getAspectClass = (ratio?: string): string => {
   }
 };
 
-// Load JSZip dynamically from CDN
 const loadJSZip = (): Promise<any> => {
   return new Promise((resolve, reject) => {
     if ((window as any).JSZip) { resolve((window as any).JSZip); return; }
@@ -193,12 +195,20 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
 
   // Edit state
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
-  const [editMode, setEditMode] = useState<'presets' | 'eraser'>('presets');
+  const [editMode, setEditMode] = useState<'presets' | 'eraser' | 'regenAll'>('presets');
   const [editPrompt, setEditPrompt] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<EditPreset | null>(null);
   const [isRefining, setIsRefining] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>('Body & Build');
+
+  // Regenerate All state
+  const [regenAllPreset, setRegenAllPreset] = useState<EditPreset | null>(null);
+  const [regenAllPrompt, setRegenAllPrompt] = useState('');
+  const [isRegenAll, setIsRegenAll] = useState(false);
+  const [regenAllProgress, setRegenAllProgress] = useState<{ current: number; total: number } | null>(null);
+  const [regenAllError, setRegenAllError] = useState<string | null>(null);
+  const regenAllCancelRef = useRef(false);
 
   // Download All state
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
@@ -210,7 +220,6 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
   const [brushSize, setBrushSize] = useState(20);
   const [hasMask, setHasMask] = useState(false);
 
-  // Set up eraser canvas when switching to eraser mode
   useEffect(() => {
     if (editMode === 'eraser' && selectedImage && canvasRef.current) {
       const canvas = canvasRef.current;
@@ -319,7 +328,6 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
     setEditPrompt(preset.prompt);
   };
 
-  // ─── APPLY EDIT (surface changes via refineGeneratedImage) ───────────────────
   const handleApplyEdit = async () => {
     if (!selectedImage || !editPrompt.trim()) return;
     setIsRefining(true);
@@ -335,54 +343,126 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
     }
   };
 
-  // ─── REGENERATE (full pipeline from original refs) ────────────────────────────
-  // This bypasses the already-generated image entirely and re-runs the full
-  // generateBrandPhotoWithRefsSafe pipeline with a modified config.
-  // Body structure changes are dramatically more reliable this way.
   const handleRegenerate = async () => {
     if (!selectedImage || !editPrompt.trim()) return;
     setIsRefining(true);
     setEditError(null);
     try {
-      // Build the modified config:
-      // - Start from the image's own stored config if available, else use baseConfig
-      // - Apply any preset configOverride (e.g. bodySizeOffset: -2)
-      // - Inject the edit prompt as an additional instruction into the scene prompt
       const imageConfig: GenerationConfig = (selectedImage as any).originalConfig || baseConfig;
       const presetOverrides = selectedPreset?.configOverride || {};
-
-      const regenerateConfig: GenerationConfig = {
-        ...imageConfig,
-        ...presetOverrides,
-      };
-
-      // The stylePrompt stored on the image, or fall back to backgroundType
+      const regenerateConfig: GenerationConfig = { ...imageConfig, ...presetOverrides };
       const originalStylePrompt: string =
         (selectedImage as any).stylePrompt ||
         imageConfig.backgroundType ||
         'Professional studio portrait';
-
-      // Append the freeform edit instruction as extra context for the prompt builder
-      const augmentedStylePrompt = `${originalStylePrompt}
-
-ADDITIONAL INSTRUCTION FOR THIS GENERATION:
-${editPrompt}`;
-
+      const augmentedStylePrompt = `${originalStylePrompt}\n\nADDITIONAL INSTRUCTION FOR THIS GENERATION:\n${editPrompt}`;
       const resultUrl = await generateBrandPhotoWithRefsSafe(
         refs,
         augmentedStylePrompt,
         regenerateConfig,
         regenerateConfig.customBackground,
-        // globalIndex: use a random offset so we don't always get the same Rule of Thirds variant
         Math.floor(Math.random() * 10)
       );
-
       insertEditedImage(resultUrl, selectedImage, '(Regenerated)');
-    } catch (err: any) {
+    } catch {
       setEditError('Regeneration failed. Please try again. If the problem persists, try Apply Edit instead.');
     } finally {
       setIsRefining(false);
     }
+  };
+
+  // ─── REGENERATE ALL ────────────────────────────────────────────────────────
+  // Runs the full pipeline on every *original* image (excludes already-edited
+  // variants) and inserts a regenerated copy immediately after each one.
+  const handleRegenAll = async () => {
+    const prompt = regenAllPrompt.trim();
+    if (!prompt) return;
+
+    // Only regenerate originals — skip images that are already edits/regen variants
+    const originals = displayImages.filter(img =>
+      !img.styleName.includes('(Edited)') &&
+      !img.styleName.includes('(Regenerated)') &&
+      !img.styleName.includes('(Erased)')
+    );
+    if (originals.length === 0) return;
+
+    setIsRegenAll(true);
+    setRegenAllError(null);
+    regenAllCancelRef.current = false;
+    setRegenAllProgress({ current: 0, total: originals.length });
+
+    // We build up a list of [sourceId, newImage] pairs and insert them all at once
+    // to avoid race conditions with multiple setState calls mid-loop.
+    const insertions: { sourceId: string; newImage: GeneratedImage }[] = [];
+
+    try {
+      for (let i = 0; i < originals.length; i++) {
+        if (regenAllCancelRef.current) break;
+
+        const source = originals[i];
+        setRegenAllProgress({ current: i + 1, total: originals.length });
+
+        const imageConfig: GenerationConfig = (source as any).originalConfig || baseConfig;
+        const presetOverrides = regenAllPreset?.configOverride || {};
+        const regenerateConfig: GenerationConfig = { ...imageConfig, ...presetOverrides };
+        const originalStylePrompt: string =
+          (source as any).stylePrompt ||
+          imageConfig.backgroundType ||
+          'Professional studio portrait';
+        const augmentedStylePrompt = `${originalStylePrompt}\n\nADDITIONAL INSTRUCTION FOR THIS GENERATION:\n${prompt}`;
+
+        const resultUrl = await generateBrandPhotoWithRefsSafe(
+          refs,
+          augmentedStylePrompt,
+          regenerateConfig,
+          regenerateConfig.customBackground,
+          Math.floor(Math.random() * 10)
+        );
+
+        insertions.push({
+          sourceId: source.id,
+          newImage: {
+            id: Date.now().toString() + Math.random(),
+            originalUrl: resultUrl,
+            imageUrl: resultUrl,
+            styleName: `${source.styleName} (Regenerated)`,
+            styleId: source.styleId,
+            createdAt: Date.now(),
+            aspectRatio: source.aspectRatio,
+            stylePrompt: (source as any).stylePrompt,
+            originalConfig: (source as any).originalConfig,
+          },
+        });
+
+        // Insert each result immediately as it comes in so the user sees progress
+        setDisplayImages(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(img => img.id === source.id);
+          if (idx !== -1) updated.splice(idx + 1, 0, insertions[insertions.length - 1].newImage);
+          return updated;
+        });
+      }
+
+      // Select the first new regenerated image
+      if (insertions.length > 0) {
+        setSelectedImage(insertions[0].newImage);
+      }
+
+      if (!regenAllCancelRef.current) {
+        setIsEditPanelOpen(false);
+        setEditMode('presets');
+      }
+    } catch (err: any) {
+      setRegenAllError(`Regeneration failed on image ${regenAllProgress?.current ?? '?'}. Images completed so far have been added.`);
+    } finally {
+      setIsRegenAll(false);
+      setRegenAllProgress(null);
+      regenAllCancelRef.current = false;
+    }
+  };
+
+  const handleCancelRegenAll = () => {
+    regenAllCancelRef.current = true;
   };
 
   const insertEditedImage = (url: string, source: GeneratedImage, label: string) => {
@@ -394,7 +474,6 @@ ${editPrompt}`;
       styleId: source.styleId,
       createdAt: Date.now(),
       aspectRatio: source.aspectRatio,
-      // Carry forward the original style context so future regenerations keep working
       ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any),
     };
     setDisplayImages(prev => {
@@ -474,6 +553,13 @@ ${editPrompt}`;
   const activePresetMode = selectedPreset?.mode ?? 'edit';
   const aspectClass = getAspectClass(selectedImage?.aspectRatio);
 
+  // Count originals for Regenerate All credit warning
+  const originalCount = displayImages.filter(img =>
+    !img.styleName.includes('(Edited)') &&
+    !img.styleName.includes('(Regenerated)') &&
+    !img.styleName.includes('(Erased)')
+  ).length;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
@@ -514,7 +600,10 @@ ${editPrompt}`;
           {selectedImage && (
             <div className="mt-4">
               {!isEditPanelOpen ? (
-                <button onClick={() => { setIsEditPanelOpen(true); setEditMode('presets'); }} className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-semibold hover:bg-slate-800 transition-all shadow-sm">
+                <button
+                  onClick={() => { setIsEditPanelOpen(true); setEditMode('presets'); }}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-semibold hover:bg-slate-800 transition-all shadow-sm"
+                >
                   <Wand2 size={18} />
                   Edit This Image
                 </button>
@@ -523,12 +612,18 @@ ${editPrompt}`;
 
                   {/* Panel header with mode tabs */}
                   <div className="flex items-center justify-between">
-                    <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
+                    <div className="flex bg-gray-100 p-1 rounded-lg gap-1 flex-wrap">
                       <button
                         onClick={() => setEditMode('presets')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${editMode === 'presets' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                       >
                         <Wand2 size={12} /> Edit / Enhance
+                      </button>
+                      <button
+                        onClick={() => { setEditMode('regenAll'); setRegenAllError(null); }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${editMode === 'regenAll' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        <Zap size={12} /> Regenerate All
                       </button>
                       <button
                         onClick={() => setEditMode('eraser')}
@@ -537,19 +632,21 @@ ${editPrompt}`;
                         <Eraser size={12} /> Magic Eraser
                       </button>
                     </div>
-                    <button onClick={() => { setIsEditPanelOpen(false); setEditError(null); setEditPrompt(''); setSelectedPreset(null); setEditMode('presets'); }} className="text-gray-400 hover:text-gray-600">
+                    <button
+                      onClick={() => { setIsEditPanelOpen(false); setEditError(null); setEditPrompt(''); setSelectedPreset(null); setEditMode('presets'); }}
+                      className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
+                    >
                       <X size={18} />
                     </button>
                   </div>
 
-                  {/* PRESETS MODE */}
+                  {/* ── PRESETS MODE ── */}
                   {editMode === 'presets' && (
                     <>
                       <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs text-slate-600 leading-relaxed">
                         <span className="font-semibold text-slate-800">Tip:</span> Use <strong>Apply Edit</strong> for lighting, background &amp; color tweaks. Use <strong>Regenerate</strong> for body shape, build, and structure — it re-runs the full pipeline from your original photos for maximum impact.
                       </div>
 
-                      {/* Preset categories */}
                       <div className="space-y-2">
                         {EDIT_CATEGORIES.map((cat) => (
                           <div key={cat.category} className="border border-gray-200 rounded-xl overflow-hidden">
@@ -580,7 +677,6 @@ ${editPrompt}`;
                         ))}
                       </div>
 
-                      {/* Preset mode hint */}
                       {selectedPreset && (
                         <div className={`rounded-xl px-4 py-3 text-xs leading-relaxed border ${selectedPreset.mode === 'regenerate' ? 'bg-indigo-50 border-indigo-200 text-indigo-800' : 'bg-green-50 border-green-200 text-green-800'}`}>
                           {selectedPreset.mode === 'regenerate'
@@ -589,7 +685,6 @@ ${editPrompt}`;
                         </div>
                       )}
 
-                      {/* Freeform prompt */}
                       <div>
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Custom instruction (optional)</label>
                         <textarea
@@ -605,7 +700,6 @@ ${editPrompt}`;
                         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">{editError}</div>
                       )}
 
-                      {/* Action buttons */}
                       <div className="flex gap-3">
                         <button
                           onClick={handleApplyEdit}
@@ -628,7 +722,91 @@ ${editPrompt}`;
                     </>
                   )}
 
-                  {/* MAGIC ERASER MODE */}
+                  {/* ── REGENERATE ALL MODE ── */}
+                  {editMode === 'regenAll' && (
+                    <>
+                      <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 text-xs text-violet-800 leading-relaxed">
+                        <span className="font-semibold">Applies one instruction to all {originalCount} original image{originalCount !== 1 ? 's' : ''}.</span> A regenerated copy will be added after each original — your originals are kept. Uses <span className="font-semibold">{originalCount} credit{originalCount !== 1 ? 's' : ''}</span>.
+                      </div>
+
+                      {/* Body/structural presets only */}
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Quick presets</p>
+                        <div className="flex flex-wrap gap-2">
+                          {REGEN_ALL_PRESETS.map((preset) => (
+                            <button
+                              key={preset.label}
+                              onClick={() => {
+                                setRegenAllPreset(preset);
+                                setRegenAllPrompt(preset.prompt);
+                              }}
+                              className={`text-xs px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${regenAllPreset?.label === preset.label ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-300 text-gray-700 hover:border-indigo-400 hover:text-indigo-600'}`}
+                            >
+                              <RefreshCw size={10} className={regenAllPreset?.label === preset.label ? 'text-white' : 'text-indigo-400'} />
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Or describe your instruction</label>
+                        <textarea
+                          value={regenAllPrompt}
+                          onChange={(e) => { setRegenAllPrompt(e.target.value); setRegenAllPreset(null); }}
+                          placeholder="e.g. Slimmer build, more athletic. Or: make every image look like natural daylight..."
+                          rows={3}
+                          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+                        />
+                      </div>
+
+                      {regenAllError && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800">{regenAllError}</div>
+                      )}
+
+                      {/* Progress bar */}
+                      {isRegenAll && regenAllProgress && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span className="font-medium">Regenerating image {regenAllProgress.current} of {regenAllProgress.total}…</span>
+                            <span>{Math.round((regenAllProgress.current / regenAllProgress.total) * 100)}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div
+                              className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${(regenAllProgress.current / regenAllProgress.total) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-3">
+                        {isRegenAll ? (
+                          <button
+                            onClick={handleCancelRegenAll}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border border-red-200 rounded-xl font-semibold hover:bg-red-100 transition-all text-sm"
+                          >
+                            <X size={15} />
+                            Cancel
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleRegenAll}
+                            disabled={!regenAllPrompt.trim() || originalCount === 0}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                          >
+                            <Zap size={15} />
+                            Regenerate All {originalCount} Image{originalCount !== 1 ? 's' : ''}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-400 text-center">
+                        Results appear one by one as each image completes. You can cancel at any time.
+                      </p>
+                    </>
+                  )}
+
+                  {/* ── MAGIC ERASER MODE ── */}
                   {editMode === 'eraser' && (
                     <>
                       <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 leading-relaxed">
