@@ -1,5 +1,4 @@
 export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:5' | '3:1' | '4:1';
-
 export interface GenerationConfig {
   clothing: string;
   backgroundType: string;
@@ -22,7 +21,6 @@ export interface GenerationConfig {
   hairColor?: string;
   includeRing?: boolean;
 }
-
 export interface LookConfig {
   id: string;
   label: string;
@@ -37,7 +35,6 @@ export interface LookConfig {
   config: GenerationConfig; // Stores the full config for this specific look
   isSurprise: boolean;
 }
-
 export interface StyleOption {
   id: string;
   name: string;
@@ -50,7 +47,6 @@ export interface StyleOption {
   bodySizeOffset?: number;
   overrides?: Partial<GenerationConfig>;
 }
-
 export interface ReferenceImage {
   id: string;
   fileName: string;
@@ -58,14 +54,12 @@ export interface ReferenceImage {
   createdAt: number;
   role: 'main' | 'sideLeft' | 'sideRight' | 'fullBody';
 }
-
 export interface MultiReferenceSet {
   main?: ReferenceImage;
   sideLeft?: ReferenceImage;
   sideRight?: ReferenceImage;
   fullBody?: ReferenceImage;
 }
-
 export interface GeneratedImage {
   id: string;
   originalUrl: string;
@@ -74,8 +68,9 @@ export interface GeneratedImage {
   styleId: string;
   createdAt: number;
   aspectRatio: AspectRatio;
+  stylePrompt?: string;              // Scene/style prompt used to generate this image
+  originalConfig?: GenerationConfig; // Config snapshot used for this image
 }
-
 export interface UploadedImage {
   id?: string;
   fileName?: string;
@@ -84,7 +79,6 @@ export interface UploadedImage {
   data?: string;
   createdAt?: number;
 }
-
 export interface BrandData {
   brandColor?: string;
   secondaryBrandColor?: string;
