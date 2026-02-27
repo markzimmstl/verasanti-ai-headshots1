@@ -207,6 +207,8 @@ function App() {
   };
 
   const handleReset = () => {
+    // Clear expertPrompt so Expert Mode doesn't carry over stale prompts from the previous session
+    setGenerationConfig(prev => ({ ...prev, expertPrompt: '' }));
     setCurrentStep('settings'); 
     window.scrollTo(0, 0);
   };
