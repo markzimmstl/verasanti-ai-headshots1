@@ -15,7 +15,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 // @ts-ignore
 import { BRAND_DEFINITIONS } from './data/brandDefinitions';
 
-const DEFAULT_CONFIG: GenerationConfig = {
+export const DEFAULT_CONFIG: GenerationConfig = {
   clothing: 'Business Casual',
   backgroundType: 'Modern Office',
   aspectRatio: '1:1',
@@ -66,6 +66,7 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [loadingPhaseIndex, setLoadingPhaseIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [settingsKey, setSettingsKey] = useState(0);
 
   useEffect(() => { localStorage.setItem('veralooks_step', currentStep); }, [currentStep]);
   useEffect(() => { localStorage.setItem('veralooks_credits', credits.toString()); }, [credits]);
@@ -207,8 +208,10 @@ function App() {
   };
 
   const handleReset = () => {
-    // Clear expertPrompt so Expert Mode doesn't carry over stale prompts from the previous session
-    setGenerationConfig(prev => ({ ...prev, expertPrompt: '' }));
+    // Fully reset config to defaults so nothing bleeds through from the previous session
+    setGenerationConfig({ ...DEFAULT_CONFIG });
+    // Increment key to force SettingsStep to fully remount with clean local state
+    setSettingsKey(k => k + 1);
     setCurrentStep('settings'); 
     window.scrollTo(0, 0);
   };
@@ -317,6 +320,7 @@ function App() {
 
             {currentStep === 'settings' && (
               <SettingsStep
+                key={settingsKey}
                 config={generationConfig}
                 credits={credits}
                 onChange={handleConfigChange}
