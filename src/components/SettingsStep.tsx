@@ -111,6 +111,11 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   // About You validation warning
   const [showAboutYouWarning, setShowAboutYouWarning] = useState(false);
 
+  // Sync expert prompt input when parent config changes (e.g. after a reset clears it)
+  useEffect(() => {
+    setExpertPromptInput(config.expertPrompt || '');
+  }, [config.expertPrompt]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) {
