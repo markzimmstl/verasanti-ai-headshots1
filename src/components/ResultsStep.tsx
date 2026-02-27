@@ -140,7 +140,27 @@ const EDIT_CATEGORIES: { category: string; presets: EditPreset[] }[] = [
     presets: [
       {
         label: '📱 Phone pic look',
-        prompt: 'Recreate this image to look like it was taken on a smartphone camera by a friend — slightly casual framing, natural ambient or available light, no professional lighting setup, slight lens distortion typical of a phone camera, authentic and candid feel. If the scene suggests evening or night, simulate on-camera flash: harsh direct flash lighting, slight red-eye reduction glow, flat frontal illumination, slightly overexposed face against a darker background.',
+        prompt: 'Recreate this image to look like it was taken on a smartphone camera by a friend — slightly casual framing, natural ambient or available light, no professional lighting setup, slight lens distortion typical of a phone camera, authentic and candid feel, deep depth of field so nearly everything is in focus (as phones render), no vignette, no lens blur, no shallow bokeh. If the scene suggests evening or night, simulate on-camera flash: harsh direct flash lighting, slight red-eye reduction glow, flat frontal illumination, slightly overexposed face against a darker background. NEGATIVE: no vignette, no heavy vignette, no dark edges, no bokeh blur.',
+        mode: 'edit',
+      },
+      {
+        label: '🎨 Graphic Novel',
+        prompt: 'Reimagine this portrait in a graphic novel illustration style — bold dark ink outlines defining the subject and all features, flat areas of color with minimal shading, high contrast between light and shadow, dramatic comic-book composition. The entire image including background should be fully illustrated, not photographic.',
+        mode: 'edit',
+      },
+      {
+        label: '🖼️ Oil Painting',
+        prompt: 'Transform this portrait into a classical oil painting — thick visible impasto brushstrokes, rich warm palette, painterly texture across the entire canvas including background, subtle glazing in shadows, the look of a museum-quality painted portrait. No photographic elements should remain.',
+        mode: 'edit',
+      },
+      {
+        label: '🌊 Watercolor Portrait',
+        prompt: 'Transform this portrait into a delicate watercolor painting — soft wet-on-wet washes of color, loose and slightly undefined edges, light and airy tones, visible paper texture beneath the pigment, gentle bleeds of color in the background. The style should feel hand-painted and impressionistic throughout.',
+        mode: 'edit',
+      },
+      {
+        label: '✨ Studio Ghibli Style',
+        prompt: 'Reimagine this portrait in the style of Studio Ghibli animation — soft anime-inspired illustration with clean linework, warm natural lighting, expressive but gentle features, lush painterly background, a sense of warmth and magic. The entire image should be fully illustrated in this style, not photographic.',
         mode: 'edit',
       },
     ],
