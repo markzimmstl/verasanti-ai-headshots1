@@ -211,8 +211,15 @@ function App() {
   };
 
   const handleReset = () => {
-    // Fully reset config to defaults so nothing bleeds through from the previous session
-    setGenerationConfig({ ...DEFAULT_CONFIG });
+    // Reset to defaults but PRESERVE About You fields — users shouldn't have to re-enter
+    // gender, age, hair color etc. every time they generate a new set of images.
+    setGenerationConfig(prev => ({
+      ...DEFAULT_CONFIG,
+      genderPresentation: prev.genderPresentation,
+      ageRange: prev.ageRange,
+      hairColor: prev.hairColor,
+      includeRing: prev.includeRing,
+    }));
     // Increment key to force SettingsStep to fully remount with clean local state
     setSettingsKey(k => k + 1);
     setCurrentStep('settings'); 
