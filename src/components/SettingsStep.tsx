@@ -779,7 +779,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
               {/* SECTION 4: CAMERA & COMPOSITION — collapsible */}
               {clothingStyleGroup && (
-                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl shadow-inner animate-fade-in overflow-hidden">
+                <section className="bg-indigo-950/30 border border-indigo-900/60 rounded-2xl shadow-inner animate-fade-in overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setCameraExpanded(prev => !prev)}
@@ -803,7 +803,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   <div className="px-6 pb-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2"><Maximize className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Aspect Ratio</p><span className="text-[10px] text-slate-500 ml-1">Width : Height</span></div>
+                      <div className="flex items-center gap-2 mb-2"><Maximize className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Aspect Ratio</p><span className="text-[10px] text-slate-200 ml-1">Width : Height</span></div>
                       <div className="grid grid-cols-2 gap-2">
                         {['1:1','16:9','9:16','4:5'].map((ratio) => (
                           <button key={ratio} type="button" onClick={() => handleAspectRatioChange(ratio as AspectRatio)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.aspectRatio||'1:1')===ratio ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60'}`}>{ratio}</button>
