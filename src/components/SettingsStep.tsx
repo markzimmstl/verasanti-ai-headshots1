@@ -699,7 +699,7 @@ Make every shot feel tailored to their specific line of work, clients, and credi
             </div>
           </section>
 
-          {creationMode === 'guided' ? (
+          {creationMode === 'guided' && (
             <>
               {/* ── SECTION 1: CLOTHING STYLE + CLOTHING CHOICE ─────────────────── */}
               <section className="bg-slate-900/60 border-2 border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-inner relative overflow-hidden">
@@ -776,7 +776,8 @@ Make every shot feel tailored to their specific line of work, clients, and credi
                     </div>
                   )}
                   </div>
-                </section>
+                )}
+              </section>
 
               {/* ── SECTION 2: CHOOSE A BACKGROUND SCENE ── */}
               {clothingStyleGroup && (
