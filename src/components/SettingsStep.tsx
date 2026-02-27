@@ -24,6 +24,7 @@ import {
   Upload,
   User,
   AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
 
 import { Button } from './Button.tsx';
@@ -93,6 +94,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [sceneId, setSceneId] = useState<string | null>(null);
   const [sceneName, setSceneName] = useState<string | null>(null);
   const [scenePrompt, setScenePrompt] = useState<string | null>(null);
+  const [cameraExpanded, setCameraExpanded] = useState(false);
   const [isCustomClothing, setIsCustomClothing] = useState(false);
   const [customClothingText, setCustomClothingText] = useState('');
   const [isCustomBackground, setIsCustomBackground] = useState(false);
@@ -760,21 +762,48 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                 </section>
               )}
 
-              {/* SECTION 4: CAMERA & COMPOSITION */}
+              {/* IMAGES FOR THIS LOOK — always visible, right after background */}
               {clothingStyleGroup && (
-                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-indigo-200">4</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Aperture className="w-5 h-5 text-indigo-400" />
-                      <h3 className="text-base font-semibold text-white">Camera & Composition</h3>
-                    </div>
+                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl px-6 py-5 shadow-inner animate-fade-in">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ImageIcon className="w-4 h-4 text-indigo-300" />
+                    <p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Images for this Look</p>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <input type="range" min={1} max={10} step={1} value={imageCount} onChange={(e) => setImageCount(parseInt(e.target.value, 10))} className="flex-1 accent-indigo-500" />
+                    <div className="w-8 text-center bg-slate-800 rounded px-1.5 py-0.5 text-xs font-bold text-white border border-slate-600">{imageCount}</div>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1">Generating {imageCount} unique variation{imageCount !== 1 ? 's' : ''}.</p>
+                </section>
+              )}
+
+              {/* SECTION 4: CAMERA & COMPOSITION — collapsible */}
+              {clothingStyleGroup && (
+                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl shadow-inner animate-fade-in overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setCameraExpanded(prev => !prev)}
+                    className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-indigo-200">4</span>
+                      </div>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <Aperture className="w-5 h-5 text-indigo-400" />
+                          <h3 className="text-base font-semibold text-white">Camera & Composition</h3>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 ml-7">Use these settings to fine tune your images.</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${cameraExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+                  {cameraExpanded && (
+                  <div className="px-6 pb-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2"><Maximize className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Aspect Ratio</p></div>
+                      <div className="flex items-center gap-2 mb-2"><Maximize className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Aspect Ratio</p><span className="text-[10px] text-slate-500 ml-1">Width : Height</span></div>
                       <div className="grid grid-cols-2 gap-2">
                         {['1:1','16:9','9:16','4:5'].map((ratio) => (
                           <button key={ratio} type="button" onClick={() => handleAspectRatioChange(ratio as AspectRatio)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.aspectRatio||'1:1')===ratio ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60'}`}>{ratio}</button>
@@ -806,6 +835,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       </div>
                     </div>
                   </div>
+                  </div>
+                  )}
                 </section>
               )}
 
@@ -859,14 +890,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       <button type="button" onClick={() => handleKeepGlassesChange(false)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses===false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Remove glasses</button>
                     </div>
                   </div>
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-1"><ImageIcon className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Images for this Look</p></div>
-                    <div className="flex items-center gap-3">
-                      <input type="range" min={1} max={10} step={1} value={imageCount} onChange={(e) => setImageCount(parseInt(e.target.value,10))} className="flex-1 accent-indigo-500" />
-                      <div className="w-8 text-center bg-slate-800 rounded px-1.5 py-0.5 text-xs font-bold text-white border border-slate-600">{imageCount}</div>
-                    </div>
-                    <p className="text-[10px] text-slate-500">Generating {imageCount} unique variations.</p>
-                  </div>
+
                 </div>
                 <div className="flex items-center justify-between pt-2">
                   <div className="text-[11px] text-slate-400">Configure this Look, then click <span className="text-indigo-300 font-semibold">Save Look</span>.</div>
