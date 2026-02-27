@@ -25,6 +25,9 @@ import {
   User,
   AlertCircle,
   ChevronDown,
+  ListChecks,
+  Loader2,
+  Sparkle,
 } from 'lucide-react';
 
 import { Button } from './Button.tsx';
@@ -110,6 +113,16 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
   // About You validation warning
   const [showAboutYouWarning, setShowAboutYouWarning] = useState(false);
+
+  // Shot list generator state
+  const [shotListExpanded, setShotListExpanded] = useState(false);
+  const [shotListDescription, setShotListDescription] = useState('');
+  const [shotListCount, setShotListCount] = useState<3|5|10>(5);
+  const [shotListLoading, setShotListLoading] = useState(false);
+  const [shotList, setShotList] = useState<any[]>([]);
+  const [shotListError, setShotListError] = useState<string|null>(null);
+  const [shotListExpandedCards, setShotListExpandedCards] = useState<Set<number>>(new Set());
+  const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
 
   // Sync expert prompt input when parent config changes (e.g. after a reset clears it)
   useEffect(() => {
@@ -350,17 +363,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     }
 
     let stylesToUse: StyleOption[] = [];
-    if (creationMode === 'expert' && expertPromptInput.trim()) {
-      stylesToUse = [{
-        id: 'expert-custom',
-        name: 'Custom Expert Prompt',
-        description: expertPromptInput,
-        promptModifier: expertPromptInput,
-        thumbnailColor: '#111827',
-        imageCount: imageCount,
-      }];
-    } else {
-      if (looks.length === 0) { alert('Please create at least one Look, or switch to Expert mode and provide a custom prompt.'); return; }
+    {
+      if (looks.length === 0) { alert('Please create at least one Look.'); return; }
       stylesToUse = looks.map((look) => ({
         id: look.id,
         name: look.label,
@@ -379,16 +383,90 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       ...config,
       retouchLevel: config.retouchLevel || 'None',
       variationsCount: 1,
-      expertPrompt: expertPromptInput,
     };
 
     onNext(stylesToUse, baseConfig);
   };
 
-  const canContinue =
-    aboutYouComplete &&
-    ((creationMode === 'expert' && !!expertPromptInput.trim()) ||
-     (creationMode === 'guided' && looks.length > 0));
+  // ── Shot List Generator ────────────────────────────────────────────────────
+  const buildShotListPrompt = (description: string, count: number) => `
+You are a personal brand photography strategist with 20 years of experience.
+A customer described their work as: "${description}"
+Generate exactly ${count} specific, personalized brand photography shots for them.
+Respond ONLY with a valid JSON array — no markdown, no backticks, no explanation.
+Format:
+[{"number":1,"name":"3-5 word name","scene":"One sentence visual scene","why":"One sentence why it builds their brand","mood":"Confident|Approachable|Expert|Behind-the-Scenes|Lifestyle|Action|Story","prompt":"2-3 sentence generation prompt, specific and visual"}]
+Make every shot feel tailored to their specific line of work, clients, and credibility signals. Avoid generic suggestions.
+`.trim();
+
+  const generateShotList = async () => {
+    if (!shotListDescription.trim() || shotListLoading) return;
+    setShotListLoading(true);
+    setShotListError(null);
+    setShotList([]);
+    setShotListExpandedCards(new Set());
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 4000,
+          messages: [{ role: "user", content: buildShotListPrompt(shotListDescription, shotListCount) }],
+        }),
+      });
+      const data = await response.json();
+      const raw = data.content?.find((b: any) => b.type === "text")?.text || "";
+      const cleaned = raw.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(cleaned);
+      if (!Array.isArray(parsed)) throw new Error("Bad format");
+      setShotList(parsed);
+    } catch {
+      setShotListError("Something went wrong. Please try again.");
+    } finally {
+      setShotListLoading(false);
+    }
+  };
+
+  const toggleShotCard = (num: number) => {
+    setShotListExpandedCards(prev => {
+      const next = new Set(prev);
+      next.has(num) ? next.delete(num) : next.add(num);
+      return next;
+    });
+  };
+
+  const handleGenerateAllShots = () => {
+    if (shotList.length === 0 || !config.genderPresentation || !config.ageRange) {
+      if (!config.genderPresentation || !config.ageRange) {
+        setShowAboutYouWarning(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+    setShowGenerateAllConfirm(true);
+  };
+
+  const confirmGenerateAllShots = () => {
+    setShowGenerateAllConfirm(false);
+    const stylesToUse: StyleOption[] = shotList.map((shot, i) => ({
+      id: `shot-${shot.number}`,
+      name: shot.name,
+      description: shot.scene,
+      promptModifier: shot.prompt,
+      thumbnailColor: '#111827',
+      imageCount: 1,
+      overrides: { expertPrompt: shot.prompt },
+    }));
+    const baseConfig: GenerationConfig = {
+      ...config,
+      retouchLevel: config.retouchLevel || 'None',
+      variationsCount: 1,
+    };
+    onNext(stylesToUse, baseConfig);
+  };
+
+  const canContinue = aboutYouComplete && looks.length > 0;
 
   // Color picker renderer
   const renderColorPicker = (
@@ -446,15 +524,32 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   return (
     <div className="w-full max-w-6xl mx-auto pb-20 animate-fade-in">
 
-      {/* HEADER & MODE SWITCHER */}
+      {/* Generate All Confirmation Modal */}
+      {showGenerateAllConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-emerald-400" />
+              </div>
+              <h3 className="text-base font-bold text-white">Generate All {shotList.length} Shots?</h3>
+            </div>
+            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+              This will use <span className="font-bold text-white">{shotList.length} credit{shotList.length !== 1 ? 's' : ''}</span> and generate one image per shot from your personal brand shot list.
+            </p>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setShowGenerateAllConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
+              <button type="button" onClick={confirmGenerateAllShots} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">Generate Now</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Design your Photoshoot</h2>
-          <p className="text-slate-400 text-sm max-w-lg">Create different "Looks" by mixing clothing styles and scenes. You can generate multiple images per Look.</p>
-        </div>
-        <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-800">
-          <button onClick={() => setCreationMode('guided')} className={`px-4 py-2 text-xs font-medium rounded-md transition-all ${creationMode === 'guided' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Guided Looks</button>
-          <button onClick={() => setCreationMode('expert')} className={`px-4 py-2 text-xs font-medium rounded-md transition-all ${creationMode === 'expert' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>Expert Mode</button>
+          <p className="text-slate-400 text-sm max-w-lg">Build your Looks by choosing a clothing style, background scene, and fine-tuning details. Generate multiple images per Look.</p>
         </div>
       </div>
 
@@ -466,10 +561,10 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
           <section className={`bg-slate-950/70 border rounded-2xl p-6 sm:p-7 shadow-inner ${showAboutYouWarning && !aboutYouComplete ? 'border-red-500/60' : aboutYouComplete ? 'border-green-500/30' : 'border-slate-800'}`}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center border ${aboutYouComplete ? 'bg-green-500/20 border-green-500/60' : 'bg-indigo-500/20 border-indigo-500/60'}`}>
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${aboutYouComplete ? 'bg-green-500' : 'bg-amber-500'}`}>
                   {aboutYouComplete
-                    ? <Check className="w-4 h-4 text-green-400" />
-                    : <User className="w-4 h-4 text-indigo-300" />}
+                    ? <Check className="w-5 h-5 text-white" />
+                    : <User className="w-5 h-5 text-white" />}
                 </div>
                 <div className="flex items-center gap-2">
                   <User className="w-5 h-5 text-indigo-400" />
@@ -606,12 +701,12 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
           {creationMode === 'guided' ? (
             <>
-              {/* SECTION 1: CLOTHING STYLE */}
-              <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-inner relative overflow-hidden">
-                <div className="flex items-center justify-between mb-4 relative z-10">
+              {/* ── SECTION 1: CLOTHING STYLE + CLOTHING CHOICE ─────────────────── */}
+              <section className="bg-slate-900/60 border-2 border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-inner relative overflow-hidden">
+                <div className="flex items-center justify-between mb-5 relative z-10">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-indigo-200">1</span>
+                    <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                      <span className="text-sm font-bold text-white">1</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Briefcase className="w-5 h-5 text-indigo-400" />
@@ -638,20 +733,14 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     );
                   })}
                 </div>
-              </section>
 
-              {/* SECTION 2: CLOTHING ITEMS */}
-              {clothingStyleGroup && (
-                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-indigo-200">2</span>
+                {/* Clothing Choice — inline below style picker once a group is selected */}
+                {clothingStyleGroup && (
+                  <div className="mt-6 pt-5 border-t border-slate-700/60 animate-fade-in">
+                    <div className="flex items-center gap-2 mb-4">
+                      <LayoutTemplate className="w-4 h-4 text-indigo-400" />
+                      <p className="text-sm font-semibold text-white">Clothing Choice</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <LayoutTemplate className="w-5 h-5 text-indigo-400" />
-                      <h3 className="text-base font-semibold text-white">What are they wearing?</h3>
-                    </div>
-                  </div>
                   {!isCustomClothing ? (
                     <>
                       <div className="space-y-5">
@@ -686,19 +775,19 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       <textarea value={customClothingText} onChange={handleCustomClothingTextChange} placeholder="Describe the outfit in detail..." className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-white min-h-[80px]" />
                     </div>
                   )}
+                  </div>
                 </section>
-              )}
 
-              {/* SECTION 3: SCENE */}
+              {/* ── SECTION 2: CHOOSE A BACKGROUND SCENE ── */}
               {clothingStyleGroup && (
-                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
-                      <span className="text-xs font-semibold text-indigo-200">3</span>
+                <section className="bg-indigo-950/40 border-2 border-indigo-800/50 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                      <span className="text-sm font-bold text-white">2</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Camera className="w-5 h-5 text-indigo-400" />
-                      <h3 className="text-base font-semibold text-white">Choose a Background</h3>
+                      <h3 className="text-base font-semibold text-white">Choose a Background Scene</h3>
                     </div>
                   </div>
                   {!isCustomBackground ? (
@@ -767,18 +856,91 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                 </section>
               )}
 
-              {/* IMAGES FOR THIS LOOK — always visible, right after background */}
+              {/* ── SECTION 3: FINE-TUNING (Retouch / Variation / Glasses / Images / Colors / Body) ── */}
               {clothingStyleGroup && (
-                <section className="bg-slate-950/70 border border-slate-800 rounded-2xl px-6 py-5 shadow-inner animate-fade-in">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ImageIcon className="w-4 h-4 text-indigo-300" />
-                    <p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Images for this Look</p>
+                <section className="bg-slate-900/60 border-2 border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                      <span className="text-sm font-bold text-white">3</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-indigo-400" />
+                      <h3 className="text-base font-semibold text-white">Fine-Tune Your Look</h3>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <input type="range" min={1} max={10} step={1} value={imageCount} onChange={(e) => setImageCount(parseInt(e.target.value, 10))} className="flex-1 accent-indigo-500" />
-                    <div className="w-8 text-center bg-slate-800 rounded px-1.5 py-0.5 text-xs font-bold text-white border border-slate-600">{imageCount}</div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* LEFT: Retouch, Variation, Glasses */}
+                    <div className="space-y-4">
+                      {/* Retouch */}
+                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3"><Droplet className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Retouch Level</p></div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['None','Natural','Polished','Airbrushed'].map((r) => (
+                            <button key={r} type="button" onClick={() => handleRetouchChange(r as any)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.retouchLevel||'None')===r ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>{r}</button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Variation */}
+                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Variation</p></div>
+                        <p className="text-[10px] text-slate-400 mb-3">How different each image will look.</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[{label:'Low',value:'low'},{label:'Medium',value:'medium'},{label:'High',value:'high'}].map((opt) => (
+                            <button key={opt.value} type="button" onClick={() => setVariationLevel(opt.value as VariationLevel)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${variationLevel===opt.value ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>{opt.label}</button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Glasses */}
+                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3"><Glasses className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Glasses</p></div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => handleKeepGlassesChange(true)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses!==false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Same as photo</button>
+                          <button type="button" onClick={() => handleKeepGlassesChange(false)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses===false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                    {/* RIGHT: Images for this Look, Brand Colors, Body Size */}
+                    <div className="space-y-4">
+                      {/* Images for this Look */}
+                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3"><ImageIcon className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Images for this Look</p></div>
+                        <div className="flex items-center gap-3">
+                          <input type="range" min={1} max={10} step={1} value={imageCount} onChange={(e) => setImageCount(parseInt(e.target.value, 10))} className="flex-1 accent-indigo-500" />
+                          <div className="w-8 text-center bg-slate-800 rounded px-1.5 py-0.5 text-xs font-bold text-white border border-slate-600">{imageCount}</div>
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-1">Generating {imageCount} unique variation{imageCount !== 1 ? 's' : ''}.</p>
+                      </div>
+                      {/* Brand Colors */}
+                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3"><Palette className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Brand Colors</p></div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><p className="text-[10px] mb-1.5 text-slate-300">Primary</p>{renderColorPicker('primary', config.brandColor||'', handleBrandColorChange, 'Choose Primary')}</div>
+                          <div><p className="text-[10px] mb-1.5 text-slate-300">Secondary</p>{renderColorPicker('secondary', config.secondaryBrandColor||'', handleSecondaryBrandColorChange, 'Choose Secondary')}</div>
+                        </div>
+                      </div>
+                      {/* Body Size */}
+                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2"><ImageIcon className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Body Size</p></div>
+                        <p className="text-[10px] text-slate-400 mb-3">0 = same as reference photo.</p>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[11px] text-slate-400 w-6 text-right">-3</span>
+                          <input type="range" min={-3} max={3} step={1} value={bodySizeOffset} onChange={(e) => setBodySizeOffset(parseInt(e.target.value,10))} className="flex-1 accent-indigo-500" />
+                          <span className="text-[11px] text-slate-400 w-6">+3</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-slate-400 mt-1">
+                          <span>Current: <span className="text-indigo-300">{bodySizeOffset}</span></span>
+                          <button type="button" onClick={() => setBodySizeOffset(0)} className="text-[11px] text-indigo-300 hover:text-indigo-200 underline">Reset</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-1">Generating {imageCount} unique variation{imageCount !== 1 ? 's' : ''}.</p>
+                  {/* Save Look */}
+                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-700/60">
+                    <div className="text-[11px] text-slate-400">Configure this Look, then click <span className="text-indigo-300 font-semibold">Save Look</span>.</div>
+                    <Button type="button" onClick={handleAddOrUpdateLook} className="bg-indigo-600 hover:bg-indigo-500 text-xs">
+                      {activeLookId ? <><Edit3 className="w-3 h-3 mr-1" />Update Look</> : <><Plus className="w-3 h-3 mr-1" />Save Look</>}
+                    </Button>
+                  </div>
                 </section>
               )}
 
@@ -791,8 +953,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/40 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
-                        <span className="text-xs font-semibold text-indigo-200">4</span>
+                      <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                        <span className="text-sm font-bold text-white">4</span>
                       </div>
                       <div className="text-left">
                         <div className="flex items-center gap-2">
@@ -845,99 +1007,120 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                 </section>
               )}
 
-              <section className="space-y-3">
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-1"><Droplet className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Retouch level</p></div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['None','Natural','Polished','Airbrushed'].map((r) => (
-                        <button key={r} type="button" onClick={() => handleRetouchChange(r as any)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.retouchLevel||'None')===r ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>{r}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-1"><Palette className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Brand Colors</p></div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div><p className="text-[11px] mb-1 text-slate-300">Primary</p>{renderColorPicker('primary', config.brandColor||'', handleBrandColorChange, 'Choose Primary')}</div>
-                      <div><p className="text-[11px] mb-1 text-slate-300">Secondary</p>{renderColorPicker('secondary', config.secondaryBrandColor||'', handleSecondaryBrandColorChange, 'Choose Secondary')}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Variation for this Look</p></div>
-                    <p className="text-[11px] text-slate-400 mb-1">Controls how different each image will be while keeping the same mood and lighting.</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[{label:'Low',value:'low'},{label:'Medium',value:'medium'},{label:'High',value:'high'}].map((opt) => (
-                        <button key={opt.value} type="button" onClick={() => setVariationLevel(opt.value as VariationLevel)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${variationLevel===opt.value ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>{opt.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-1"><ImageIcon className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Body size for this Look</p></div>
-                    <p className="text-[11px] text-slate-400 mb-1">Adjusts how slim or full the body appears. 0 = same as reference photo.</p>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[11px] text-slate-400 w-10 text-right">-3</span>
-                      <input type="range" min={-3} max={3} step={1} value={bodySizeOffset} onChange={(e) => setBodySizeOffset(parseInt(e.target.value,10))} className="flex-1 accent-indigo-500" />
-                      <span className="text-[11px] text-slate-400 w-10">+3</span>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-slate-400">
-                      <span>Current: <span className="text-indigo-300">{bodySizeOffset}</span></span>
-                      <button type="button" onClick={() => setBodySizeOffset(0)} className="text-[11px] text-indigo-300 hover:text-indigo-200 underline">Reset to 0</button>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 mb-1"><Glasses className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Glasses</p></div>
-                    <div className="flex gap-2 mb-1">
-                      <button type="button" onClick={() => handleKeepGlassesChange(true)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses!==false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Same as in photo</button>
-                      <button type="button" onClick={() => handleKeepGlassesChange(false)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses===false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Remove glasses</button>
-                    </div>
-                  </div>
 
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-[11px] text-slate-400">Configure this Look, then click <span className="text-indigo-300 font-semibold">Save Look</span>.</div>
-                  <Button type="button" onClick={handleAddOrUpdateLook} className="bg-indigo-600 hover:bg-indigo-500 text-xs">
-                    {activeLookId ? <><Edit3 className="w-3 h-3 mr-1" />Update Look</> : <><Plus className="w-3 h-3 mr-1" />Save Look</>}
-                  </Button>
-                </div>
-              </section>
+              {/* ── SECTION 5: SHOT LIST GENERATOR ─────────────────────────────── */}
+              {clothingStyleGroup && (
+                <section className="bg-emerald-950/30 border-2 border-emerald-900/40 rounded-2xl shadow-inner animate-fade-in overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShotListExpanded(prev => !prev)}
+                    className="w-full flex items-center justify-between px-6 py-5 hover:bg-emerald-900/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                        <span className="text-sm font-bold text-white">5</span>
+                      </div>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2">
+                          <ListChecks className="w-5 h-5 text-emerald-400" />
+                          <h3 className="text-base font-semibold text-white">Personal Brand Shot List</h3>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 ml-7">Tell us what you do — get a tailored list of brand photos to generate.</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${shotListExpanded ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {shotListExpanded && (
+                    <div className="px-6 pb-6">
+                      {/* Description input */}
+                      <div className="mb-4">
+                        <label className="block text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Describe your work</label>
+                        <textarea
+                          value={shotListDescription}
+                          onChange={e => setShotListDescription(e.target.value)}
+                          placeholder="e.g. I'm a real estate agent in St. Louis specializing in luxury homes..."
+                          rows={3}
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
+                        />
+                      </div>
+                      {/* Shot count selector */}
+                      <div className="mb-4">
+                        <p className="text-[11px] font-bold uppercase tracking-wide mb-2 text-slate-400">How many shots?</p>
+                        <div className="flex gap-2">
+                          {([3,5,10] as const).map(n => (
+                            <button key={n} type="button"
+                              onClick={() => setShotListCount(n)}
+                              className={`flex-1 text-sm font-bold rounded-lg py-2 border transition ${shotListCount===n ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-emerald-600/50'}`}>
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Generate button */}
+                      <button
+                        type="button"
+                        onClick={generateShotList}
+                        disabled={!shotListDescription.trim() || shotListLoading}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition bg-emerald-700 hover:bg-emerald-600 text-white disabled:opacity-40 disabled:cursor-not-allowed mb-4"
+                      >
+                        {shotListLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Generating your shot list…</> : <><Sparkle className="w-4 h-4" />Generate Shot List</>}
+                      </button>
+                      {shotListError && <p className="text-xs text-red-400 mb-3">{shotListError}</p>}
+
+                      {/* Shot list results */}
+                      {shotList.length > 0 && (
+                        <div className="space-y-2">
+                          {shotList.map((shot, i) => (
+                            <div key={shot.number} className="bg-slate-900/70 border border-slate-700 rounded-xl overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => toggleShotCard(shot.number)}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/50 transition-colors"
+                              >
+                                <div className="h-6 w-6 rounded-full bg-emerald-700/60 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-[10px] font-bold text-emerald-200">{shot.number}</span>
+                                </div>
+                                <span className="flex-1 text-xs font-semibold text-white">{shot.name}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-slate-400">{shot.mood}</span>
+                                <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${shotListExpandedCards.has(shot.number) ? 'rotate-180' : ''}`} />
+                              </button>
+                              {shotListExpandedCards.has(shot.number) && (
+                                <div className="px-4 pb-4 border-t border-slate-700/50 pt-3 space-y-2">
+                                  <p className="text-[11px] text-slate-300 leading-relaxed">{shot.scene}</p>
+                                  <div className="bg-emerald-950/30 border border-emerald-900/40 rounded-lg p-2.5">
+                                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-1">Why this shot</p>
+                                    <p className="text-[11px] text-slate-300 leading-relaxed">{shot.why}</p>
+                                  </div>
+                                  <div className="bg-slate-950/60 border border-slate-700 rounded-lg p-2.5">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Prompt</p>
+                                    <p className="text-[10px] text-slate-400 leading-relaxed font-mono">{shot.prompt}</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* Generate All */}
+                          <div className="pt-3 border-t border-slate-700/50">
+                            <button
+                              type="button"
+                              onClick={handleGenerateAllShots}
+                              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white transition"
+                            >
+                              <Zap className="w-4 h-4" />
+                              Generate All {shotList.length} Shots
+                            </button>
+                            <p className="text-[10px] text-slate-500 text-center mt-1.5">Uses {shotList.length} credit{shotList.length !== 1 ? 's' : ''} · 1 image per shot</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </section>
+              )}
+
             </>
-          ) : (
-            <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-inner">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-8 w-8 rounded-full bg-indigo-500/20 border border-indigo-500/60 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-indigo-200">1</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Wand2 className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-base font-semibold text-white">Expert Prompt</h3>
-                </div>
-              </div>
-              <p className="text-xs mb-3" style={{ color: ORANGE }}>Describe exactly what you want. The prompt will be applied to all images.</p>
-              <textarea value={expertPromptInput} onChange={(e) => handleExpertPromptChange(e.target.value)} rows={8} placeholder="Describe lighting, mood, background, clothing, and any other details you care about..." className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              <div className="mt-4 pt-4 border-t border-slate-800">
-                <div className="flex items-center gap-2 mb-3">
-                  <ImageIcon className="w-4 h-4 text-indigo-300" />
-                  <p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Number of Images</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={imageCount}
-                    onChange={(e) => setImageCount(parseInt(e.target.value, 10))}
-                    className="flex-1 accent-indigo-500"
-                  />
-                  <div className="w-8 text-center bg-slate-800 rounded px-1.5 py-0.5 text-xs font-bold text-white border border-slate-600">{imageCount}</div>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">Generating {imageCount} unique variation{imageCount !== 1 ? 's' : ''} from your prompt.</p>
-              </div>
-            </section>
           )}
         </div>
 
@@ -972,8 +1155,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
           <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 shadow-inner space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <p className="text-xs text-slate-400">Total images to generate: <span className="text-indigo-300 font-semibold">{creationMode==='guided'?totalImages:imageCount}</span></p>
-                <p className="text-xs text-slate-400">Mode: <span className="text-indigo-300 font-semibold">{creationMode==='guided'?'Guided Looks':'Expert Prompt'}</span></p>
+                <p className="text-xs text-slate-400">Total images to generate: <span className="text-indigo-300 font-semibold">{totalImages}</span></p>
+                <p className="text-xs text-slate-400">Looks saved: <span className="text-indigo-300 font-semibold">{looks.length} / {MAX_LOOKS}</span></p>
               </div>
               <div className="text-xs text-slate-400 flex items-center gap-1">
                 <Zap className="w-3 h-3 text-yellow-400" />
