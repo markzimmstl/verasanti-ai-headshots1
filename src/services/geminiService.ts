@@ -326,6 +326,37 @@ const buildPrompt = (
     negativeConstraints += " NO rings on any fingers. Bare hands with no jewelry on fingers.";
   }
 
+  // ── EXPERT MODE: the user's prompt IS the brief. Don't bury it under defaults. ──
+  if (config.expertPrompt?.trim()) {
+    return `
+   Create a high-fidelity photorealistic personal brand photo exactly as described below.
+
+   *** PRIMARY DIRECTIVE — EXPERT PROMPT (FOLLOW THIS PRECISELY) ***
+   ${config.expertPrompt.trim()}
+
+   *** CRITICAL INSTRUCTION: OVERRIDE REFERENCE IMAGE FRAMING ***
+   The Reference Image is provided ONLY for facial identity, skin tone, and hair color.
+   IGNORE the pose, framing, and background of the reference image.
+   Build a completely new image based on the expert prompt above.
+
+   MANDATORY RULES (apply always):
+   1. EXACTLY ONE PERSON in the image.
+   2. CROPPING GUARDRAIL: NEVER crop exactly at a joint. Crop mid-limb.
+   3. NEVER cut off the top of the head or fingers.
+
+   SUBJECT DETAILS:
+   ${aboutYouInstruction}
+   ${bodyInstruction}
+   ${textureInstruction}
+
+   ${negativeConstraints}
+
+   CAMERA SETUP:
+   - Aspect Ratio: ${config.aspectRatio}
+ `;
+  }
+
+  // ── GUIDED MODE: full structured prompt ──
   return `
    Create a high-fidelity photorealistic personal brand photo.
 
