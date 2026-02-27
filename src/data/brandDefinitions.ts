@@ -343,7 +343,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'creative-studio',
         name: 'Creative Studio Backdrop',
         prompt:
-          'in a softly lit creative studio with shelves of cameras, lenses, art books, and props in the background; clearly a creative workspace, not a corporate office or hospital',
+          'in a softly lit creative studio; background has a few art books, a single film camera used sparingly as a prop, plants, and warm practical lights — shelves are minimal and uncluttered; clearly a creative workspace, not a corporate office or hospital',
         iconType: 'camera',
       },
       {
@@ -357,7 +357,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'creative-photo-set',
         name: 'Photo Set Background',
         prompt:
-          'on a minimal photography set with seamless paper backdrop and light stands softly out of focus; this is a creative photo studio, distinct from corporate or medical studio backgrounds',
+          'on an angled photography set — the seamless paper backdrop curves up one side of the frame while the opposite side reveals either camera equipment and lighting stands or a relaxed lounge area with a couch and plants; this is a creative photo studio interior, distinct from corporate or medical backgrounds',
         iconType: 'camera',
       },
       {
@@ -579,6 +579,13 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         prompt:
           'standing firmly on a gravel maintenance path between rows of solar panels in a solar farm, realistic perspective with feet on the ground; clearly an energy installation, not an office or studio',
         iconType: 'sun',
+      },
+      {
+        id: 'warehouse',
+        name: 'Warehouse',
+        prompt:
+          'inside a large working warehouse with tall metal shelving racks stocked with boxes and pallets, concrete floor, high ceiling with industrial lighting; clearly an active distribution or storage facility, not a factory floor or office',
+        iconType: 'factory',
       },
     ],
   },
