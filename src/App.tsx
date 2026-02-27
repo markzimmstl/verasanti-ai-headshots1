@@ -144,10 +144,13 @@ function App() {
 
         for (let i = 0; i < countForThisLook; i++) {
           setLoadingMessage(`Generating ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
-          
-          const selectedClothing = finalConfigForThisLook.clothing;
-          const selectedScenePrompt = finalConfigForThisLook.backgroundType || "in a professional corporate setting";
-          const fullPrompt = `${selectedClothing}, ${selectedScenePrompt}`;
+
+          // In expert mode the full prompt IS the expert prompt text.
+          // In guided mode, build the prompt from clothing + scene as before.
+          const isExpertMode = !!finalConfigForThisLook.expertPrompt?.trim();
+          const fullPrompt = isExpertMode
+            ? finalConfigForThisLook.expertPrompt!.trim()
+            : `${finalConfigForThisLook.clothing}, ${finalConfigForThisLook.backgroundType || "in a professional corporate setting"}`;
 
           const imageUrl = await generateBrandPhotoWithRefsSafe(
             referenceImages,
