@@ -818,7 +818,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   )}
                   </div>
                 )}
-              </div>
+                </div>
+                )}
               </section>
               </div>
 
