@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Briefcase,
   Camera,
@@ -129,6 +130,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [shotListError, setShotListError] = useState<string|null>(null);
   const [shotListExpandedCards, setShotListExpandedCards] = useState<Set<number>>(new Set());
   const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
+  const [shotImageCounts, setShotImageCounts] = useState<Record<number, number>>({});
 
   // Sync expert prompt input when parent config changes (e.g. after a reset clears it)
   useEffect(() => {
@@ -470,17 +472,29 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     setShowGenerateAllConfirm(true);
   };
 
+  // Parse aspect ratio from a free-text prompt (e.g. "16x9", "16:9", "9:16")
+  const parseAspectRatioFromPrompt = (prompt: string): AspectRatio => {
+    const p = prompt.toLowerCase();
+    if (p.match(/16\s*[x:]\s*9/)) return '16:9';
+    if (p.match(/9\s*[x:]\s*16/)) return '9:16';
+    if (p.match(/4\s*[x:]\s*5/)) return '4:5';
+    if (p.match(/1\s*[x:]\s*1|square/)) return '1:1';
+    return config.aspectRatio || '1:1';
+  };
+
   const confirmGenerateAllShots = () => {
     setShowGenerateAllConfirm(false);
-    // Shot list items first, then any saved looks
     const shotStyles: StyleOption[] = shotList.map((shot) => ({
       id: `shot-${shot.number}`,
       name: shot.name,
       description: shot.scene,
       promptModifier: shot.prompt,
       thumbnailColor: '#111827',
-      imageCount: 1,
-      overrides: { expertPrompt: shot.prompt },
+      imageCount: shotImageCounts[shot.number] || 1,
+      overrides: {
+        expertPrompt: shot.prompt,
+        aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
+      },
     }));
     const lookStyles: StyleOption[] = looks.map((look) => ({
       id: look.id,
@@ -515,8 +529,11 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       description: shot.scene,
       promptModifier: shot.prompt,
       thumbnailColor: '#111827',
-      imageCount: 1,
-      overrides: { expertPrompt: shot.prompt },
+      imageCount: shotImageCounts[shot.number] || 1,
+      overrides: {
+        expertPrompt: shot.prompt,
+        aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
+      },
     };
     const baseConfig: GenerationConfig = {
       ...config,
@@ -581,35 +598,37 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     );
   };
 
+  // Portal modal — renders to document.body to escape any CSS stacking context
+  const confirmModal = showGenerateAllConfirm ? createPortal(
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}>
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
+            <Zap className="w-5 h-5 text-emerald-400" />
+          </div>
+          <h3 className="text-base font-bold text-white">Ready to Generate?</h3>
+        </div>
+        <p className="text-sm text-slate-400 mb-3 leading-relaxed">
+          This will generate your <span className="font-bold text-white">{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</span>
+          {looks.length > 0 && <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span>}.
+        </p>
+        <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 mb-5 text-xs text-slate-400 space-y-1">
+          {shotList.length > 0 && <div className="flex justify-between"><span>Shot List images</span><span className="text-white font-semibold">{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)} credit{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) !== 1 ? 's' : ''}</span></div>}
+          {looks.length > 0 && <div className="flex justify-between"><span>Saved Looks images</span><span className="text-white font-semibold">{looks.reduce((s,l) => s + l.imageCount, 0)} credit{looks.reduce((s,l) => s + l.imageCount, 0) !== 1 ? 's' : ''}</span></div>}
+          <div className="flex justify-between border-t border-slate-700 pt-1 mt-1"><span className="font-medium text-slate-300">Total</span><span className="text-indigo-300 font-bold">{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)} credits</span></div>
+        </div>
+        <div className="flex gap-3">
+          <button type="button" onClick={() => setShowGenerateAllConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
+          <button type="button" onClick={confirmGenerateAllShots} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">Generate Now</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
     <div className="w-full max-w-6xl mx-auto pb-20 animate-fade-in">
-
-      {/* Generate All Confirmation Modal */}
-      {showGenerateAllConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-sm w-full mx-0 sm:mx-4 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5 text-emerald-400" />
-              </div>
-              <h3 className="text-base font-bold text-white">Ready to Generate?</h3>
-            </div>
-            <p className="text-sm text-slate-400 mb-3 leading-relaxed">
-              This will generate your <span className="font-bold text-white">{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</span>
-              {looks.length > 0 && <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span>}.
-            </p>
-            <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 mb-5 text-xs text-slate-400 space-y-1">
-              {shotList.length > 0 && <div className="flex justify-between"><span>Shot List images</span><span className="text-white font-semibold">{shotList.length} credit{shotList.length !== 1 ? 's' : ''}</span></div>}
-              {looks.length > 0 && <div className="flex justify-between"><span>Saved Looks images</span><span className="text-white font-semibold">{looks.reduce((s,l) => s + l.imageCount, 0)} credit{looks.reduce((s,l) => s + l.imageCount, 0) !== 1 ? 's' : ''}</span></div>}
-              <div className="flex justify-between border-t border-slate-700 pt-1 mt-1"><span className="font-medium text-slate-300">Total</span><span className="text-indigo-300 font-bold">{shotList.length + looks.reduce((s,l) => s + l.imageCount, 0)} credits</span></div>
-            </div>
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setShowGenerateAllConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
-              <button type="button" onClick={confirmGenerateAllShots} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">Generate Now</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {confirmModal}
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -1241,14 +1260,29 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                                       className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-[10px] text-slate-300 font-mono leading-relaxed focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
                                     />
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleGenerateSingleShot(shot)}
-                                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 text-white transition"
-                                  >
-                                    <Zap className="w-3 h-3" />
-                                    Generate This Shot · 1 credit
-                                  </button>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] text-slate-500 uppercase tracking-wide font-bold">Images</span>
+                                      <div className="flex gap-1">
+                                        {[1,2,3,4].map(n => (
+                                          <button
+                                            key={n}
+                                            type="button"
+                                            onClick={() => setShotImageCounts(prev => ({ ...prev, [shot.number]: n }))}
+                                            className={`w-6 h-6 rounded text-[10px] font-bold transition ${(shotImageCounts[shot.number] || 1) === n ? 'bg-emerald-600 text-white' : 'bg-slate-800 border border-slate-600 text-slate-400 hover:border-emerald-500'}`}
+                                          >{n}</button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleGenerateSingleShot(shot)}
+                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 text-white transition"
+                                    >
+                                      <Zap className="w-3 h-3" />
+                                      Generate · {shotImageCounts[shot.number] || 1} credit{(shotImageCounts[shot.number] || 1) !== 1 ? 's' : ''}
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1265,8 +1299,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                               Generate All {shotList.length} Shot{shotList.length !== 1 ? 's' : ''}{looks.length > 0 ? ` + ${looks.length} Saved Look${looks.length !== 1 ? 's' : ''}` : ''}
                             </button>
                             <p className="text-[10px] text-slate-500 text-center mt-1.5">
-                              {shotList.length + looks.reduce((s,l) => s + l.imageCount, 0)} total credit{(shotList.length + looks.reduce((s,l) => s + l.imageCount, 0)) !== 1 ? 's' : ''}
-                              {looks.length > 0 ? ` · includes your ${looks.length} saved look${looks.length !== 1 ? 's' : ''}` : ' · 1 image per shot'}
+                              {shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)} total credit{(shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)) !== 1 ? 's' : ''}
+                              {looks.length > 0 ? ` · includes ${looks.length} saved look${looks.length !== 1 ? 's' : ''}` : ''}
                             </p>
                           </div>
                         </div>
