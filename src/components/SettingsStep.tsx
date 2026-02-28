@@ -375,23 +375,23 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     }, 100);
   };
 
-  // About You complete → open Section 1
+  // About You complete → just unlock Section 1, no auto-scroll (hair/ring are optional below)
   useEffect(() => {
     if (aboutYouComplete && !sec1Open) {
       setSec1Open(true);
-      scrollToSection(sectionRefs.sec1);
+      // No scroll — user scrolls manually to see hair/ring options first
     }
   }, [aboutYouComplete]);
 
-  // Clothing style selected → open Section 2
+  // Clothing ITEM chosen → open Section 2 and scroll to it
   useEffect(() => {
-    if (clothingStyleGroup && !sec2Open) {
+    if (clothingOption && !sec2Open) {
       setSec2Open(true);
       scrollToSection(sectionRefs.sec2);
     }
-  }, [clothingStyleGroup]);
+  }, [clothingOption]);
 
-  // Background selected → open Section 3
+  // Background selected → open Section 3 and scroll to it
   useEffect(() => {
     if (sceneId && !sec3Open) {
       setSec3Open(true);
@@ -1010,13 +1010,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       </div>
                     </div>
                   </div>
-                  {/* Save Look */}
-                  <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-700/60">
-                    <div className="text-[11px] text-slate-400">Configure this Look, then click <span className="text-indigo-300 font-semibold">Save Look</span>.</div>
-                    <Button type="button" onClick={handleAddOrUpdateLook} className="bg-indigo-600 hover:bg-indigo-500 text-xs">
-                      {activeLookId ? <><Edit3 className="w-3 h-3 mr-1" />Update Look</> : <><Plus className="w-3 h-3 mr-1" />Save Look</>}
-                    </Button>
-                  </div>
+
                 </div>
                 )}
               </section>
@@ -1120,7 +1114,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   <div className="px-6 pb-6">
                       {/* Description input */}
                       <div className="mb-4">
-                        <label className="block text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Describe your work</label>
+                        <label className="block text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Describe your work and we'll create a list of images to build your brand.</label>
                         <textarea
                           value={shotListDescription}
                           onChange={e => setShotListDescription(e.target.value)}
@@ -1209,25 +1203,27 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
           )}
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="space-y-6">
-          <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 shadow-inner">
-            <div className="flex items-center gap-2 mb-4">
+        {/* RIGHT COLUMN — sticky on desktop */}
+        <div className="lg:sticky lg:top-6 lg:self-start space-y-4">
+
+          {/* Saved Looks list */}
+          <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 shadow-inner">
+            <div className="flex items-center gap-2 mb-3">
               <LayoutTemplate className="w-4 h-4 text-indigo-400" />
               <h3 className="text-sm font-semibold text-white">Saved Looks ({looks.length}/{MAX_LOOKS})</h3>
             </div>
             {looks.length === 0 ? (
-              <p className="text-xs text-slate-500">No Looks created yet. Configure a Look on the left, then click "Save Look".</p>
+              <p className="text-xs text-slate-500 leading-relaxed">No Looks saved yet. Choose your clothing, background, and click <span className="text-indigo-300 font-medium">Save Look</span> below.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {looks.map((look) => (
                   <div key={look.id} className={`border rounded-xl px-3 py-2 text-xs flex items-center justify-between gap-3 ${activeLookId===look.id ? 'border-indigo-500 bg-indigo-500/5' : 'border-slate-700 bg-slate-900/40'}`}>
-                    <div>
-                      <p className="font-semibold text-white mb-0.5">{look.label}</p>
-                      <p className="text-slate-300 mb-0.5">{look.clothingOption} – {look.sceneName}</p>
-                      <p className="text-[11px] text-slate-500">{look.imageCount} image{look.imageCount>1?'s':''} · {look.config.framing}, {look.config.aspectRatio} · {look.config.mood} · Variation: {look.variationLevel||DEFAULT_VARIATION_LEVEL} · Body: {typeof look.bodySizeOffset==='number'?look.bodySizeOffset:DEFAULT_BODY_OFFSET}</p>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-white mb-0.5 truncate">{look.label}</p>
+                      <p className="text-slate-300 mb-0.5 truncate">{look.clothingOption} – {look.sceneName}</p>
+                      <p className="text-[10px] text-slate-500">{look.imageCount} image{look.imageCount>1?'s':''} · {look.config.framing} · {look.config.aspectRatio}</p>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button type="button" onClick={() => handleEditLook(look)} className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200"><Edit3 className="w-3 h-3" /></button>
                       <button type="button" onClick={() => handleDeleteLook(look.id)} className="p-1.5 rounded-full bg-slate-800 hover:bg-red-600/80 text-slate-200"><Trash2 className="w-3 h-3" /></button>
                     </div>
@@ -1237,21 +1233,40 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
             )}
           </section>
 
-          <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 shadow-inner space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs text-slate-400">Total images to generate: <span className="text-indigo-300 font-semibold">{totalImages}</span></p>
-                <p className="text-xs text-slate-400">Looks saved: <span className="text-indigo-300 font-semibold">{looks.length} / {MAX_LOOKS}</span></p>
-              </div>
-              <div className="text-xs text-slate-400 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-yellow-400" />
-                <span>Each image uses <span className="font-semibold">1 credit</span>.</span>
-              </div>
+          {/* Save Look button — grayed until clothing + background chosen */}
+          {(() => {
+            const canSave = !!clothingStyleGroup && !!clothingOption && !!sceneId;
+            return (
+              <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 shadow-inner space-y-3">
+                {!canSave && (
+                  <p className="text-[11px] text-slate-500 leading-relaxed text-center">
+                    {!clothingStyleGroup ? 'Choose a Clothing Style to get started.' : !clothingOption ? 'Choose a clothing item next.' : 'Choose a Background Scene to unlock.'}
+                  </p>
+                )}
+                <Button
+                  type="button"
+                  onClick={handleAddOrUpdateLook}
+                  disabled={!canSave}
+                  className={`w-full py-3 text-sm font-bold transition-all ${canSave ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}`}
+                >
+                  {activeLookId
+                    ? <><Edit3 className="w-4 h-4 mr-2 inline" />Update Look</>
+                    : <><Plus className="w-4 h-4 mr-2 inline" />Save Look</>}
+                </Button>
+              </section>
+            );
+          })()}
+
+          {/* Stats + Continue */}
+          <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 shadow-inner space-y-3">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Total images: <span className="text-indigo-300 font-semibold">{totalImages}</span></span>
+              <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-400" />1 credit each</span>
             </div>
             {!aboutYouComplete && (
               <div className="flex items-center gap-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-300">
                 <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                Complete "About You" above to continue.
+                Complete "About You" to continue.
               </div>
             )}
             <div className="flex items-center justify-between">
@@ -1260,6 +1275,37 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
             </div>
           </section>
         </div>
+      </div>
+
+      {/* MOBILE FIXED BOTTOM BAR */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800 px-4 py-3 flex items-center gap-3">
+        {(() => {
+          const canSave = !!clothingStyleGroup && !!clothingOption && !!sceneId;
+          return (
+            <>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-slate-500 truncate">
+                  {looks.length === 0 ? 'No Looks saved yet' : `${looks.length} Look${looks.length > 1 ? 's' : ''} saved · ${totalImages} image${totalImages !== 1 ? 's' : ''}`}
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={handleAddOrUpdateLook}
+                disabled={!canSave}
+                className={`flex-shrink-0 text-xs font-bold px-4 py-2 ${canSave ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
+              >
+                {activeLookId ? 'Update Look' : 'Save Look'}
+              </Button>
+              <Button
+                onClick={handleContinue}
+                disabled={!canContinue}
+                className="flex-shrink-0 text-xs font-bold px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40"
+              >
+                Continue
+              </Button>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
