@@ -20,10 +20,26 @@ export const getAiClient = () => {
 const IMAGE_MODEL = "gemini-2.5-flash-image";
 const TEXT_MODEL = "gemini-2.5-flash";
 
-const cleanBase64 = (dataUrl: string) => {
+const cleanBase64 = (dataUrl: string): string => {
   if (!dataUrl) return "";
   const parts = dataUrl.split(",");
   return parts.length === 2 ? parts[1] : dataUrl;
+};
+
+// Detect mime type from data URL prefix, default to jpeg
+const getMimeType = (dataUrl: string): string => {
+  if (!dataUrl) return "image/jpeg";
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+  return match ? match[1] : "image/jpeg";
+};
+
+// Build a safe inline image part — returns null if image data is empty/invalid
+const makeInlinePart = (dataUrl: string): { inlineData: { mimeType: string; data: string } } | null => {
+  if (!dataUrl) return null;
+  const data = cleanBase64(dataUrl);
+  if (!data || data.length < 100) return null; // reject obviously invalid data
+  const mimeType = getMimeType(dataUrl);
+  return { inlineData: { mimeType, data } };
 };
 
 const extractImagesFromParts = (parts: any[]): string[] => {
@@ -425,13 +441,15 @@ export const generateBrandPhotoWithRefs = async (
   const roleExplanation = buildRoleExplanation(refs);
   const prompt = roleExplanation + "\n\n" + buildPrompt(stylePrompt, config, globalIndex);
   const parts: any[] = [{ text: prompt }];
-  parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.main?.base64 || '') } });
+  const mainPart = makeInlinePart(refs.main?.base64 || '');
+  if (!mainPart) throw new Error("Reference photo is missing or invalid. Please re-upload your photo.");
+  parts.push(mainPart);
   let extraImagesAdded = 0;
-  if (refs.sideLeft && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideLeft.base64) } }); extraImagesAdded++; }
-  if (refs.sideRight && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.sideRight.base64) } }); extraImagesAdded++; }
-  if (refs.fullBody && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(refs.fullBody.base64) } }); extraImagesAdded++; }
+  if (refs.sideLeft) { const p = makeInlinePart(refs.sideLeft.base64); if (p && extraImagesAdded < 2) { parts.push(p); extraImagesAdded++; } }
+  if (refs.sideRight) { const p = makeInlinePart(refs.sideRight.base64); if (p && extraImagesAdded < 2) { parts.push(p); extraImagesAdded++; } }
+  if (refs.fullBody) { const p = makeInlinePart(refs.fullBody.base64); if (p && extraImagesAdded < 2) { parts.push(p); extraImagesAdded++; } }
   const bgImage = config.customBackground || customBackgroundBase64;
-  if (bgImage && extraImagesAdded < 2) { parts.push({ inlineData: { mimeType: "image/jpeg", data: cleanBase64(bgImage) } }); }
+  if (bgImage) { const p = makeInlinePart(bgImage); if (p && extraImagesAdded < 2) { parts.push(p); extraImagesAdded++; } }
 
   try {
     const aspectRatioMap: Record<string, string> = { '1:1': '1:1', '4:5': '4:5', '9:16': '9:16', '16:9': '16:9', '3:1': '3:1', '4:1': '4:1' };
