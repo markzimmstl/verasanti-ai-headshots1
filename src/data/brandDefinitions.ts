@@ -110,6 +110,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
           'Fitness Influencer – sports bra, high-waist leggings, trendy sneakers',
           'Wellness Studio – layered studio wrap, yoga pants, yoga socks',
           'Alternative Products Expert – ethereal yoga wear, loose linen pants, simple sandals',
+          'Life Coach – elegant wrap blouse, tailored wide-leg trousers, simple heeled mules; warm, approachable authority',
         ],
       },
       {
@@ -119,6 +120,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
           'Trainer Performance – athletic polo, athletic shorts, cross-training sneakers',
           'Wellness Coach – hoodie, joggers, stylish sneakers',
           'Health Products Expert – performance compression top, athletic shorts, running shoes',
+          'Life Coach – smart casual button-down shirt, chinos, clean leather sneakers; confident yet relaxed authority',
         ],
       },
       {
@@ -128,6 +130,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
           'Wellness Casual – hoodie, joggers, lifestyle sneakers',
           'Fitness Pro – performance polo, athletic pants, trainers',
           'Group Class – solid tank, workout pants, gym shoes',
+          'Life Coach – relaxed linen blazer, simple fitted tee, straight-cut trousers, white sneakers; calm confidence and warmth',
           'Keep Original Clothing (From Photo)',
         ],
       },
