@@ -174,7 +174,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         <h2 className="text-3xl font-bold text-white mb-3">Upload Reference Photos</h2>
         <p className="text-slate-400 max-w-lg mx-auto text-sm">
           The AI needs to learn what the subject looks like. <br />
-          <span className="text-indigo-400">One good photo is enough</span>, but adding side angles helps improve likeness.
+          <span className="text-indigo-400">One good photo is enough</span>, but adding side angles and a full-body image helps improve likeness.
         </p>
       </div>
 
