@@ -523,7 +523,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const style: StyleOption = {
+    const shotStyle: StyleOption = {
       id: `shot-${shot.number}`,
       name: shot.name,
       description: shot.scene,
@@ -535,12 +535,25 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
       },
     };
+    // Bundle any saved Looks so they aren't discarded when navigating to results
+    const lookStyles: StyleOption[] = looks.map((look) => ({
+      id: look.id,
+      name: look.label,
+      description: `${look.clothingOption} – ${look.sceneName}`,
+      promptModifier: look.scenePrompt,
+      thumbnailColor: '#111827',
+      imageCount: look.imageCount,
+      clothingDescription: look.clothingOption,
+      variationLevel: look.variationLevel,
+      bodySizeOffset: look.bodySizeOffset,
+      overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
+    }));
     const baseConfig: GenerationConfig = {
       ...config,
       retouchLevel: config.retouchLevel || 'None',
       variationsCount: 1,
     };
-    onNext([style], baseConfig);
+    onNext([shotStyle, ...lookStyles], baseConfig);
   };
 
   const canContinue = aboutYouComplete && looks.length > 0;
