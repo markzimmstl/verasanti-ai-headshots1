@@ -129,9 +129,8 @@ function App() {
     setError(null);
     const newImages: GeneratedImage[] = [];
     
-    setCredits(prev => Math.max(0, prev - totalImagesRequested));
-
     let globalImageIndex = 0;
+    let successfulImageCount = 0;
 
     try {
       for (const style of styles) {
@@ -152,15 +151,30 @@ function App() {
             ? finalConfigForThisLook.expertPrompt!.trim()
             : `${finalConfigForThisLook.clothing}, ${finalConfigForThisLook.backgroundType || "in a professional corporate setting"}`;
 
-          const imageUrl = await generateBrandPhotoWithRefsSafe(
-            referenceImages,
-            fullPrompt,
-            finalConfigForThisLook,
-            undefined,
-            globalImageIndex
-          );
+          let imageUrl: string | null = null;
+          try {
+            imageUrl = await generateBrandPhotoWithRefsSafe(
+              referenceImages,
+              fullPrompt,
+              finalConfigForThisLook,
+              undefined,
+              globalImageIndex
+            );
+          } catch (imgErr: any) {
+            console.warn(`Image failed for ${style.name} #${i + 1}:`, imgErr.message);
+            globalImageIndex++;
+            continue;
+          }
 
-          if (!imageUrl) throw new Error("Failed to generate image");
+          if (!imageUrl) {
+            console.warn(`Image generation failed for ${style.name} #${i + 1}, skipping.`);
+            globalImageIndex++;
+            continue;
+          }
+          
+          // Only deduct credit when image actually succeeds
+          successfulImageCount++;
+          setCredits(prev => Math.max(0, prev - 1));
 
           // Store stylePrompt and originalConfig on each image so ResultsStep
           // can re-run the full generation pipeline for Regenerate edits.
@@ -181,10 +195,14 @@ function App() {
         }
       }
 
-      setGeneratedImages(prev => [...newImages, ...prev]);
-      setPendingGeneration(null);
-      setCurrentStep('results');
-      window.scrollTo(0, 0);
+      if (newImages.length > 0) {
+        setGeneratedImages(prev => [...newImages, ...prev]);
+        setPendingGeneration(null);
+        setCurrentStep('results');
+        window.scrollTo(0, 0);
+      } else {
+        setError("No images were generated successfully. Please check your reference photo and try again.");
+      }
 
     } catch (err: any) {
       console.error("Generation Error:", err);
@@ -283,16 +301,29 @@ function App() {
 
       <main className="flex-1 flex flex-col relative">
         {error && (
-          <div className="max-w-4xl mx-auto mt-8 px-4 w-full">
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-200">
-              <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
-              <p>{error}</p>
-              <button 
-                onClick={() => setError(null)}
-                className="ml-auto text-xs hover:text-white underline"
-              >
-                Dismiss
-              </button>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <div className="bg-slate-900 border border-red-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-red-300 mb-1">Generation Error</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">{error}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setError(null); window.scrollTo(0, 0); }}
+                  className="flex-1 py-2 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => { setError(null); window.scrollTo(0, 0); }}
+                  className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+                >
+                  Try Again
+                </button>
+              </div>
             </div>
           </div>
         )}
