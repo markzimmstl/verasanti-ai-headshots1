@@ -18,6 +18,7 @@ export const getAiClient = () => {
 };
 
 const IMAGE_MODEL = "gemini-2.5-flash-image";
+const TEXT_MODEL = "gemini-2.5-flash";
 
 const cleanBase64 = (dataUrl: string) => {
   if (!dataUrl) return "";
@@ -126,10 +127,17 @@ const buildPrompt = (
    - FINGERS: Never cut off fingers. If hands are visible, all fingers must be fully within the frame. Same rule applies to toes (full body shots) and the top of the head.
    - Avoid "mergers" where background objects look like they are growing out of the subject's head.
    - The background must be the ENVIRONMENT ONLY. 
-   - NO GLASSES unless the reference image clearly shows the subject wearing glasses.
    - CLOTHING TEXT: No text, no logos, no lettering, no graphics on any garment.
    - (Exception: If the scene description specifically asks for a "photo studio set" with visible gear, ignore the lighting equipment constraint).
  `;
+  negativeConstraints += glassesConstraint;
+
+  // Glasses — default is to preserve whatever is in the reference photo
+  const glassesConstraint = config.keepGlasses === false
+    ? "   - REMOVE any glasses from the subject. Subject must have no eyewear.
+"
+    : "   - GLASSES: Preserve exactly what the reference photo shows. If subject wears glasses, keep them. If not, add none.
+";
 
   let textureInstruction = "";
   if (config.retouchLevel === 'None') {
@@ -526,15 +534,16 @@ export const magicErase = async (
   const mimeType = imageBase64.includes("image/png") ? "image/png" : "image/jpeg";
   const prompt = `I am providing two images:
 1. The ORIGINAL photo
-2. A MASK image with RED brush strokes painted over areas to be removed
+2. A MASK image with RED brush strokes painted over a specific area
 
-Your task:
-- Identify where the RED brush strokes appear in the mask image.
-- Those red-painted areas in the original photo are the objects to REMOVE ENTIRELY.
-- Fill the removed areas seamlessly with the surrounding background, matching the lighting, texture, color, and perspective of the scene.
-- The result must look like a real photograph where those objects never existed.
-- Do NOT alter any other part of the image. Only fill the red-brushed areas.
-- Preserve the subject's face, clothing, pose, and all unmasked areas exactly.`;
+Your task — follow these rules with extreme precision:
+- SCOPE: Only the pixels that are covered by RED brush strokes in the mask need to be changed. Do not touch anything outside the red area.
+- REMOVAL: Remove the object or content that is under the red brush strokes in the original photo.
+- FILL: Fill ONLY those exact pixels with surrounding background — match the local texture, color, lighting, and perspective tightly. Do not expand the fill beyond the red region.
+- CONSERVATISM: Be conservative. Fill the minimum area necessary. Do not bleed the fill into adjacent unmasked areas.
+- PRESERVATION: Every pixel NOT under a red brush stroke must be preserved exactly — same color, same detail, same sharpness. This includes the subject's face, hair, clothing, hands, and all background elements outside the mask.
+- The result must look like a real photograph. The removed area should be invisible, replaced naturally by background that would logically be there.
+- CRITICAL: Do NOT remove or alter the person. Do NOT change the background outside the red mask area. Do NOT reframe or crop the image.`;
   try {
     const response = await ai.models.generateContent({
       model: IMAGE_MODEL,
@@ -647,4 +656,31 @@ export const checkPhotoQuality = (base64: string): Promise<PhotoQualityResult> =
     img.onerror = () => resolve({ passed: true, warnings: [] });
     img.src = base64;
   });
+};
+
+// ── SHOT LIST GENERATOR ───────────────────────────────────────────────────────
+export const generateShotList = async (
+  description: string,
+  count: number
+): Promise<any[]> => {
+  const ai = getAiClient();
+  const prompt = `You are a personal brand photography strategist with 20 years of experience.
+A customer described their work as: "${description}"
+Generate exactly ${count} specific, personalized brand photography shots for them.
+Respond ONLY with a valid JSON array — no markdown, no backticks, no preamble, no explanation.
+Each object must have exactly these fields:
+{"number":1,"name":"3-5 word name","scene":"One sentence visual scene description","why":"One sentence why this shot builds their brand","mood":"Confident|Approachable|Expert|Behind-the-Scenes|Lifestyle|Action|Story","prompt":"2-3 sentence generation prompt that is specific, visual, and actionable"}
+Make every shot feel tailored to their specific line of work, clients, and credibility signals. Avoid generic suggestions.`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    config: { responseMimeType: "application/json" },
+  });
+
+  const raw = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const cleaned = raw.replace(/```json|```/g, "").trim();
+  const parsed = JSON.parse(cleaned);
+  if (!Array.isArray(parsed)) throw new Error("Unexpected response format");
+  return parsed;
 };
