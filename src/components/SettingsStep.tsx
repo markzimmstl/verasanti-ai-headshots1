@@ -472,7 +472,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
   const confirmGenerateAllShots = () => {
     setShowGenerateAllConfirm(false);
-    const stylesToUse: StyleOption[] = shotList.map((shot, i) => ({
+    // Shot list items first, then any saved looks
+    const shotStyles: StyleOption[] = shotList.map((shot) => ({
       id: `shot-${shot.number}`,
       name: shot.name,
       description: shot.scene,
@@ -481,12 +482,48 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       imageCount: 1,
       overrides: { expertPrompt: shot.prompt },
     }));
+    const lookStyles: StyleOption[] = looks.map((look) => ({
+      id: look.id,
+      name: look.label,
+      description: `${look.clothingOption} – ${look.sceneName}`,
+      promptModifier: look.scenePrompt,
+      thumbnailColor: '#111827',
+      imageCount: look.imageCount,
+      clothingDescription: look.clothingOption,
+      variationLevel: look.variationLevel,
+      bodySizeOffset: look.bodySizeOffset,
+      overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
+    }));
+    const stylesToUse = [...shotStyles, ...lookStyles];
     const baseConfig: GenerationConfig = {
       ...config,
       retouchLevel: config.retouchLevel || 'None',
       variationsCount: 1,
     };
     onNext(stylesToUse, baseConfig);
+  };
+
+  const handleGenerateSingleShot = (shot: any) => {
+    if (!aboutYouComplete) {
+      setShowAboutYouWarning(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const style: StyleOption = {
+      id: `shot-${shot.number}`,
+      name: shot.name,
+      description: shot.scene,
+      promptModifier: shot.prompt,
+      thumbnailColor: '#111827',
+      imageCount: 1,
+      overrides: { expertPrompt: shot.prompt },
+    };
+    const baseConfig: GenerationConfig = {
+      ...config,
+      retouchLevel: config.retouchLevel || 'None',
+      variationsCount: 1,
+    };
+    onNext([style], baseConfig);
   };
 
   const canContinue = aboutYouComplete && looks.length > 0;
@@ -549,17 +586,23 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
       {/* Generate All Confirmation Modal */}
       {showGenerateAllConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl p-6 max-w-sm w-full mx-0 sm:mx-4 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
                 <Zap className="w-5 h-5 text-emerald-400" />
               </div>
-              <h3 className="text-base font-bold text-white">Generate All {shotList.length} Shots?</h3>
+              <h3 className="text-base font-bold text-white">Ready to Generate?</h3>
             </div>
-            <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-              This will use <span className="font-bold text-white">{shotList.length} credit{shotList.length !== 1 ? 's' : ''}</span> and generate one image per shot from your personal brand shot list.
+            <p className="text-sm text-slate-400 mb-3 leading-relaxed">
+              This will generate your <span className="font-bold text-white">{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</span>
+              {looks.length > 0 && <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span>}.
             </p>
+            <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 mb-5 text-xs text-slate-400 space-y-1">
+              {shotList.length > 0 && <div className="flex justify-between"><span>Shot List images</span><span className="text-white font-semibold">{shotList.length} credit{shotList.length !== 1 ? 's' : ''}</span></div>}
+              {looks.length > 0 && <div className="flex justify-between"><span>Saved Looks images</span><span className="text-white font-semibold">{looks.reduce((s,l) => s + l.imageCount, 0)} credit{looks.reduce((s,l) => s + l.imageCount, 0) !== 1 ? 's' : ''}</span></div>}
+              <div className="flex justify-between border-t border-slate-700 pt-1 mt-1"><span className="font-medium text-slate-300">Total</span><span className="text-indigo-300 font-bold">{shotList.length + looks.reduce((s,l) => s + l.imageCount, 0)} credits</span></div>
+            </div>
             <div className="flex gap-3">
               <button type="button" onClick={() => setShowGenerateAllConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
               <button type="button" onClick={confirmGenerateAllShots} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">Generate Now</button>
@@ -938,7 +981,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {!sceneId && <span className="text-[10px] text-slate-500">Choose a Background first</span>}
+                    {!aboutYouComplete && <span className="text-[10px] text-slate-500">Complete About You first</span>}
                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec3Open ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
@@ -1083,17 +1126,27 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
               </section>
               </div>
 
+              {/* ── AMBER DIVIDER: Shot List shortcut ── */}
+              <div className="flex items-center gap-3 py-2">
+                <div className="flex-1 h-px bg-amber-500/30" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30">
+                  <ListChecks className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-[11px] font-semibold text-amber-300">Use the Shot List Generator to craft your perfect looks</span>
+                </div>
+                <div className="flex-1 h-px bg-amber-500/30" />
+              </div>
+
               {/* ── SECTION 5: SHOT LIST GENERATOR ── */}
               <div ref={sectionRefs.sec5}>
-              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${sceneId ? 'bg-emerald-950/30 border-emerald-900/40' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
+              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${aboutYouComplete ? 'bg-emerald-950/30 border-emerald-900/40' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
                 <button
                   type="button"
-                  disabled={!sceneId}
-                  onClick={() => sceneId && setSec5Open(p => !p)}
+                  disabled={!aboutYouComplete}
+                  onClick={() => aboutYouComplete && setSec5Open(p => !p)}
                   className="w-full flex items-center justify-between px-6 py-5 hover:bg-emerald-900/20 transition-colors disabled:cursor-not-allowed"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${sceneId ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${aboutYouComplete ? 'bg-amber-500' : 'bg-slate-700'}`}>
                       <span className="text-sm font-bold text-white">5</span>
                     </div>
                     <div className="text-left">
@@ -1172,9 +1225,30 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                                     <p className="text-[11px] text-slate-300 leading-relaxed">{shot.why}</p>
                                   </div>
                                   <div className="bg-slate-950/60 border border-slate-700 rounded-lg p-2.5">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Prompt</p>
-                                    <p className="text-[10px] text-slate-400 leading-relaxed font-mono">{shot.prompt}</p>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Prompt</p>
+                                      <span className="text-[10px] text-slate-600 italic">Edit to fine-tune for your brand</span>
+                                    </div>
+                                    <textarea
+                                      value={shot.prompt}
+                                      onChange={(e) => {
+                                        const updated = shotList.map((s) =>
+                                          s.number === shot.number ? { ...s, prompt: e.target.value } : s
+                                        );
+                                        setShotList(updated);
+                                      }}
+                                      rows={4}
+                                      className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-[10px] text-slate-300 font-mono leading-relaxed focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
+                                    />
                                   </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleGenerateSingleShot(shot)}
+                                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 text-white transition"
+                                  >
+                                    <Zap className="w-3 h-3" />
+                                    Generate This Shot · 1 credit
+                                  </button>
                                 </div>
                               )}
                             </div>
@@ -1188,9 +1262,12 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white transition"
                             >
                               <Zap className="w-4 h-4" />
-                              Generate All {shotList.length} Shots
+                              Generate All {shotList.length} Shot{shotList.length !== 1 ? 's' : ''}{looks.length > 0 ? ` + ${looks.length} Saved Look${looks.length !== 1 ? 's' : ''}` : ''}
                             </button>
-                            <p className="text-[10px] text-slate-500 text-center mt-1.5">Uses {shotList.length} credit{shotList.length !== 1 ? 's' : ''} · 1 image per shot</p>
+                            <p className="text-[10px] text-slate-500 text-center mt-1.5">
+                              {shotList.length + looks.reduce((s,l) => s + l.imageCount, 0)} total credit{(shotList.length + looks.reduce((s,l) => s + l.imageCount, 0)) !== 1 ? 's' : ''}
+                              {looks.length > 0 ? ` · includes your ${looks.length} saved look${looks.length !== 1 ? 's' : ''}` : ' · 1 image per shot'}
+                            </p>
                           </div>
                         </div>
                       )}
