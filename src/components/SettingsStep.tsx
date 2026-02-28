@@ -135,48 +135,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     setExpertPromptInput(config.expertPrompt || '');
   }, [config.expertPrompt]);
 
-  // Progressive disclosure — auto-open next section when prerequisite is met
-  const sectionRefs = {
-    sec1: React.useRef<HTMLDivElement>(null),
-    sec2: React.useRef<HTMLDivElement>(null),
-    sec3: React.useRef<HTMLDivElement>(null),
-    sec4: React.useRef<HTMLDivElement>(null),
-    sec5: React.useRef<HTMLDivElement>(null),
-  };
-
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
-    setTimeout(() => {
-      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  // About You complete → open Section 1
-  useEffect(() => {
-    if (aboutYouComplete && !sec1Open) {
-      setSec1Open(true);
-      scrollToSection(sectionRefs.sec1);
-    }
-  }, [aboutYouComplete]);
-
-  // Clothing style selected → open Section 2
-  useEffect(() => {
-    if (clothingStyleGroup && !sec2Open) {
-      setSec2Open(true);
-      scrollToSection(sectionRefs.sec2);
-    }
-  }, [clothingStyleGroup]);
-
-  // Background selected → open Section 3
-  useEffect(() => {
-    if (sceneId && !sec3Open) {
-      setSec3Open(true);
-      scrollToSection(sectionRefs.sec3);
-    }
-  }, [sceneId]);
-
-  // Section 3 opened → unlock Section 4 (but don't auto-open — it's optional)
-  // Section 4 opened → unlock Section 5 (same)
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (colorPickerRef.current && !colorPickerRef.current.contains(event.target as Node)) {
@@ -401,6 +359,45 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const totalImages = looks.reduce((sum, look) => sum + look.imageCount, 0);
 
   const aboutYouComplete = !!config.genderPresentation && !!config.ageRange;
+
+  // Progressive disclosure — auto-open next section when prerequisite is met
+  const sectionRefs = {
+    sec1: React.useRef<HTMLDivElement | null>(null),
+    sec2: React.useRef<HTMLDivElement | null>(null),
+    sec3: React.useRef<HTMLDivElement | null>(null),
+    sec4: React.useRef<HTMLDivElement | null>(null),
+    sec5: React.useRef<HTMLDivElement | null>(null),
+  };
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+    setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  // About You complete → open Section 1
+  useEffect(() => {
+    if (aboutYouComplete && !sec1Open) {
+      setSec1Open(true);
+      scrollToSection(sectionRefs.sec1);
+    }
+  }, [aboutYouComplete]);
+
+  // Clothing style selected → open Section 2
+  useEffect(() => {
+    if (clothingStyleGroup && !sec2Open) {
+      setSec2Open(true);
+      scrollToSection(sectionRefs.sec2);
+    }
+  }, [clothingStyleGroup]);
+
+  // Background selected → open Section 3
+  useEffect(() => {
+    if (sceneId && !sec3Open) {
+      setSec3Open(true);
+      scrollToSection(sectionRefs.sec3);
+    }
+  }, [sceneId]);
 
   const handleContinue = () => {
     // Require gender + age
@@ -854,10 +851,10 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   {!isCustomBackground ? (
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {BRAND_DEFINITIONS[clothingStyleGroup]?.sceneOptions.map((scene: any) => {
+                        {BRAND_DEFINITIONS[clothingStyleGroup!]?.sceneOptions.map((scene: any) => {
                           const isActive = sceneId === scene.id;
                           return (
-                            <button key={scene.id} type="button" onClick={() => handleSceneSelect(clothingStyleGroup, scene.id, scene.name, scene.prompt)} className={`text-left p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500' : 'bg-slate-900/40 border-slate-800 hover:border-slate-600 hover:bg-slate-800'}`}>
+                            <button key={scene.id} type="button" onClick={() => handleSceneSelect(clothingStyleGroup!, scene.id, scene.name, scene.prompt)} className={`text-left p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500' : 'bg-slate-900/40 border-slate-800 hover:border-slate-600 hover:bg-slate-800'}`}>
                               <p className={`text-xs font-medium mb-1 ${isActive ? 'text-white' : 'text-slate-200'}`}>{scene.name}</p>
                               <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{scene.prompt}</p>
                             </button>
