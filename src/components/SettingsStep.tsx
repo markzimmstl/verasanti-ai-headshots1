@@ -33,6 +33,7 @@ import {
 import { Button } from './Button.tsx';
 import { BRAND_DEFINITIONS } from '../data/brandDefinitions.ts';
 import { GenerationConfig, StyleOption, LookConfig, AspectRatio } from '../types.ts';
+import { generateShotList as generateShotListFromGemini } from '../services/geminiService.ts';
 
 declare global {
   interface Window { EyeDropper: any; }
@@ -389,16 +390,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   };
 
   // ── Shot List Generator ────────────────────────────────────────────────────
-  const buildShotListPrompt = (description: string, count: number) => `
-You are a personal brand photography strategist with 20 years of experience.
-A customer described their work as: "${description}"
-Generate exactly ${count} specific, personalized brand photography shots for them.
-Respond ONLY with a valid JSON array — no markdown, no backticks, no explanation.
-Format:
-[{"number":1,"name":"3-5 word name","scene":"One sentence visual scene","why":"One sentence why it builds their brand","mood":"Confident|Approachable|Expert|Behind-the-Scenes|Lifestyle|Action|Story","prompt":"2-3 sentence generation prompt, specific and visual"}]
-Make every shot feel tailored to their specific line of work, clients, and credibility signals. Avoid generic suggestions.
-`.trim();
-
   const generateShotList = async () => {
     if (!shotListDescription.trim() || shotListLoading) return;
     setShotListLoading(true);
@@ -406,23 +397,11 @@ Make every shot feel tailored to their specific line of work, clients, and credi
     setShotList([]);
     setShotListExpandedCards(new Set());
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: buildShotListPrompt(shotListDescription, shotListCount) }],
-        }),
-      });
-      const data = await response.json();
-      const raw = data.content?.find((b: any) => b.type === "text")?.text || "";
-      const cleaned = raw.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
-      if (!Array.isArray(parsed)) throw new Error("Bad format");
-      setShotList(parsed);
-    } catch {
-      setShotListError("Something went wrong. Please try again.");
+      const shots = await generateShotListFromGemini(shotListDescription, shotListCount);
+      setShotList(shots);
+    } catch (err) {
+      console.error("Shot list error:", err);
+      setShotListError("Something went wrong generating your shot list. Please try again.");
     } finally {
       setShotListLoading(false);
     }
@@ -960,9 +939,8 @@ Make every shot feel tailored to their specific line of work, clients, and credi
                       <div className="text-left">
                         <div className="flex items-center gap-2">
                           <Aperture className="w-5 h-5 text-indigo-400" />
-                          <h3 className="text-base font-semibold text-white">Camera & Composition</h3>
+                          <h3 className="text-base font-semibold text-white">Camera, Lighting & Composition Settings</h3>
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5 ml-7">Use these settings to fine tune your images.</p>
                       </div>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${cameraExpanded ? 'rotate-180' : ''}`} />
