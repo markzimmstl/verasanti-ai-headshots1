@@ -464,10 +464,13 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
       {
         category: 'Feminine Styles',
         items: [
-          'Hair Stylist – black stylist apron over blouse, slim pants, comfortable flats',
-          'Salon Manager – blouse, trousers, stylish loafers',
-          'Nail Tech – fun printed top, dark pants, clean sneakers',
-          'Spa Owner – flowy blouse, wide pants, sandals',
+          'Boutique Owner – elegant wrap dress, block-heel ankle boots, simple gold jewelry; polished retail authority',
+          'Home Designer – tailored blazer over fitted tee, straight-leg jeans, clean leather loafers; creative yet professional',
+          'Interior Stylist – linen blazer, wide-leg trousers, pointed-toe flats; design-forward and approachable',
+          'Beauty Pro – chic stylist apron over a blouse, slim trousers, comfortable fashion flats',
+          'Spa & Wellness Owner – flowy wrap blouse, tailored wide pants, simple sandals; calm and elevated',
+          'Shop Owner – smart casual blazer, fitted trousers, stylish sneakers; modern small business energy',
+          'Keep Original Clothing (From Photo)',
         ],
       },
       {
