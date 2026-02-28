@@ -98,7 +98,12 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [sceneId, setSceneId] = useState<string | null>(null);
   const [sceneName, setSceneName] = useState<string | null>(null);
   const [scenePrompt, setScenePrompt] = useState<string | null>(null);
-  const [cameraExpanded, setCameraExpanded] = useState(false);
+  // Section expansion state — progressive disclosure
+  const [sec1Open, setSec1Open] = useState(false);
+  const [sec2Open, setSec2Open] = useState(false);
+  const [sec3Open, setSec3Open] = useState(false);
+  const [sec4Open, setSec4Open] = useState(false);
+  const [sec5Open, setSec5Open] = useState(false);
   const [isCustomClothing, setIsCustomClothing] = useState(false);
   const [customClothingText, setCustomClothingText] = useState('');
   const [isCustomBackground, setIsCustomBackground] = useState(false);
@@ -129,6 +134,48 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   useEffect(() => {
     setExpertPromptInput(config.expertPrompt || '');
   }, [config.expertPrompt]);
+
+  // Progressive disclosure — auto-open next section when prerequisite is met
+  const sectionRefs = {
+    sec1: React.useRef<HTMLDivElement>(null),
+    sec2: React.useRef<HTMLDivElement>(null),
+    sec3: React.useRef<HTMLDivElement>(null),
+    sec4: React.useRef<HTMLDivElement>(null),
+    sec5: React.useRef<HTMLDivElement>(null),
+  };
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
+    setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  // About You complete → open Section 1
+  useEffect(() => {
+    if (aboutYouComplete && !sec1Open) {
+      setSec1Open(true);
+      scrollToSection(sectionRefs.sec1);
+    }
+  }, [aboutYouComplete]);
+
+  // Clothing style selected → open Section 2
+  useEffect(() => {
+    if (clothingStyleGroup && !sec2Open) {
+      setSec2Open(true);
+      scrollToSection(sectionRefs.sec2);
+    }
+  }, [clothingStyleGroup]);
+
+  // Background selected → open Section 3
+  useEffect(() => {
+    if (sceneId && !sec3Open) {
+      setSec3Open(true);
+      scrollToSection(sectionRefs.sec3);
+    }
+  }, [sceneId]);
+
+  // Section 3 opened → unlock Section 4 (but don't auto-open — it's optional)
+  // Section 4 opened → unlock Section 5 (same)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -681,23 +728,38 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
           {creationMode === 'guided' && (
             <>
               {/* ── SECTION 1: CLOTHING STYLE + CLOTHING CHOICE ─────────────────── */}
-              <section className="bg-slate-900/60 border-2 border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-inner relative overflow-hidden">
-                <div className="flex items-center justify-between mb-5 relative z-10">
+              <div ref={sectionRefs.sec1}>
+              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${aboutYouComplete ? 'bg-slate-900/60 border-slate-700/80' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
+                <button
+                  type="button"
+                  disabled={!aboutYouComplete}
+                  onClick={() => aboutYouComplete && setSec1Open(p => !p)}
+                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/30 transition-colors disabled:cursor-not-allowed"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${aboutYouComplete ? 'bg-amber-500' : 'bg-slate-700'}`}>
                       <span className="text-sm font-bold text-white">1</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Briefcase className="w-5 h-5 text-indigo-400" />
-                      <h3 className="text-base font-semibold text-white">Clothing Style</h3>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-base font-semibold text-white">Clothing Style</h3>
+                        {clothingStyleGroup && <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ {clothingStyleGroup}</span>}
+                      </div>
                     </div>
                   </div>
-                  {clothingStyleGroup && (
-                    <button type="button" onClick={handleSurpriseMe} className="flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-200 transition-colors bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20 hover:border-indigo-500/50">
-                      <Shuffle className="w-3 h-3" />Surprise Me
-                    </button>
-                  )}
-                </div>
+                  <div className="flex items-center gap-2">
+                    {clothingStyleGroup && sec1Open && (
+                      <button type="button" onClick={(e) => { e.stopPropagation(); handleSurpriseMe(); }} className="flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-200 transition-colors bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20 hover:border-indigo-500/50">
+                        <Shuffle className="w-3 h-3" />Surprise Me
+                      </button>
+                    )}
+                    {!aboutYouComplete && <span className="text-[10px] text-slate-500">Complete About You first</span>}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec1Open ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {sec1Open && (
+                <div className="px-6 pb-6">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative z-10">
                   {Object.entries(BRAND_DEFINITIONS).map(([key, brand]) => {
                     const isActive = clothingStyleGroup === key;
@@ -756,20 +818,38 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   )}
                   </div>
                 )}
+              </div>
               </section>
+              </div>
 
               {/* ── SECTION 2: CHOOSE A BACKGROUND SCENE ── */}
-              {clothingStyleGroup && (
-                <section className="bg-indigo-950/40 border-2 border-indigo-800/50 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+              <div ref={sectionRefs.sec2}>
+              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${clothingStyleGroup ? 'bg-indigo-950/40 border-indigo-800/50' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
+                <button
+                  type="button"
+                  disabled={!clothingStyleGroup}
+                  onClick={() => clothingStyleGroup && setSec2Open(p => !p)}
+                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-indigo-900/20 transition-colors disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${clothingStyleGroup ? 'bg-amber-500' : 'bg-slate-700'}`}>
                       <span className="text-sm font-bold text-white">2</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Camera className="w-5 h-5 text-indigo-400" />
-                      <h3 className="text-base font-semibold text-white">Choose a Background Scene</h3>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <Camera className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-base font-semibold text-white">Choose a Background Scene</h3>
+                        {sceneId && <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ {sceneName}</span>}
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    {!clothingStyleGroup && <span className="text-[10px] text-slate-500">Choose Clothing Style first</span>}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec2Open ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {sec2Open && (
+                <div className="px-6 pb-6">
                   {!isCustomBackground ? (
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -833,21 +913,39 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       )}
                     </div>
                   )}
-                </section>
-              )}
+                </div>
+                )}
+              </section>
+              </div>
 
-              {/* ── SECTION 3: FINE-TUNING (Retouch / Variation / Glasses / Images / Colors / Body) ── */}
-              {clothingStyleGroup && (
-                <section className="bg-slate-900/60 border-2 border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-inner animate-fade-in">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
+              {/* ── SECTION 3: FINE-TUNING ── */}
+              <div ref={sectionRefs.sec3}>
+              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${sceneId ? 'bg-slate-900/60 border-slate-700/80' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
+                <button
+                  type="button"
+                  disabled={!sceneId}
+                  onClick={() => sceneId && setSec3Open(p => !p)}
+                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/30 transition-colors disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${sceneId ? 'bg-amber-500' : 'bg-slate-700'}`}>
                       <span className="text-sm font-bold text-white">3</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-indigo-400" />
-                      <h3 className="text-base font-semibold text-white">Fine-Tune Your Look</h3>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-base font-semibold text-white">Fine-Tune Your Look</h3>
+                        <span className="text-[10px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Optional</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    {!sceneId && <span className="text-[10px] text-slate-500">Choose a Background first</span>}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec3Open ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {sec3Open && (
+                <div className="px-6 pb-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     {/* LEFT: Retouch, Variation, Glasses */}
                     <div className="space-y-4">
@@ -921,32 +1019,39 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       {activeLookId ? <><Edit3 className="w-3 h-3 mr-1" />Update Look</> : <><Plus className="w-3 h-3 mr-1" />Save Look</>}
                     </Button>
                   </div>
-                </section>
-              )}
+                </div>
+                )}
+              </section>
+              </div>
 
-              {/* SECTION 4: CAMERA & COMPOSITION — collapsible */}
-              {clothingStyleGroup && (
-                <section className="bg-indigo-950/30 border border-indigo-900/60 rounded-2xl shadow-inner animate-fade-in overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setCameraExpanded(prev => !prev)}
-                    className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/40 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
-                        <span className="text-sm font-bold text-white">4</span>
-                      </div>
-                      <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <Aperture className="w-5 h-5 text-indigo-400" />
-                          <h3 className="text-base font-semibold text-white">Camera, Lighting & Composition Settings</h3>
-                        </div>
+              {/* ── SECTION 4: CAMERA, LIGHTING & COMPOSITION ── */}
+              <div ref={sectionRefs.sec4}>
+              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${sceneId ? 'bg-indigo-950/30 border-indigo-900/60' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
+                <button
+                  type="button"
+                  disabled={!sceneId}
+                  onClick={() => sceneId && setSec4Open(p => !p)}
+                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-indigo-900/20 transition-colors disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${sceneId ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                      <span className="text-sm font-bold text-white">4</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <Aperture className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-base font-semibold text-white">Camera, Lighting & Composition Settings</h3>
+                        <span className="text-[10px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Optional</span>
                       </div>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${cameraExpanded ? 'rotate-180' : ''}`} />
-                  </button>
-                  {cameraExpanded && (
-                  <div className="px-6 pb-6">
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!sceneId && <span className="text-[10px] text-slate-500">Choose a Background first</span>}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec4Open ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                {sec4Open && (
+                <div className="px-6 pb-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-2"><Maximize className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Aspect Ratio</p><span className="text-[10px] text-slate-200 ml-1">Width : Height</span></div>
@@ -982,36 +1087,39 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     </div>
                   </div>
                   </div>
-                  )}
-                </section>
-              )}
+                )}
+              </section>
+              </div>
 
-
-              {/* ── SECTION 5: SHOT LIST GENERATOR ─────────────────────────────── */}
-              {clothingStyleGroup && (
-                <section className="bg-emerald-950/30 border-2 border-emerald-900/40 rounded-2xl shadow-inner animate-fade-in overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setShotListExpanded(prev => !prev)}
-                    className="w-full flex items-center justify-between px-6 py-5 hover:bg-emerald-900/20 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center shadow-md flex-shrink-0">
-                        <span className="text-sm font-bold text-white">5</span>
-                      </div>
-                      <div className="text-left">
-                        <div className="flex items-center gap-2">
-                          <ListChecks className="w-5 h-5 text-emerald-400" />
-                          <h3 className="text-base font-semibold text-white">Personal Brand Shot List</h3>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5 ml-7">Tell us what you do — get a tailored list of brand photos to generate.</p>
+              {/* ── SECTION 5: SHOT LIST GENERATOR ── */}
+              <div ref={sectionRefs.sec5}>
+              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${sceneId ? 'bg-emerald-950/30 border-emerald-900/40' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
+                <button
+                  type="button"
+                  disabled={!sceneId}
+                  onClick={() => sceneId && setSec5Open(p => !p)}
+                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-emerald-900/20 transition-colors disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${sceneId ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                      <span className="text-sm font-bold text-white">5</span>
+                    </div>
+                    <div className="text-left">
+                      <div className="flex items-center gap-2">
+                        <ListChecks className="w-5 h-5 text-emerald-400" />
+                        <h3 className="text-base font-semibold text-white">Personal Brand Shot List</h3>
+                        <span className="text-[10px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Optional</span>
                       </div>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${shotListExpanded ? 'rotate-180' : ''}`} />
-                  </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!sceneId && <span className="text-[10px] text-slate-500">Choose a Background first</span>}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec5Open ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
 
-                  {shotListExpanded && (
-                    <div className="px-6 pb-6">
+                {sec5Open && (
+                  <div className="px-6 pb-6">
                       {/* Description input */}
                       <div className="mb-4">
                         <label className="block text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Describe your work</label>
@@ -1097,7 +1205,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     </div>
                   )}
                 </section>
-              )}
+              </div>
 
             </>
           )}
