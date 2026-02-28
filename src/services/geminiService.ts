@@ -130,14 +130,12 @@ const buildPrompt = (
    - CLOTHING TEXT: No text, no logos, no lettering, no graphics on any garment.
    - (Exception: If the scene description specifically asks for a "photo studio set" with visible gear, ignore the lighting equipment constraint).
  `;
-  negativeConstraints += glassesConstraint;
-
   // Glasses — default is to preserve whatever is in the reference photo
   const glassesConstraint = config.keepGlasses === false
-    ? "   - REMOVE any glasses from the subject. Subject must have no eyewear.
-"
-    : "   - GLASSES: Preserve exactly what the reference photo shows. If subject wears glasses, keep them. If not, add none.
-";
+    ? "   - REMOVE any glasses from the subject. Subject must have no eyewear.\n"
+    : "   - GLASSES: Preserve exactly what the reference photo shows. If subject wears glasses, keep them. If not, add none.\n";
+
+  negativeConstraints += glassesConstraint;
 
   let textureInstruction = "";
   if (config.retouchLevel === 'None') {
