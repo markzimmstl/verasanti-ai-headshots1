@@ -45,7 +45,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'boardroom',
         name: 'Executive Boardroom',
         prompt:
-          'standing confidently in an executive boardroom with a long mahogany table, office chairs, and a presentation screen; this is a corporate meeting room, not a hospital, logistics hub, or camera studio',
+          'standing confidently in an executive boardroom with a long mahogany table, leather office chairs, and floor-to-ceiling windows or architectural wall paneling; NO screens, NO monitors, NO whiteboards on walls; this is a sophisticated corporate meeting room, not a hospital or camera studio',
         iconType: 'briefcase',
       },
       {
