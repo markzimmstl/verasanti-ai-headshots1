@@ -567,12 +567,16 @@ export const refineGeneratedImage = async (
     });
     const outputParts = response.candidates?.[0]?.content?.parts;
     const images = extractImagesFromParts(outputParts || []);
-    if (images.length === 0) throw new Error("Refinement returned no images.");
+    // If refinement returns no image, silently fall back to the original
+    if (images.length === 0) {
+      console.warn("Refinement returned no images — using original.");
+      return currentImageBase64;
+    }
     return images[0];
   } catch (error: any) {
-    console.error("Refinement Error:", error);
-    if (!refinementPrompt.includes("remove any digital screens")) alert(`Refinement Failed: ${error.message}`);
-    throw error;
+    // Never show alert() — silently return the original image so generation continues
+    console.warn("Refinement failed, using original image:", error.message);
+    return currentImageBase64;
   }
 };
 
