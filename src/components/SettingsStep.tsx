@@ -130,6 +130,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [shotListError, setShotListError] = useState<string|null>(null);
   const [shotListExpandedCards, setShotListExpandedCards] = useState<Set<number>>(new Set());
   const [showGenerateAllConfirm, setShowGenerateAllConfirm] = useState(false);
+  const [pendingSingleShot, setPendingSingleShot] = useState<any>(null);
   const [shotImageCounts, setShotImageCounts] = useState<Record<number, number>>({});
 
   // Sync expert prompt input when parent config changes (e.g. after a reset clears it)
@@ -394,8 +395,9 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   }, [clothingOption]);
 
   // Background selected → open Section 3 and scroll to it
+  // But NOT when the user picks "Custom Background" — they're still in Section 2
   useEffect(() => {
-    if (sceneId && !sec3Open) {
+    if (sceneId && sceneId !== 'custom' && !sec3Open) {
       setSec3Open(true);
       scrollToSection(sectionRefs.sec3);
     }
@@ -484,6 +486,42 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
   const confirmGenerateAllShots = () => {
     setShowGenerateAllConfirm(false);
+    // If triggered from a single-shot button, only queue that one shot (+ saved looks)
+    if (pendingSingleShot) {
+      const shot = pendingSingleShot;
+      setPendingSingleShot(null);
+      const shotStyle: StyleOption = {
+        id: `shot-${shot.number}`,
+        name: shot.name,
+        description: shot.scene,
+        promptModifier: shot.prompt,
+        thumbnailColor: '#111827',
+        imageCount: shotImageCounts[shot.number] || 1,
+        overrides: {
+          expertPrompt: shot.prompt,
+          aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
+        },
+      };
+      const lookStyles: StyleOption[] = looks.map((look) => ({
+        id: look.id,
+        name: look.label,
+        description: `${look.clothingOption} – ${look.sceneName}`,
+        promptModifier: look.scenePrompt,
+        thumbnailColor: '#111827',
+        imageCount: look.imageCount,
+        clothingDescription: look.clothingOption,
+        variationLevel: look.variationLevel,
+        bodySizeOffset: look.bodySizeOffset,
+        overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
+      }));
+      const baseConfig: GenerationConfig = {
+        ...config,
+        retouchLevel: config.retouchLevel || 'None',
+        variationsCount: 1,
+      };
+      onNext([shotStyle, ...lookStyles], baseConfig);
+      return;
+    }
     const shotStyles: StyleOption[] = shotList.map((shot) => ({
       id: `shot-${shot.number}`,
       name: shot.name,
@@ -523,37 +561,9 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const shotStyle: StyleOption = {
-      id: `shot-${shot.number}`,
-      name: shot.name,
-      description: shot.scene,
-      promptModifier: shot.prompt,
-      thumbnailColor: '#111827',
-      imageCount: shotImageCounts[shot.number] || 1,
-      overrides: {
-        expertPrompt: shot.prompt,
-        aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
-      },
-    };
-    // Bundle any saved Looks so they aren't discarded when navigating to results
-    const lookStyles: StyleOption[] = looks.map((look) => ({
-      id: look.id,
-      name: look.label,
-      description: `${look.clothingOption} – ${look.sceneName}`,
-      promptModifier: look.scenePrompt,
-      thumbnailColor: '#111827',
-      imageCount: look.imageCount,
-      clothingDescription: look.clothingOption,
-      variationLevel: look.variationLevel,
-      bodySizeOffset: look.bodySizeOffset,
-      overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
-    }));
-    const baseConfig: GenerationConfig = {
-      ...config,
-      retouchLevel: config.retouchLevel || 'None',
-      variationsCount: 1,
-    };
-    onNext([shotStyle, ...lookStyles], baseConfig);
+    // Store which shot is pending and open the shared confirmation modal
+    setPendingSingleShot(shot);
+    setShowGenerateAllConfirm(true);
   };
 
   const canContinue = aboutYouComplete && looks.length > 0;
@@ -619,19 +629,31 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
           <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
             <Zap className="w-5 h-5 text-emerald-400" />
           </div>
-          <h3 className="text-base font-bold text-white">Ready to Generate?</h3>
+          <h3 className="text-base font-bold text-white">
+            {pendingSingleShot ? `Generate "${pendingSingleShot.name}"?` : 'Ready to Generate?'}
+          </h3>
         </div>
         <p className="text-sm text-slate-400 mb-3 leading-relaxed">
-          This will generate your <span className="font-bold text-white">{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</span>
-          {looks.length > 0 && <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span>}.
+          {pendingSingleShot
+            ? <span>This will generate <span className="font-bold text-white">{shotImageCounts[pendingSingleShot.number] || 1} image{(shotImageCounts[pendingSingleShot.number] || 1) !== 1 ? 's' : ''}</span> for this shot{looks.length > 0 ? <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span> : ''}.</span>
+            : <span>This will generate your <span className="font-bold text-white">{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</span>{looks.length > 0 ? <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span> : ''}.</span>
+          }
         </p>
         <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 mb-5 text-xs text-slate-400 space-y-1">
-          {shotList.length > 0 && <div className="flex justify-between"><span>Shot List images</span><span className="text-white font-semibold">{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)} credit{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) !== 1 ? 's' : ''}</span></div>}
+          {pendingSingleShot
+            ? <div className="flex justify-between"><span>"{pendingSingleShot.name}"</span><span className="text-white font-semibold">{shotImageCounts[pendingSingleShot.number] || 1} credit{(shotImageCounts[pendingSingleShot.number] || 1) !== 1 ? 's' : ''}</span></div>
+            : shotList.length > 0 && <div className="flex justify-between"><span>Shot List images</span><span className="text-white font-semibold">{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)} credit{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) !== 1 ? 's' : ''}</span></div>
+          }
           {looks.length > 0 && <div className="flex justify-between"><span>Saved Looks images</span><span className="text-white font-semibold">{looks.reduce((s,l) => s + l.imageCount, 0)} credit{looks.reduce((s,l) => s + l.imageCount, 0) !== 1 ? 's' : ''}</span></div>}
-          <div className="flex justify-between border-t border-slate-700 pt-1 mt-1"><span className="font-medium text-slate-300">Total</span><span className="text-indigo-300 font-bold">{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)} credits</span></div>
+          <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
+            <span className="font-medium text-slate-300">Total</span>
+            <span className="text-indigo-300 font-bold">
+              {(pendingSingleShot ? (shotImageCounts[pendingSingleShot.number] || 1) : shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)) + looks.reduce((s,l) => s + l.imageCount, 0)} credits
+            </span>
+          </div>
         </div>
         <div className="flex gap-3">
-          <button type="button" onClick={() => setShowGenerateAllConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
+          <button type="button" onClick={() => { setShowGenerateAllConfirm(false); setPendingSingleShot(null); }} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
           <button type="button" onClick={confirmGenerateAllShots} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">Generate Now</button>
         </div>
       </div>
