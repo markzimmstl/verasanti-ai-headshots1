@@ -286,7 +286,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
       framingInstruction = "Medium Shot (Waist Up). Crop at hips.";
   }
 
-  let angleInstruction = "Eye Level. Neutral, direct connection.";
+  let angleInstruction = "Eye Level. Camera lens is exactly at the subject's eye height. Neutral, direct connection. Do NOT shoot upward even if the environment has tall structures, high ceilings, or imposing elements — the camera stays at eye level regardless of surroundings.";
   if (config.cameraAngle === "Low Angle (Power)") angleInstruction = "Low Angle. Camera at waist height looking slightly up. Heroic/Power stance.";
   else if (config.cameraAngle === "High Angle") angleInstruction = "High Angle. Camera slightly above eye level looking down. Approachable.";
 
