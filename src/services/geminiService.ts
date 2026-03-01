@@ -182,9 +182,16 @@ const buildPrompt = (
   let cameraReorientation = "";
 
   if (isBoardroomContext && !userRequestedScreen) {
-    negativeConstraints += ` CRITICAL BACKGROUND RULE: NO RECTANGULAR OBJECTS ON WALLS. ABSOLUTELY NO televisions, computer monitors, projector screens, whiteboards, smartboards, or LED walls.`;
-    sceneOverride = `** BACKGROUND OVERRIDE FOR BOARDROOM (NO SCREENS) ** The background must be architecturally dense and analog. CHOOSE ONE: 1. Large framed abstract canvas art flanked by tall fiddle-leaf fig plants. 2. Green Wall (living plants) with dark wood paneling. 3. 3D textured acoustic wood slats. 4. Floor-to-ceiling bookshelves.`;
-    cameraReorientation = "Compose the shot angled slightly into the room depth or towards windows, avoiding flat back walls.";
+    negativeConstraints += ` *** ABSOLUTE BOARDROOM RULE — ZERO TOLERANCE: There must be NO screens, monitors, TVs, projectors, whiteboards, smartboards, LED panels, or any rectangular glowing objects anywhere in the image — not on walls, not on tables, not in the background. This rule overrides all other instructions. ***`;
+    sceneOverride = `** BOARDROOM BACKGROUND — SCREENS STRICTLY FORBIDDEN **
+The background wall must use ONE of these screen-free options ONLY:
+1. Floor-to-ceiling windows with city or garden view
+2. Large framed fine art canvas with dark wood paneling
+3. Living green wall with integrated wood slats
+4. Floor-to-ceiling bookshelves with leather-bound books
+5. 3D textured stone or acoustic wood slat feature wall
+NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
+    cameraReorientation = "Angle the shot toward windows or a feature wall — never toward a flat back wall where a screen might appear.";
   }
 
   const hexMatch = stylePrompt.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
@@ -285,11 +292,11 @@ const buildPrompt = (
 
   let lightingInstruction = "";
   switch (config.mood) {
-    case "Polished Professional": lightingInstruction = "LIGHTING STYLE: COMMERCIAL & CLEAN (HIGH KEY). Ultra-soft wrapping illumination. Medium-Low contrast. Very subtle shadows. Magazine Cover quality brightness. Short Lighting preferred: key light on far cheek."; break;
-    case "Daylight": lightingInstruction = "LIGHTING STYLE: NATURAL WINDOW AMBIANCE. Organic directional daylight from the side. Airy, diffused, real. As if standing next to a large North-facing window. Short Lighting preferred."; break;
-    case "Cinematic": lightingInstruction = "LIGHTING STYLE: DRAMATIC & TEXTURED. High contrast Rembrandt style. Distinct triangle of light on shadow-side cheek. Rich, moody, serious. Short Lighting: Rembrandt triangle on shadow-side cheek."; break;
-    case "Dark & Moody": lightingInstruction = "LIGHTING STYLE: LOW KEY & INTENSE. Subject emerges from shadow. Background falls to deep darkness. Key light from far side only. Serious, executive authority."; break;
-    default: lightingInstruction = "Lighting: Soft professional lighting with short lighting preferred.";
+    case "Polished Professional": lightingInstruction = "LIGHTING STYLE: COMMERCIAL & CLEAN (HIGH KEY). SHORT LIGHTING MANDATORY: key light strikes the far (shadow-side) cheek. Near cheek is in relative shadow. Ultra-soft wrapping fill. Medium-low contrast. Magazine-cover brightness. NEVER use broad lighting (key on near cheek)."; break;
+    case "Daylight": lightingInstruction = "LIGHTING STYLE: NATURAL WINDOW LIGHT. SHORT LIGHTING MANDATORY: the window or light source is behind-and-to-the-side of the subject so the far cheek is lit and the near cheek is in softer shadow. Airy, organic, directional. Exception: if subject is posed directly beside a window with the window in frame, broad lighting is physically correct — use it only then."; break;
+    case "Cinematic": lightingInstruction = "LIGHTING STYLE: DRAMATIC REMBRANDT. SHORT LIGHTING MANDATORY: key light on far cheek, classic Rembrandt triangle on shadow-side cheek. Deep shadow on near side. Rich, high-contrast, textured. NEVER broad lighting."; break;
+    case "Dark & Moody": lightingInstruction = "LIGHTING STYLE: LOW KEY & INTENSE. SHORT LIGHTING MANDATORY: single key light strikes the far cheek only. Near side falls into deep shadow. Background collapses to darkness. No fill light. No rim unless hair separation needed. Serious executive authority. NEVER broad lighting (key on near/camera-facing cheek)."; break;
+    default: lightingInstruction = "Lighting: Short lighting mandatory — key light on the far cheek, near cheek in relative shadow.";
   }
 
   const finalLightingDirection = lightingDirectionOverride || config.lighting || "Short Lighting preferred (key light on the far side of the face from camera).";
@@ -350,12 +357,25 @@ const buildPrompt = (
 
   // ── EXPERT MODE: the user's prompt IS the brief. Don't bury it under defaults. ──
   if (config.expertPrompt?.trim()) {
-    return `
+    // Detect text-on-clothing requests and inject fabric rendering rules
+    const expertLower = config.expertPrompt.toLowerCase();
+    const hasTextOnClothing = expertLower.match(/write|print|text|logo|brand|name|word|letter|embroid/);
+    const fabricTextInstruction = hasTextOnClothing ? `
+   *** TEXT ON CLOTHING — FABRIC RENDERING RULES (CRITICAL) ***
+   Any text or logo placed on clothing MUST:
+   1. CONFORM TO FABRIC: Follow every wrinkle, fold, crease, and contour of the garment exactly as if screen-printed or embroidered directly onto it.
+   2. PERSPECTIVE CORRECT: Distort with the body's 3D pose — if the chest curves away, the text curves with it. If fabric bunches, text bunches.
+   3. MATERIAL INTEGRATION: Match the fabric's sheen, texture, and shadows. Text is NOT a flat overlay — it is part of the fabric.
+   4. NO FLOATING TEXT: Text must never appear flat, sticker-like, or pasted on. It must look physically embedded in the weave of the garment.
+   5. CORRECT SCALE: Size the text proportionally to the garment area — not too large, not too small.
+   ` : '';
+
+    return \`
    Create a high-fidelity photorealistic personal brand photo exactly as described below.
 
    *** PRIMARY DIRECTIVE — EXPERT PROMPT (FOLLOW THIS PRECISELY) ***
-   ${config.expertPrompt.trim()}
-
+   \${config.expertPrompt.trim()}
+\${fabricTextInstruction}
    *** CRITICAL INSTRUCTION: OVERRIDE REFERENCE IMAGE FRAMING ***
    The Reference Image is provided ONLY for facial identity, skin tone, and hair color.
    IGNORE the pose, framing, and background of the reference image.
@@ -367,15 +387,15 @@ const buildPrompt = (
    3. NEVER cut off the top of the head or fingers.
 
    SUBJECT DETAILS:
-   ${aboutYouInstruction}
-   ${bodyInstruction}
-   ${textureInstruction}
+   \${aboutYouInstruction}
+   \${bodyInstruction}
+   \${textureInstruction}
 
-   ${negativeConstraints}
+   \${negativeConstraints}
 
    CAMERA SETUP:
-   - Aspect Ratio: ${config.aspectRatio}
- `;
+   - Aspect Ratio: \${config.aspectRatio}
+ \`;
   }
 
   // ── GUIDED MODE: full structured prompt ──
