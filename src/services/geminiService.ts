@@ -391,6 +391,11 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
    \${bodyInstruction}
    \${textureInstruction}
 
+   EXPRESSION & GAZE:
+   - Direct, engaged eye contact with the camera lens — as if listening intently to someone just behind it.
+   - Expression: composed, present, attentive. Faintest natural smile or neutral composure. No forced grin.
+   - Eyes: bright, focused, alive.
+
    \${negativeConstraints}
 
    CAMERA SETUP:
@@ -415,6 +420,12 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
    ${aboutYouInstruction}
    ${clothingLogic}
    ${bodyInstruction}
+
+   EXPRESSION & GAZE:
+   - Direct, engaged eye contact with the camera lens — as if listening intently and with genuine interest to someone just behind the camera.
+   - Expression: composed, present, attentive. Mouth gently closed or with the faintest natural smile. No forced grin. No blank stare.
+   - Subtle forward lean or weight shift toward camera to convey engagement and energy.
+   - Eyes: bright, focused, alive — not glazed or distant.
 
    CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
    COMPOSITION SAFETY: Ensure clean figure-ground separation behind the head. Shift camera angle if needed.
@@ -509,13 +520,18 @@ export const generateBrandPhotoWithRefsSafe = async (
     }
   }
 
-  const lowerPrompt = (stylePrompt + (config.backgroundType || '')).toLowerCase();
-  const isBoardroomContext = lowerPrompt.includes('boardroom') || lowerPrompt.includes('meeting room') || lowerPrompt.includes('conference room');
-  const userRequestedScreen = lowerPrompt.match(/screen|monitor|tv|projector|display|presentation|slide/);
+  const lowerPrompt = (stylePrompt + ' ' + (config.backgroundType || '')).toLowerCase();
+  const isBoardroomContext = lowerPrompt.includes('boardroom') || lowerPrompt.includes('meeting room') || lowerPrompt.includes('conference room') || lowerPrompt.includes('executive');
+  // Only skip refinement if user EXPLICITLY asked for a screen — not if it's in the scene description
+  const userRequestedScreen = stylePrompt.toLowerCase().match(/with.*screen|with.*monitor|include.*screen|add.*screen|presentation screen/);
 
   if (isBoardroomContext && !userRequestedScreen) {
     try {
-      return await refineGeneratedImage(generatedImageBase64, "Remove any digital screens, monitors, TVs, whiteboards, or projector screens from the background walls. Replace with wood paneling, textured stone, or art matching the existing scene.", config.aspectRatio);
+      return await refineGeneratedImage(
+        generatedImageBase64,
+        `URGENT CORRECTION: This boardroom image contains a screen, monitor, TV, whiteboard, or projector on the wall. REMOVE IT COMPLETELY. Replace the wall area with ONE of: rich wood paneling, floor-to-ceiling bookshelves, large framed artwork, or a textured stone feature wall. Preserve the subject, lighting, and all other scene elements exactly. Do not alter the person in any way.`,
+        config.aspectRatio
+      );
     } catch {
       return generatedImageBase64;
     }
