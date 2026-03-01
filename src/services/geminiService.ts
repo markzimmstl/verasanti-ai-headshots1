@@ -370,12 +370,12 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
    5. CORRECT SCALE: Size the text proportionally to the garment area — not too large, not too small.
    ` : '';
 
-    return \`
+    return `
    Create a high-fidelity photorealistic personal brand photo exactly as described below.
 
    *** PRIMARY DIRECTIVE — EXPERT PROMPT (FOLLOW THIS PRECISELY) ***
-   \${config.expertPrompt.trim()}
-\${fabricTextInstruction}
+   ${config.expertPrompt.trim()}
+${fabricTextInstruction}
    *** CRITICAL INSTRUCTION: OVERRIDE REFERENCE IMAGE FRAMING ***
    The Reference Image is provided ONLY for facial identity, skin tone, and hair color.
    IGNORE the pose, framing, and background of the reference image.
@@ -387,20 +387,20 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
    3. NEVER cut off the top of the head or fingers.
 
    SUBJECT DETAILS:
-   \${aboutYouInstruction}
-   \${bodyInstruction}
-   \${textureInstruction}
+   ${aboutYouInstruction}
+   ${bodyInstruction}
+   ${textureInstruction}
 
    EXPRESSION & GAZE:
    - Direct, engaged eye contact with the camera lens — as if listening intently to someone just behind it.
    - Expression: composed, present, attentive. Faintest natural smile or neutral composure. No forced grin.
    - Eyes: bright, focused, alive.
 
-   \${negativeConstraints}
+   ${negativeConstraints}
 
    CAMERA SETUP:
-   - Aspect Ratio: \${config.aspectRatio}
- \`;
+   - Aspect Ratio: ${config.aspectRatio}
+ `;
   }
 
   // ── GUIDED MODE: full structured prompt ──
