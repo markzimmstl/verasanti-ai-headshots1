@@ -145,6 +145,8 @@ const buildPrompt = (
    - The background must be the ENVIRONMENT ONLY. 
    - CLOTHING TEXT: No text, no logos, no lettering, no graphics on any garment.
    - (Exception: If the scene description specifically asks for a "photo studio set" with visible gear, ignore the lighting equipment constraint).
+   - POSE: Subject must stand upright with good posture. NEVER bent forward at the waist. NEVER hunched over. NEVER leaning dramatically downward. No awkward or contorted body positions. Natural, confident, professional stance only.
+   - CAMERA ANGLE: NEVER a worm's-eye view. NEVER shoot upward from below the subject's waist. If Eye Level is selected, the lens is at the subject's eye height — not low, not looking up.
  `;
   // Glasses — default is to preserve whatever is in the reference photo
   const glassesConstraint = config.keepGlasses === false
@@ -192,6 +194,15 @@ The background wall must use ONE of these screen-free options ONLY:
 5. 3D textured stone or acoustic wood slat feature wall
 NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     cameraReorientation = "Angle the shot toward windows or a feature wall — never toward a flat back wall where a screen might appear.";
+  }
+
+  // Industrial scenes (construction, warehouse) tend to push Gemini toward low angles
+  // due to tall structures and high ceilings — enforce eye level explicitly
+  const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling');
+  if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
+    cameraReorientation = (cameraReorientation ? cameraReorientation + ' ' : '') +
+      '*** EYE LEVEL ENFORCEMENT FOR TALL ENVIRONMENT: The camera lens is positioned EXACTLY at the subject's eye height. The camera does NOT look upward even though the scene has tall structures, scaffolding, high ceilings, or cranes. These tall elements appear in the BACKGROUND behind and above the subject — the camera itself stays at the subject's eye level looking straight ahead. This is a corporate portrait, not an architectural photo. ***';
+    negativeConstraints += ' INDUSTRIAL SCENE CAMERA RULE: ABSOLUTELY NO low-angle shot. ABSOLUTELY NO worm's-eye view. ABSOLUTELY NO camera pointing upward. The tall background elements are behind the subject, not dictating the camera angle.';
   }
 
   const hexMatch = stylePrompt.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
