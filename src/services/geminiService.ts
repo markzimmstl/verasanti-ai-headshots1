@@ -201,8 +201,8 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling');
   if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
     cameraReorientation = (cameraReorientation ? cameraReorientation + ' ' : '') +
-      '*** EYE LEVEL ENFORCEMENT FOR TALL ENVIRONMENT: The camera lens is positioned EXACTLY at the subject's eye height. The camera does NOT look upward even though the scene has tall structures, scaffolding, high ceilings, or cranes. These tall elements appear in the BACKGROUND behind and above the subject — the camera itself stays at the subject's eye level looking straight ahead. This is a corporate portrait, not an architectural photo. ***';
-    negativeConstraints += ' INDUSTRIAL SCENE CAMERA RULE: ABSOLUTELY NO low-angle shot. ABSOLUTELY NO worm's-eye view. ABSOLUTELY NO camera pointing upward. The tall background elements are behind the subject, not dictating the camera angle.';
+      `*** EYE LEVEL ENFORCEMENT FOR TALL ENVIRONMENT: The camera lens is positioned EXACTLY at the subject's eye height. The camera does NOT look upward even though the scene has tall structures, scaffolding, high ceilings, or cranes. These tall elements appear in the BACKGROUND behind and above the subject — the camera itself stays at the subject's eye level looking straight ahead. This is a corporate portrait, not an architectural photo. ***`;
+    negativeConstraints += ` INDUSTRIAL SCENE CAMERA RULE: ABSOLUTELY NO low-angle shot. ABSOLUTELY NO worm's-eye view. ABSOLUTELY NO camera pointing upward. The tall background elements are behind the subject, not dictating the camera angle.`;
   }
 
   const hexMatch = stylePrompt.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
