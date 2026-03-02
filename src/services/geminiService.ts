@@ -196,19 +196,22 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     cameraReorientation = "Angle the shot toward windows or a feature wall — never toward a flat back wall where a screen might appear.";
   }
 
-  // Industrial scenes (construction, warehouse) push Gemini toward low angles
-  // Enforce eye level via sceneOverride (early in prompt) AND negativeConstraints
+  // Industrial scenes push Gemini toward low angles due to trained visual priors.
+  // Strategy: rewrite stylePrompt to remove trigger words, describe scene as already-at-eye-level.
   const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling');
   if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
-    const eyeLevelAngle = config.cameraAngle === 'High Angle' ? 'SLIGHTLY ABOVE eye level' : 'EXACTLY at the subject\'s eye height';
-    sceneOverride = `*** INDUSTRIAL SCENE — CAMERA ANGLE OVERRIDE (HIGHEST PRIORITY) ***
-This is a professional portrait, NOT an architectural or construction photograph.
-CAMERA POSITION: Lens is ${eyeLevelAngle}. Camera shoots STRAIGHT AHEAD — NEVER upward.
-The environment (cranes, shelving, scaffolding, high ceilings) exists in the BACKGROUND at mid-ground level behind the subject.
-These background elements do NOT determine the camera angle. The subject's eye line determines the camera angle.
-Treat this exactly like a studio portrait that happens to have an industrial backdrop.
-${sceneOverride}`;
-    negativeConstraints += ` *** INDUSTRIAL PORTRAIT RULE: ZERO low-angle shots. ZERO upward-pointing camera. ZERO worm's-eye view. The camera is at eye level. Background height is irrelevant to camera placement. ***`;
+    const eyeLevelAngle = config.cameraAngle === 'High Angle' ? 'slightly above' : 'exactly at';
+    // Replace the stylePrompt with a camera-neutral rewrite that describes the scene
+    // from the photographer's eye level — removing tall-structure trigger words
+    if (lowerPrompt.includes('warehouse')) {
+      stylePrompt = `professional corporate portrait; subject standing upright facing camera on a concrete floor; behind the subject at the same horizontal level are industrial metal storage racks with boxes — visible from mid-torso height, not towering; warm industrial overhead lighting; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
+    } else if (lowerPrompt.includes('construction')) {
+      stylePrompt = `professional corporate portrait; subject standing upright on a job site facing camera; behind the subject at the same horizontal level are steel beams, building materials, and site equipment — visible from mid-torso height; natural outdoor daylight; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
+    } else {
+      // Generic industrial rewrite
+      stylePrompt = `professional corporate portrait in an industrial setting; subject standing upright facing camera; industrial environment visible behind subject at mid-ground level — not towering overhead; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
+    }
+    negativeConstraints += ` *** ABSOLUTE RULE: Camera is at eye level. ZERO low-angle shots. ZERO upward tilt. ZERO worm's-eye perspective. The background does not dictate the camera angle. ***`;
   }
 
   const hexMatch = stylePrompt.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
