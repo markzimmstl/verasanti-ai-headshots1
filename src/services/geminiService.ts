@@ -196,13 +196,19 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     cameraReorientation = "Angle the shot toward windows or a feature wall — never toward a flat back wall where a screen might appear.";
   }
 
-  // Industrial scenes (construction, warehouse) tend to push Gemini toward low angles
-  // due to tall structures and high ceilings — enforce eye level explicitly
+  // Industrial scenes (construction, warehouse) push Gemini toward low angles
+  // Enforce eye level via sceneOverride (early in prompt) AND negativeConstraints
   const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling');
   if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
-    cameraReorientation = (cameraReorientation ? cameraReorientation + ' ' : '') +
-      `*** EYE LEVEL ENFORCEMENT FOR TALL ENVIRONMENT: The camera lens is positioned EXACTLY at the subject's eye height. The camera does NOT look upward even though the scene has tall structures, scaffolding, high ceilings, or cranes. These tall elements appear in the BACKGROUND behind and above the subject — the camera itself stays at the subject's eye level looking straight ahead. This is a corporate portrait, not an architectural photo. ***`;
-    negativeConstraints += ` INDUSTRIAL SCENE CAMERA RULE: ABSOLUTELY NO low-angle shot. ABSOLUTELY NO worm's-eye view. ABSOLUTELY NO camera pointing upward. The tall background elements are behind the subject, not dictating the camera angle.`;
+    const eyeLevelAngle = config.cameraAngle === 'High Angle' ? 'SLIGHTLY ABOVE eye level' : 'EXACTLY at the subject\'s eye height';
+    sceneOverride = `*** INDUSTRIAL SCENE — CAMERA ANGLE OVERRIDE (HIGHEST PRIORITY) ***
+This is a professional portrait, NOT an architectural or construction photograph.
+CAMERA POSITION: Lens is ${eyeLevelAngle}. Camera shoots STRAIGHT AHEAD — NEVER upward.
+The environment (cranes, shelving, scaffolding, high ceilings) exists in the BACKGROUND at mid-ground level behind the subject.
+These background elements do NOT determine the camera angle. The subject's eye line determines the camera angle.
+Treat this exactly like a studio portrait that happens to have an industrial backdrop.
+${sceneOverride}`;
+    negativeConstraints += ` *** INDUSTRIAL PORTRAIT RULE: ZERO low-angle shots. ZERO upward-pointing camera. ZERO worm's-eye view. The camera is at eye level. Background height is irrelevant to camera placement. ***`;
   }
 
   const hexMatch = stylePrompt.match(/#(?:[0-9a-fA-F]{3}){1,2}/);
