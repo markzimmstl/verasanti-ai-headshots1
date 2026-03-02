@@ -331,12 +331,15 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       config: cloneConfig({ ...config, retouchLevel: config.retouchLevel || 'None' }),
       isSurprise: false,
     };
+    const wasUpdate = !!activeLookId;
     setLooks((prev) => {
       if (activeLookId) return prev.map((look) => look.id === activeLookId ? newLook : look);
       if (prev.length >= MAX_LOOKS) { alert(`You can create up to ${MAX_LOOKS} Looks.`); return prev; }
       return [...prev, newLook];
     });
-    if (!activeLookId) resetBuilder();
+    // Always reset after save or update so the button clears and builder is fresh
+    setActiveLookId(null);
+    resetBuilder();
   };
 
   const handleEditLook = (look: LookConfig) => {
