@@ -576,7 +576,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'construction-site',
         name: 'Construction Site',
         prompt:
-          'on a construction site with cranes, scaffolding, and partially built structures in the background; camera at eye level, subject standing confidently facing camera; clearly outdoors industrial, not a city sidewalk or hospital',
+          'professional portrait on a construction site; subject standing upright on flat ground, camera lens at the subject\'s eye height shooting straight ahead; construction equipment and steel structures visible at the same horizontal level as the subject in the mid-ground and background — not towering overhead; hard hat optional; natural daylight; clearly an active job site, not a city sidewalk or studio',
         iconType: 'building',
       },
       {
@@ -590,7 +590,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'warehouse',
         name: 'Warehouse',
         prompt:
-          'inside a large working warehouse with tall metal shelving racks stocked with boxes and pallets in the background, concrete floor; camera at eye level, subject standing confidently facing camera; clearly an active distribution or storage facility, not a factory floor or office',
+          'professional portrait inside a warehouse; subject standing upright on the concrete floor, camera lens at the subject\'s eye height shooting straight ahead; storage shelving and stacked pallets visible at mid-ground behind the subject at the same horizontal level — shelves not towering overhead; industrial ceiling lights visible in upper periphery only; clearly an active distribution facility, not a factory floor or office',
         iconType: 'factory',
       },
     ],
