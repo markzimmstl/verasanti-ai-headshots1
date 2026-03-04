@@ -45,7 +45,8 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
   }, []);
 
   const pct         = Math.min(progress, 92);
-  const displayText = message || LOADING_PHRASES[idx];
+  // message prop = live "Generating Look #1 (Image 2 of 3)…" — shown statically above the rotating phrase
+  const rotatingText = LOADING_PHRASES[idx];
 
   return (
     <div
@@ -56,7 +57,6 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
 
         {/* ── Spinner ring ── */}
         <div className="relative mb-10" style={{ width: 96, height: 96 }}>
-          {/* Pulsing ambient glow */}
           <div
             className="absolute rounded-full animate-pulse"
             style={{
@@ -64,7 +64,6 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
               background: 'radial-gradient(ellipse, rgba(76,29,149,0.35) 0%, transparent 70%)',
             }}
           />
-          {/* Spinning gradient arc */}
           <svg
             className="absolute inset-0 animate-spin"
             style={{ animationDuration: '1.4s' }}
@@ -85,7 +84,6 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
               strokeDashoffset="104"
             />
           </svg>
-          {/* Center ✦ */}
           <div className="absolute inset-0 flex items-center justify-center text-3xl">✦</div>
         </div>
 
@@ -104,7 +102,24 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
           <em style={{ color: 'rgba(159,103,255,0.9)' }}>brand images</em>
         </h1>
 
-        {/* ── Rotating status text ── */}
+        {/* ── Static generation status (from App) ── */}
+        {message && (
+          <div
+            className="mb-3 px-4 py-2 rounded-full"
+            style={{
+              background: 'rgba(13,148,136,0.1)',
+              border: '1px solid rgba(13,148,136,0.25)',
+              fontSize: '13px',
+              fontWeight: 500,
+              color: 'rgba(13,148,136,0.9)',
+              letterSpacing: '0.01em',
+            }}
+          >
+            {message}
+          </div>
+        )}
+
+        {/* ── Rotating ambient status text ── */}
         <div
           className="flex items-center justify-center gap-2.5 mb-10 overflow-hidden"
           style={{ height: 28 }}
@@ -117,9 +132,8 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
               transform: visible ? 'translateY(0)' : 'translateY(-6px)',
             }}
           >
-            {displayText}
+            {rotatingText}
           </p>
-          {/* Three animated dots */}
           <div className="flex gap-1 items-center shrink-0">
             {[0, 1, 2].map(i => (
               <div
@@ -179,7 +193,6 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
 
       </div>
 
-      {/* Keyframes */}
       <style>{`
         @keyframes dotPulse {
           0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
