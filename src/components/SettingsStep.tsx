@@ -53,7 +53,6 @@ interface SettingsStepProps {
 type CreationMode = 'guided' | 'expert';
 
 const MAX_LOOKS = 5;
-const ORANGE = '#f47621';
 
 const cloneConfig = (cfg: GenerationConfig): GenerationConfig =>
   JSON.parse(JSON.stringify(cfg));
@@ -83,6 +82,77 @@ const HAIR_COLORS = [
 
 const AGE_RANGES = ['18–29', '30–44', '45–59', '60+'];
 
+// ── Design tokens ───────────────────────────────────────────────────────────
+const T = {
+  bg:           '#080A0F',
+  panel:        'rgba(255,255,255,0.03)',
+  panelBorder:  'rgba(255,255,255,0.07)',
+  panelHover:   'rgba(255,255,255,0.05)',
+  purple:       '#9F67FF',
+  purpleDeep:   '#4C1D95',
+  purpleDim:    'rgba(76,29,149,0.15)',
+  purpleBorder: 'rgba(76,29,149,0.3)',
+  purpleGrad:   'linear-gradient(135deg, #2E1065, #4C1D95)',
+  teal:         '#0D9488',
+  tealDim:      'rgba(13,148,136,0.12)',
+  tealBorder:   'rgba(13,148,136,0.3)',
+  amber:        '#F59E0B',
+  amberDim:     'rgba(245,158,11,0.1)',
+  amberBorder:  'rgba(245,158,11,0.25)',
+  red:          'rgba(239,68,68,0.85)',
+  redDim:       'rgba(239,68,68,0.08)',
+  redBorder:    'rgba(239,68,68,0.2)',
+  white:        '#FFFFFF',
+  white80:      'rgba(255,255,255,0.8)',
+  white60:      'rgba(255,255,255,0.6)',
+  white40:      'rgba(255,255,255,0.4)',
+  white20:      'rgba(255,255,255,0.2)',
+  white10:      'rgba(255,255,255,0.1)',
+  white06:      'rgba(255,255,255,0.06)',
+  white03:      'rgba(255,255,255,0.03)',
+  serif:        "'Cormorant Garamond', serif",
+  sans:         "'DM Sans', sans-serif",
+};
+
+// Shared style helpers
+const pill = (active: boolean) => ({
+  display: 'inline-flex' as const,
+  alignItems: 'center' as const,
+  gap: 6,
+  padding: '6px 14px',
+  borderRadius: 8,
+  fontSize: 12,
+  fontWeight: 500,
+  cursor: 'pointer',
+  transition: 'all 0.15s',
+  background: active ? T.purpleGrad : T.panel,
+  border: `1px solid ${active ? 'rgba(76,29,149,0.6)' : T.panelBorder}`,
+  color: active ? T.white : T.white60,
+  boxShadow: active ? '0 4px 16px rgba(46,16,101,0.35)' : 'none',
+});
+
+const sectionStyle = (unlocked: boolean) => ({
+  borderRadius: 16,
+  overflow: 'hidden',
+  border: `1px solid ${unlocked ? T.panelBorder : 'rgba(255,255,255,0.04)'}`,
+  background: unlocked ? T.panel : 'rgba(255,255,255,0.01)',
+  opacity: unlocked ? 1 : 0.45,
+  transition: 'all 0.2s',
+  marginBottom: 12,
+});
+
+const sectionHeaderStyle = (unlocked: boolean) => ({
+  width: '100%',
+  display: 'flex' as const,
+  alignItems: 'center' as const,
+  justifyContent: 'space-between' as const,
+  padding: '20px 24px',
+  background: 'none',
+  border: 'none',
+  cursor: unlocked ? 'pointer' : 'not-allowed',
+  transition: 'background 0.15s',
+});
+
 export const SettingsStep: React.FC<SettingsStepProps> = ({
   config,
   onChange,
@@ -99,7 +169,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [sceneId, setSceneId] = useState<string | null>(null);
   const [sceneName, setSceneName] = useState<string | null>(null);
   const [scenePrompt, setScenePrompt] = useState<string | null>(null);
-  // Section expansion state — progressive disclosure
   const [sec1Open, setSec1Open] = useState(false);
   const [sec2Open, setSec2Open] = useState(false);
   const [sec3Open, setSec3Open] = useState(false);
@@ -117,11 +186,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [bodySizeOffset, setBodySizeOffset] = useState<number>(DEFAULT_BODY_OFFSET);
   const [activeColorPicker, setActiveColorPicker] = useState<'primary' | 'secondary' | 'customBg' | null>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
-
-  // About You validation warning
   const [showAboutYouWarning, setShowAboutYouWarning] = useState(false);
-
-  // Shot list generator state
   const [shotListExpanded, setShotListExpanded] = useState(false);
   const [shotListDescription, setShotListDescription] = useState('');
   const [shotListCount, setShotListCount] = useState<3|5|10>(5);
@@ -133,7 +198,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [pendingSingleShot, setPendingSingleShot] = useState<any>(null);
   const [shotImageCounts, setShotImageCounts] = useState<Record<number, number>>({});
 
-  // Sync expert prompt input when parent config changes (e.g. after a reset clears it)
   useEffect(() => {
     setExpertPromptInput(config.expertPrompt || '');
   }, [config.expertPrompt]);
@@ -152,7 +216,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     onChange({ ...config, ...patch });
   };
 
-  // ── About You helpers ──────────────────────────────────────────
   const ringLabel = () => {
     if (config.genderPresentation === 'woman') return 'Include diamond engagement / wedding ring';
     if (config.genderPresentation === 'man')   return 'Include gold wedding band';
@@ -165,7 +228,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     return 'wearing a simple elegant wedding band on left ring finger';
   };
 
-  // ── Config helpers ─────────────────────────────────────────────
   const handleExpertPromptChange = (value: string) => {
     setExpertPromptInput(value);
     updateConfig({ expertPrompt: value });
@@ -331,13 +393,11 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
       config: cloneConfig({ ...config, retouchLevel: config.retouchLevel || 'None' }),
       isSurprise: false,
     };
-    const wasUpdate = !!activeLookId;
     setLooks((prev) => {
       if (activeLookId) return prev.map((look) => look.id === activeLookId ? newLook : look);
       if (prev.length >= MAX_LOOKS) { alert(`You can create up to ${MAX_LOOKS} Looks.`); return prev; }
       return [...prev, newLook];
     });
-    // Always reset after save or update so the button clears and builder is fresh
     setActiveLookId(null);
     resetBuilder();
   };
@@ -363,10 +423,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   };
 
   const totalImages = looks.reduce((sum, look) => sum + look.imageCount, 0);
-
   const aboutYouComplete = !!config.genderPresentation && !!config.ageRange;
 
-  // Progressive disclosure — auto-open next section when prerequisite is met
   const sectionRefs = {
     sec1: React.useRef<HTMLDivElement | null>(null),
     sec2: React.useRef<HTMLDivElement | null>(null),
@@ -376,71 +434,45 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   };
 
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
-    setTimeout(() => {
-      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+    setTimeout(() => { ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
   };
 
-  // About You complete → just unlock Section 1, no auto-scroll (hair/ring are optional below)
   useEffect(() => {
-    if (aboutYouComplete && !sec1Open) {
-      setSec1Open(true);
-      // No scroll — user scrolls manually to see hair/ring options first
-    }
+    if (aboutYouComplete && !sec1Open) { setSec1Open(true); }
   }, [aboutYouComplete]);
 
-  // Clothing ITEM chosen → open Section 2 and scroll to it
   useEffect(() => {
-    if (clothingOption && !sec2Open) {
-      setSec2Open(true);
-      scrollToSection(sectionRefs.sec2);
-    }
+    if (clothingOption && !sec2Open) { setSec2Open(true); scrollToSection(sectionRefs.sec2); }
   }, [clothingOption]);
 
-  // Background selected → open Section 3 and scroll to it
-  // But NOT when the user picks "Custom Background" — they're still in Section 2
   useEffect(() => {
-    if (sceneId && sceneId !== 'custom' && !sec3Open) {
-      setSec3Open(true);
-      scrollToSection(sectionRefs.sec3);
-    }
+    if (sceneId && sceneId !== 'custom' && !sec3Open) { setSec3Open(true); scrollToSection(sectionRefs.sec3); }
   }, [sceneId]);
 
   const handleContinue = () => {
-    // Require gender + age
     if (!config.genderPresentation || !config.ageRange) {
       setShowAboutYouWarning(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-
     let stylesToUse: StyleOption[] = [];
-    {
-      if (looks.length === 0) { alert('Please create at least one Look.'); return; }
-      stylesToUse = looks.map((look) => ({
-        id: look.id,
-        name: look.label,
-        description: `${look.clothingOption} – ${look.sceneName}`,
-        promptModifier: look.scenePrompt,
-        thumbnailColor: '#111827',
-        imageCount: look.imageCount,
-        clothingDescription: look.clothingOption,
-        variationLevel: look.variationLevel,
-        bodySizeOffset: look.bodySizeOffset,
-        overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
-      }));
-    }
-
-    const baseConfig: GenerationConfig = {
-      ...config,
-      retouchLevel: config.retouchLevel || 'None',
-      variationsCount: 1,
-    };
-
+    if (looks.length === 0) { alert('Please create at least one Look.'); return; }
+    stylesToUse = looks.map((look) => ({
+      id: look.id,
+      name: look.label,
+      description: `${look.clothingOption} – ${look.sceneName}`,
+      promptModifier: look.scenePrompt,
+      thumbnailColor: '#111827',
+      imageCount: look.imageCount,
+      clothingDescription: look.clothingOption,
+      variationLevel: look.variationLevel,
+      bodySizeOffset: look.bodySizeOffset,
+      overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
+    }));
+    const baseConfig: GenerationConfig = { ...config, retouchLevel: config.retouchLevel || 'None', variationsCount: 1 };
     onNext(stylesToUse, baseConfig);
   };
 
-  // ── Shot List Generator ────────────────────────────────────────────────────
   const generateShotList = async () => {
     if (!shotListDescription.trim() || shotListLoading) return;
     setShotListLoading(true);
@@ -477,7 +509,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     setShowGenerateAllConfirm(true);
   };
 
-  // Parse aspect ratio from a free-text prompt (e.g. "16x9", "16:9", "9:16")
   const parseAspectRatioFromPrompt = (prompt: string): AspectRatio => {
     const p = prompt.toLowerCase();
     if (p.match(/16\s*[x:]\s*9/)) return '16:9';
@@ -489,7 +520,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
   const confirmGenerateAllShots = () => {
     setShowGenerateAllConfirm(false);
-    // If triggered from a single-shot button, only queue that one shot (+ saved looks)
     if (pendingSingleShot) {
       const shot = pendingSingleShot;
       setPendingSingleShot(null);
@@ -500,122 +530,96 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         promptModifier: shot.prompt,
         thumbnailColor: '#111827',
         imageCount: shotImageCounts[shot.number] || 1,
-        overrides: {
-          expertPrompt: shot.prompt,
-          aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
-        },
+        overrides: { expertPrompt: shot.prompt, aspectRatio: parseAspectRatioFromPrompt(shot.prompt) },
       };
       const lookStyles: StyleOption[] = looks.map((look) => ({
-        id: look.id,
-        name: look.label,
-        description: `${look.clothingOption} – ${look.sceneName}`,
-        promptModifier: look.scenePrompt,
-        thumbnailColor: '#111827',
-        imageCount: look.imageCount,
-        clothingDescription: look.clothingOption,
-        variationLevel: look.variationLevel,
-        bodySizeOffset: look.bodySizeOffset,
+        id: look.id, name: look.label, description: `${look.clothingOption} – ${look.sceneName}`,
+        promptModifier: look.scenePrompt, thumbnailColor: '#111827', imageCount: look.imageCount,
+        clothingDescription: look.clothingOption, variationLevel: look.variationLevel, bodySizeOffset: look.bodySizeOffset,
         overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
       }));
-      const baseConfig: GenerationConfig = {
-        ...config,
-        retouchLevel: config.retouchLevel || 'None',
-        variationsCount: 1,
-      };
-      onNext([shotStyle, ...lookStyles], baseConfig);
+      onNext([shotStyle, ...lookStyles], { ...config, retouchLevel: config.retouchLevel || 'None', variationsCount: 1 });
       return;
     }
     const shotStyles: StyleOption[] = shotList.map((shot) => ({
-      id: `shot-${shot.number}`,
-      name: shot.name,
-      description: shot.scene,
-      promptModifier: shot.prompt,
-      thumbnailColor: '#111827',
-      imageCount: shotImageCounts[shot.number] || 1,
-      overrides: {
-        expertPrompt: shot.prompt,
-        aspectRatio: parseAspectRatioFromPrompt(shot.prompt),
-      },
+      id: `shot-${shot.number}`, name: shot.name, description: shot.scene, promptModifier: shot.prompt,
+      thumbnailColor: '#111827', imageCount: shotImageCounts[shot.number] || 1,
+      overrides: { expertPrompt: shot.prompt, aspectRatio: parseAspectRatioFromPrompt(shot.prompt) },
     }));
     const lookStyles: StyleOption[] = looks.map((look) => ({
-      id: look.id,
-      name: look.label,
-      description: `${look.clothingOption} – ${look.sceneName}`,
-      promptModifier: look.scenePrompt,
-      thumbnailColor: '#111827',
-      imageCount: look.imageCount,
-      clothingDescription: look.clothingOption,
-      variationLevel: look.variationLevel,
-      bodySizeOffset: look.bodySizeOffset,
+      id: look.id, name: look.label, description: `${look.clothingOption} – ${look.sceneName}`,
+      promptModifier: look.scenePrompt, thumbnailColor: '#111827', imageCount: look.imageCount,
+      clothingDescription: look.clothingOption, variationLevel: look.variationLevel, bodySizeOffset: look.bodySizeOffset,
       overrides: { ...look.config, bodySizeOffset: look.bodySizeOffset },
     }));
-    const stylesToUse = [...shotStyles, ...lookStyles];
-    const baseConfig: GenerationConfig = {
-      ...config,
-      retouchLevel: config.retouchLevel || 'None',
-      variationsCount: 1,
-    };
-    onNext(stylesToUse, baseConfig);
+    onNext([...shotStyles, ...lookStyles], { ...config, retouchLevel: config.retouchLevel || 'None', variationsCount: 1 });
   };
 
   const handleGenerateSingleShot = (shot: any) => {
-    if (!aboutYouComplete) {
-      setShowAboutYouWarning(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    // Store which shot is pending and open the shared confirmation modal
+    if (!aboutYouComplete) { setShowAboutYouWarning(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     setPendingSingleShot(shot);
     setShowGenerateAllConfirm(true);
   };
 
   const canContinue = aboutYouComplete && looks.length > 0;
 
-  // Color picker renderer
+  // ── Color picker ───────────────────────────────────────────────
   const renderColorPicker = (
     type: 'primary' | 'secondary' | 'customBg',
     currentValue: string,
-    onChange: (val: string) => void,
+    onChangeFn: (val: string) => void,
     placeholder: string
   ) => {
     const isActive = activeColorPicker === type;
     return (
-      <div className="relative">
+      <div style={{ position: 'relative' }}>
         <button
           type="button"
           onClick={() => setActiveColorPicker(isActive ? null : type)}
-          className={`w-full flex items-center gap-2 bg-slate-950 border rounded-lg px-3 py-2 text-xs transition-all ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-slate-700 hover:border-slate-500'}`}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+            background: T.panel, border: `1px solid ${isActive ? T.purple : T.panelBorder}`,
+            borderRadius: 8, padding: '8px 12px', fontSize: 12, cursor: 'pointer',
+            color: currentValue ? T.white : T.white40, transition: 'all 0.15s',
+            boxShadow: isActive ? `0 0 0 1px ${T.purple}` : 'none',
+          }}
         >
-          <div
-            className="w-4 h-4 rounded-full border border-slate-600 shadow-sm"
-            style={{
-              backgroundColor: currentValue || 'transparent',
-              backgroundImage: currentValue ? 'none' : 'linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b), linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 75%, #1e293b 75%, #1e293b)',
-              backgroundSize: '4px 4px',
-              backgroundPosition: '0 0, 2px 2px',
-            }}
-          />
-          <span className={currentValue ? 'text-white' : 'text-slate-500'}>{currentValue || placeholder}</span>
+          <div style={{
+            width: 14, height: 14, borderRadius: '50%', border: `1px solid ${T.white20}`,
+            backgroundColor: currentValue || 'transparent',
+            backgroundImage: currentValue ? 'none' : 'linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%), linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%)',
+            backgroundSize: '4px 4px',
+            flexShrink: 0,
+          }} />
+          <span>{currentValue || placeholder}</span>
         </button>
         {isActive && (
-          <div ref={colorPickerRef} className="absolute bottom-full left-0 mb-2 z-50 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-4 w-64 animate-fade-in">
-            <button type="button" onClick={() => { onChange(''); setActiveColorPicker(null); }} className="flex items-center gap-2 w-full text-left px-2 py-1.5 mb-3 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-700">
-              <Ban className="w-3 h-3 text-red-400" /><span>None / Clear</span>
+          <div ref={colorPickerRef} style={{
+            position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, zIndex: 50,
+            background: '#0D0F16', border: `1px solid ${T.panelBorder}`, borderRadius: 16,
+            boxShadow: '0 24px 48px rgba(0,0,0,0.6)', padding: 16, width: 256,
+          }}>
+            <button type="button" onClick={() => { onChangeFn(''); setActiveColorPicker(null); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '6px 8px', marginBottom: 12, fontSize: 12, background: 'none', border: `1px solid ${T.panelBorder}`, borderRadius: 8, color: T.white40, cursor: 'pointer' }}>
+              <Ban style={{ width: 12, height: 12, color: T.red }} /><span>None / Clear</span>
             </button>
-            <div className="grid grid-cols-6 gap-2 mb-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 14 }}>
               {PRESET_COLORS.map((color) => (
-                <button key={color} type="button" onClick={() => { onChange(color); setActiveColorPicker(null); }} className="w-8 h-8 rounded-full border border-slate-700 hover:scale-110 transition-transform relative group" style={{ backgroundColor: color }}>
-                  {currentValue === color && <div className="absolute inset-0 flex items-center justify-center"><Check className="w-4 h-4 text-white drop-shadow-md" /></div>}
+                <button key={color} type="button" onClick={() => { onChangeFn(color); setActiveColorPicker(null); }}
+                  style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${T.panelBorder}`, backgroundColor: color, cursor: 'pointer', position: 'relative', transition: 'transform 0.1s' }}>
+                  {currentValue === color && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check style={{ width: 14, height: 14, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} /></div>}
                 </button>
               ))}
             </div>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs">#</span>
-                <input type="text" value={currentValue.replace('#', '')} onChange={(e) => onChange(`#${e.target.value}`)} placeholder="HEX" className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-5 pr-2 py-1.5 text-xs text-white focus:ring-1 focus:ring-indigo-500 outline-none" />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: T.white40, fontSize: 12 }}>#</span>
+                <input type="text" value={currentValue.replace('#', '')} onChange={(e) => onChangeFn(`#${e.target.value}`)} placeholder="HEX"
+                  style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 8, paddingLeft: 20, paddingRight: 8, paddingTop: 6, paddingBottom: 6, fontSize: 12, color: T.white, outline: 'none', boxSizing: 'border-box' }} />
               </div>
-              <button type="button" onClick={() => { pickColorWithEyeDropper(type as any); setActiveColorPicker(null); }} disabled={!isEyeDropperSupported} className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors" title="Pick from screen">
-                <Pipette className="w-4 h-4" />
+              <button type="button" onClick={() => { pickColorWithEyeDropper(type as any); setActiveColorPicker(null); }} disabled={!isEyeDropperSupported}
+                style={{ padding: '6px 8px', background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 8, color: T.white60, cursor: 'pointer' }} title="Pick from screen">
+                <Pipette style={{ width: 14, height: 14 }} />
               </button>
             </div>
           </div>
@@ -624,367 +628,339 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     );
   };
 
-  // Portal modal — renders to document.body to escape any CSS stacking context
+  // ── Confirm modal ──────────────────────────────────────────────
   const confirmModal = showGenerateAllConfirm ? createPortal(
-    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}>
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
-            <Zap className="w-5 h-5 text-emerald-400" />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)' }}>
+      <div style={{ background: '#0D0F16', border: `1px solid ${T.panelBorder}`, borderRadius: 20, padding: 28, maxWidth: 380, width: '100%', margin: '0 16px', boxShadow: '0 48px 96px rgba(0,0,0,0.7)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: T.tealDim, border: `1px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Zap style={{ width: 20, height: 20, color: T.teal }} />
           </div>
-          <h3 className="text-base font-bold text-white">
+          <h3 style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 400, color: T.white, margin: 0 }}>
             {pendingSingleShot ? `Generate "${pendingSingleShot.name}"?` : 'Ready to Generate?'}
           </h3>
         </div>
-        <p className="text-sm text-slate-400 mb-3 leading-relaxed">
+        <p style={{ fontSize: 13, color: T.white60, marginBottom: 14, lineHeight: 1.6 }}>
           {pendingSingleShot
-            ? <span>This will generate <span className="font-bold text-white">{shotImageCounts[pendingSingleShot.number] || 1} image{(shotImageCounts[pendingSingleShot.number] || 1) !== 1 ? 's' : ''}</span> for this shot{looks.length > 0 ? <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span> : ''}.</span>
-            : <span>This will generate your <span className="font-bold text-white">{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</span>{looks.length > 0 ? <span> plus your <span className="font-bold text-white">{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</span></span> : ''}.</span>
+            ? <span>This will generate <strong style={{ color: T.white }}>{shotImageCounts[pendingSingleShot.number] || 1} image{(shotImageCounts[pendingSingleShot.number] || 1) !== 1 ? 's' : ''}</strong> for this shot{looks.length > 0 ? <span> plus your <strong style={{ color: T.white }}>{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</strong></span> : ''}.</span>
+            : <span>This will generate your <strong style={{ color: T.white }}>{shotList.length} Shot List image{shotList.length !== 1 ? 's' : ''}</strong>{looks.length > 0 ? <span> plus your <strong style={{ color: T.white }}>{looks.length} Saved Look{looks.length !== 1 ? 's' : ''}</strong></span> : ''}.</span>
           }
         </p>
-        <div className="bg-slate-800/60 border border-slate-700 rounded-xl p-3 mb-5 text-xs text-slate-400 space-y-1">
+        <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14, marginBottom: 20, fontSize: 12, color: T.white60 }}>
           {pendingSingleShot
-            ? <div className="flex justify-between"><span>"{pendingSingleShot.name}"</span><span className="text-white font-semibold">{shotImageCounts[pendingSingleShot.number] || 1} credit{(shotImageCounts[pendingSingleShot.number] || 1) !== 1 ? 's' : ''}</span></div>
-            : shotList.length > 0 && <div className="flex justify-between"><span>Shot List images</span><span className="text-white font-semibold">{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)} credit{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) !== 1 ? 's' : ''}</span></div>
+            ? <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>"{pendingSingleShot.name}"</span><span style={{ color: T.white, fontWeight: 600 }}>{shotImageCounts[pendingSingleShot.number] || 1} credit{(shotImageCounts[pendingSingleShot.number] || 1) !== 1 ? 's' : ''}</span></div>
+            : shotList.length > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Shot List images</span><span style={{ color: T.white, fontWeight: 600 }}>{shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)} credits</span></div>
           }
-          {looks.length > 0 && <div className="flex justify-between"><span>Saved Looks images</span><span className="text-white font-semibold">{looks.reduce((s,l) => s + l.imageCount, 0)} credit{looks.reduce((s,l) => s + l.imageCount, 0) !== 1 ? 's' : ''}</span></div>}
-          <div className="flex justify-between border-t border-slate-700 pt-1 mt-1">
-            <span className="font-medium text-slate-300">Total</span>
-            <span className="text-indigo-300 font-bold">
+          {looks.length > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}><span>Saved Looks</span><span style={{ color: T.white, fontWeight: 600 }}>{looks.reduce((s,l) => s + l.imageCount, 0)} credits</span></div>}
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${T.panelBorder}`, paddingTop: 8, marginTop: 8 }}>
+            <span style={{ color: T.white80, fontWeight: 500 }}>Total</span>
+            <span style={{ color: T.purple, fontWeight: 700 }}>
               {(pendingSingleShot ? (shotImageCounts[pendingSingleShot.number] || 1) : shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0)) + looks.reduce((s,l) => s + l.imageCount, 0)} credits
             </span>
           </div>
         </div>
-        <div className="flex gap-3">
-          <button type="button" onClick={() => { setShowGenerateAllConfirm(false); setPendingSingleShot(null); }} className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-800 text-sm font-medium transition">Cancel</button>
-          <button type="button" onClick={confirmGenerateAllShots} className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition">Generate Now</button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" onClick={() => { setShowGenerateAllConfirm(false); setPendingSingleShot(null); }}
+            style={{ flex: 1, padding: '12px', borderRadius: 11, border: `1px solid ${T.panelBorder}`, background: 'none', color: T.white60, fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}>
+            Cancel
+          </button>
+          <button type="button" onClick={confirmGenerateAllShots}
+            style={{ flex: 1, padding: '12px', borderRadius: 11, background: T.tealDim, border: `1px solid ${T.tealBorder}`, color: T.teal, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
+            Generate Now
+          </button>
         </div>
       </div>
     </div>,
     document.body
   ) : null;
 
+  // ── Section accordion wrapper ──────────────────────────────────
+  const SectionBlock = ({ num, icon, title, badge, unlocked, isOpen, onToggle, hint, rightEl, children }: {
+    num: number, icon: React.ReactNode, title: string, badge?: string, unlocked: boolean,
+    isOpen: boolean, onToggle: () => void, hint?: string, rightEl?: React.ReactNode, children: React.ReactNode
+  }) => (
+    <div style={sectionStyle(unlocked)}>
+      <button
+        type="button"
+        disabled={!unlocked}
+        onClick={onToggle}
+        style={sectionHeaderStyle(unlocked)}
+        onMouseOver={e => { if (unlocked) (e.currentTarget as HTMLElement).style.background = T.panelHover; }}
+        onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            background: unlocked ? T.purpleGrad : T.panel,
+            border: `1px solid ${unlocked ? 'rgba(76,29,149,0.5)' : T.panelBorder}`,
+          }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.white }}>{num}</span>
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: T.purple }}>{icon}</span>
+              <span style={{ fontFamily: T.serif, fontSize: 18, fontWeight: 400, color: T.white }}>{title}</span>
+              {badge && <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 8px', borderRadius: 100, background: T.tealDim, border: `1px solid ${T.tealBorder}`, color: T.teal }}>{badge}</span>}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {rightEl}
+          {hint && !unlocked && <span style={{ fontSize: 11, color: T.white40 }}>{hint}</span>}
+          <ChevronDown style={{ width: 16, height: 16, color: T.white40, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }} />
+        </div>
+      </button>
+      {isOpen && <div style={{ padding: '0 24px 24px' }}>{children}</div>}
+    </div>
+  );
+
+  // ── Toggle button (pill style) ─────────────────────────────────
+  const ToggleBtn = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button type="button" onClick={onClick} style={pill(active)}>{children}</button>
+  );
+
   return (
-    <div className="w-full max-w-6xl mx-auto pb-20 animate-fade-in">
+    <div style={{ width: '100%', maxWidth: 1080, margin: '0 auto', paddingBottom: 80 }} className="animate-fade-in">
       {confirmModal}
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Design your Photoshoot</h2>
-          <p className="text-slate-400 text-sm max-w-lg">Build your Looks by choosing a clothing style, background scene, and fine-tuning details. Generate multiple images per Look.</p>
+      {/* Page header */}
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 100, padding: '4px 12px', marginBottom: 14, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple, fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Step 2 of 4
         </div>
+        <h1 style={{ fontFamily: T.serif, fontSize: 40, fontWeight: 400, color: T.white, letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 10px' }}>
+          Design your Photoshoot
+        </h1>
+        <p style={{ fontSize: 15, fontWeight: 300, color: T.white40, margin: 0, maxWidth: 520, lineHeight: 1.6 }}>
+          Build your Looks by choosing a clothing style, background scene, and fine-tuning details.
+        </p>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr,320px] gap-8 items-start">
-        {/* LEFT COLUMN */}
-        <div className="space-y-6">
+      {/* Two-column layout */}
+      <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>
+        <style>{`.settings-grid { grid-template-columns: 1fr 300px; } @media (max-width: 960px) { .settings-grid { grid-template-columns: 1fr !important; } }`}</style>
 
-          {/* ── ABOUT YOU (always visible, required) ─────────────── */}
-          <section className={`bg-slate-950/70 border rounded-2xl p-6 sm:p-7 shadow-inner ${showAboutYouWarning && !aboutYouComplete ? 'border-red-500/60' : aboutYouComplete ? 'border-green-500/30' : 'border-slate-800'}`}>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${aboutYouComplete ? 'bg-green-500' : 'bg-amber-500'}`}>
-                  {aboutYouComplete
-                    ? <Check className="w-5 h-5 text-white" />
-                    : <User className="w-5 h-5 text-white" />}
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-base font-semibold text-white">About You</h3>
-                </div>
-              </div>
-              <span className="text-[10px] uppercase tracking-wide font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20">Required</span>
-            </div>
+        {/* ── LEFT COLUMN ── */}
+        <div>
 
-            {showAboutYouWarning && !aboutYouComplete && (
-              <div className="mb-4 flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                Please select your gender presentation and age range before continuing.
-              </div>
-            )}
-
-            <div className="space-y-5">
-
-              {/* Gender Presentation */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-2 ml-1" style={{ color: ORANGE }}>Gender Presentation</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'woman',    label: 'Woman' },
-                    { value: 'man',      label: 'Man' },
-                    { value: 'nonbinary',label: 'Non-binary' },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => {
-                        updateConfig({ genderPresentation: opt.value as any, includeRing: false });
-                        setShowAboutYouWarning(false);
-                      }}
-                      className={`text-xs px-3 py-2.5 rounded-lg border transition-all ${
-                        config.genderPresentation === opt.value
-                          ? 'bg-indigo-500 border-indigo-400 text-white shadow-md'
-                          : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Age Range */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-2 ml-1" style={{ color: ORANGE }}>Age Range</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {AGE_RANGES.map((range) => (
-                    <button
-                      key={range}
-                      type="button"
-                      onClick={() => { updateConfig({ ageRange: range as any }); setShowAboutYouWarning(false); }}
-                      className={`text-xs px-2 py-2.5 rounded-lg border transition-all ${
-                        config.ageRange === range
-                          ? 'bg-indigo-500 border-indigo-400 text-white shadow-md'
-                          : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
-                      }`}
-                    >
-                      {range}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Hair Color */}
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-2 ml-1" style={{ color: ORANGE }}>Hair Color <span className="text-slate-500 normal-case font-normal">(optional — helps consistency)</span></p>
-                <div className="flex flex-wrap gap-2">
-                  {HAIR_COLORS.map((hair) => {
-                    const isActive = config.hairColor === hair.label;
-                    return (
-                      <button
-                        key={hair.label}
-                        type="button"
-                        onClick={() => updateConfig({ hairColor: isActive ? undefined : hair.label })}
-                        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all ${
-                          isActive
-                            ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                            : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500 hover:text-white'
-                        }`}
-                      >
-                        <span className="w-3 h-3 rounded-full border border-slate-600 flex-shrink-0" style={{ backgroundColor: hair.color }} />
-                        {hair.label}
-                        {isActive && <Check className="w-3 h-3 text-indigo-300" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Wedding Ring — only shown after gender is selected */}
-              {config.genderPresentation && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider mb-2 ml-1" style={{ color: ORANGE }}>Wedding / Engagement Ring <span className="text-slate-500 normal-case font-normal">(optional)</span></p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => updateConfig({ includeRing: false })}
-                      className={`text-xs px-3 py-2.5 rounded-lg border transition-all ${
-                        !config.includeRing
-                          ? 'bg-indigo-500 border-indigo-400 text-white shadow-md'
-                          : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
-                      }`}
-                    >
-                      None (default)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => updateConfig({ includeRing: true })}
-                      className={`text-xs px-3 py-2.5 rounded-lg border transition-all ${
-                        config.includeRing
-                          ? 'bg-indigo-500 border-indigo-400 text-white shadow-md'
-                          : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'
-                      }`}
-                    >
-                      {config.genderPresentation === 'woman'
-                        ? '💍 Diamond ring + band'
-                        : config.genderPresentation === 'man'
-                        ? '💍 Gold wedding band'
-                        : '💍 Elegant band'}
-                    </button>
+          {/* ABOUT YOU */}
+          <div style={{ ...sectionStyle(true), border: showAboutYouWarning && !aboutYouComplete ? `1px solid rgba(239,68,68,0.5)` : aboutYouComplete ? `1px solid rgba(13,148,136,0.25)` : `1px solid ${T.panelBorder}`, opacity: 1 }}>
+            <div style={{ padding: '20px 24px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: aboutYouComplete ? T.tealDim : T.amberDim, border: `1px solid ${aboutYouComplete ? T.tealBorder : T.amberBorder}` }}>
+                    {aboutYouComplete
+                      ? <Check style={{ width: 16, height: 16, color: T.teal }} />
+                      : <User style={{ width: 16, height: 16, color: T.amber }} />}
                   </div>
-                  {config.includeRing && (
-                    <p className="text-[11px] text-slate-500 mt-1.5 ml-1">{ringLabel()}</p>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <User style={{ width: 16, height: 16, color: T.purple }} />
+                    <span style={{ fontFamily: T.serif, fontSize: 18, fontWeight: 400, color: T.white }}>About You</span>
+                  </div>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 10px', borderRadius: 100, background: T.redDim, border: `1px solid ${T.redBorder}`, color: T.red }}>Required</span>
+              </div>
+
+              {showAboutYouWarning && !aboutYouComplete && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: T.redDim, border: `1px solid ${T.redBorder}`, borderRadius: 10, marginBottom: 16, fontSize: 12, color: T.red }}>
+                  <AlertCircle style={{ width: 14, height: 14, flexShrink: 0 }} />
+                  Please select your gender presentation and age range before continuing.
                 </div>
               )}
 
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                {/* Gender */}
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>Gender Presentation</p>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {[{ value: 'woman', label: 'Woman' }, { value: 'man', label: 'Man' }, { value: 'nonbinary', label: 'Non-binary' }].map((opt) => (
+                      <button key={opt.value} type="button"
+                        onClick={() => { updateConfig({ genderPresentation: opt.value as any, includeRing: false }); setShowAboutYouWarning(false); }}
+                        style={pill(config.genderPresentation === opt.value)}
+                      >{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Age Range */}
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>Age Range</p>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {AGE_RANGES.map((range) => (
+                      <button key={range} type="button"
+                        onClick={() => { updateConfig({ ageRange: range as any }); setShowAboutYouWarning(false); }}
+                        style={pill(config.ageRange === range)}
+                      >{range}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Hair Color */}
+                <div>
+                  <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>
+                    Hair Color <span style={{ color: T.white40, textTransform: 'none', fontWeight: 400, letterSpacing: 0 }}>(optional)</span>
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {HAIR_COLORS.map((hair) => {
+                      const isActive = config.hairColor === hair.label;
+                      return (
+                        <button key={hair.label} type="button"
+                          onClick={() => updateConfig({ hairColor: isActive ? undefined : hair.label })}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 100, fontSize: 11, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s', background: isActive ? T.purpleDim : T.panel, border: `1px solid ${isActive ? T.purpleBorder : T.panelBorder}`, color: isActive ? T.white : T.white60 }}>
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: hair.color, border: `1px solid rgba(255,255,255,0.15)`, flexShrink: 0 }} />
+                          {hair.label}
+                          {isActive && <Check style={{ width: 10, height: 10, color: T.purple }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Ring */}
+                {config.genderPresentation && (
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>
+                      Wedding Ring <span style={{ color: T.white40, textTransform: 'none', fontWeight: 400, letterSpacing: 0 }}>(optional)</span>
+                    </p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" onClick={() => updateConfig({ includeRing: false })} style={pill(!config.includeRing)}>None (default)</button>
+                      <button type="button" onClick={() => updateConfig({ includeRing: true })} style={pill(!!config.includeRing)}>
+                        {config.genderPresentation === 'woman' ? '💍 Diamond ring + band' : config.genderPresentation === 'man' ? '💍 Gold wedding band' : '💍 Elegant band'}
+                      </button>
+                    </div>
+                    {config.includeRing && <p style={{ fontSize: 11, color: T.white40, marginTop: 6 }}>{ringLabel()}</p>}
+                  </div>
+                )}
+              </div>
             </div>
-          </section>
+          </div>
 
           {creationMode === 'guided' && (
             <>
-              {/* ── SECTION 1: CLOTHING STYLE + CLOTHING CHOICE ─────────────────── */}
+              {/* SECTION 1 — Clothing Style */}
               <div ref={sectionRefs.sec1}>
-              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${aboutYouComplete ? 'bg-slate-900/60 border-slate-700/80' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
-                <button
-                  type="button"
-                  disabled={!aboutYouComplete}
-                  onClick={() => aboutYouComplete && setSec1Open(p => !p)}
-                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/30 transition-colors disabled:cursor-not-allowed"
+                <SectionBlock num={1} icon={<Briefcase style={{ width: 16, height: 16 }} />} title="Clothing Style" unlocked={aboutYouComplete}
+                  isOpen={sec1Open} onToggle={() => aboutYouComplete && setSec1Open(p => !p)}
+                  hint="Complete About You first"
+                  badge={clothingStyleGroup || undefined}
+                  rightEl={clothingStyleGroup && sec1Open ? (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handleSurpriseMe(); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.purple, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, borderRadius: 100, padding: '4px 12px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                      <Shuffle style={{ width: 11, height: 11 }} />Surprise Me
+                    </button>
+                  ) : undefined}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${aboutYouComplete ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                      <span className="text-sm font-bold text-white">1</span>
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-base font-semibold text-white">Clothing Style</h3>
-                        {clothingStyleGroup && <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ {clothingStyleGroup}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {clothingStyleGroup && sec1Open && (
-                      <button type="button" onClick={(e) => { e.stopPropagation(); handleSurpriseMe(); }} className="flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-200 transition-colors bg-indigo-500/10 px-3 py-1.5 rounded-full border border-indigo-500/20 hover:border-indigo-500/50">
-                        <Shuffle className="w-3 h-3" />Surprise Me
-                      </button>
-                    )}
-                    {!aboutYouComplete && <span className="text-[10px] text-slate-500">Complete About You first</span>}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec1Open ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
-                {sec1Open && (
-                <div className="px-6 pb-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 relative z-10">
-                  {Object.entries(BRAND_DEFINITIONS).map(([key, brand]) => {
-                    const isActive = clothingStyleGroup === key;
-                    const Icon = (brand as any).icon || Briefcase;
-                    return (
-                      <button key={key} type="button" onClick={() => handleClothingStyleGroupSelect(key)} className={`relative flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200 group ${isActive ? 'bg-indigo-600 border-indigo-500 shadow-xl shadow-indigo-900/20' : 'bg-slate-900/40 border-slate-800 hover:bg-slate-800 hover:border-slate-700'}`}>
-                        <div className={`mb-3 p-2.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400 group-hover:text-indigo-300 group-hover:bg-slate-700'}`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-300'}`}>{(brand as any).label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Clothing Choice — inline below style picker once a group is selected */}
-                {clothingStyleGroup && (
-                  <div className="mt-6 pt-5 border-t border-slate-700/60 animate-fade-in">
-                    <div className="flex items-center gap-2 mb-4">
-                      <LayoutTemplate className="w-4 h-4 text-indigo-400" />
-                      <p className="text-sm font-semibold text-white">Clothing Choice</p>
-                    </div>
-                  {!isCustomClothing ? (
-                    <>
-                      <div className="space-y-5">
-                        {BRAND_DEFINITIONS[clothingStyleGroup]?.clothingOptions.map((group: any) => (
-                          <div key={group.category}>
-                            <p className="text-[10px] font-bold uppercase tracking-wider mb-2 ml-1" style={{ color: ORANGE }}>{group.category}</p>
-                            <div className="flex flex-wrap gap-2">
-                              {group.items.map((item: any) => {
-                                const isActive = clothingOption === item;
-                                return (
-                                  <button key={item} type="button" onClick={() => handleClothingOptionSelect(clothingStyleGroup, item)} className={`text-xs px-3.5 py-2 rounded-lg border transition-all ${isActive ? 'bg-indigo-500 border-indigo-400 text-white shadow-md' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500 hover:text-white'}`}>
-                                    {item}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                  {/* Style group tiles */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }} className="style-grid">
+                    <style>{`@media (max-width: 600px) { .style-grid { grid-template-columns: repeat(2, 1fr) !important; } }`}</style>
+                    {Object.entries(BRAND_DEFINITIONS).map(([key, brand]) => {
+                      const isActive = clothingStyleGroup === key;
+                      const Icon = (brand as any).icon || Briefcase;
+                      return (
+                        <button key={key} type="button" onClick={() => handleClothingStyleGroupSelect(key)}
+                          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 8px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s', background: isActive ? T.purpleGrad : T.panel, border: `1px solid ${isActive ? 'rgba(76,29,149,0.5)' : T.panelBorder}`, boxShadow: isActive ? '0 8px 24px rgba(46,16,101,0.35)' : 'none' }}>
+                          <div style={{ marginBottom: 10, padding: 8, borderRadius: '50%', background: isActive ? 'rgba(255,255,255,0.15)' : T.panelHover }}>
+                            <Icon style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />
                           </div>
-                        ))}
-                      </div>
-                      <div className="mt-6 pt-4 border-t border-slate-800">
-                        <button onClick={handleCustomClothingToggle} className="w-full py-3 rounded-xl border border-dashed border-slate-700 hover:border-indigo-500 hover:bg-slate-800/50 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-medium">
-                          <Plus className="w-4 h-4" />Add Your Own Outfit
+                          <span style={{ fontSize: 11, fontWeight: 500, color: isActive ? T.white : T.white60 }}>{(brand as any).label}</span>
                         </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Clothing choice — inline */}
+                  {clothingStyleGroup && (
+                    <div style={{ paddingTop: 18, borderTop: `1px solid ${T.panelBorder}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                        <LayoutTemplate style={{ width: 14, height: 14, color: T.purple }} />
+                        <span style={{ fontSize: 14, fontWeight: 500, color: T.white }}>Clothing Choice</span>
                       </div>
-                    </>
-                  ) : (
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="text-xs font-bold text-white uppercase">Custom Outfit</span>
-                        <button onClick={() => setIsCustomClothing(false)} className="text-xs text-slate-400 hover:text-white underline">Back to presets</button>
-                      </div>
-                      <textarea value={customClothingText} onChange={handleCustomClothingTextChange} placeholder="Describe the outfit in detail..." className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-white min-h-[80px]" />
+                      {!isCustomClothing ? (
+                        <>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {BRAND_DEFINITIONS[clothingStyleGroup]?.clothingOptions.map((group: any) => (
+                              <div key={group.category}>
+                                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>{group.category}</p>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                  {group.items.map((item: any) => (
+                                    <button key={item} type="button" onClick={() => handleClothingOptionSelect(clothingStyleGroup, item)} style={pill(clothingOption === item)}>{item}</button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <button onClick={handleCustomClothingToggle}
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 16, padding: '12px', borderRadius: 10, border: `1px dashed ${T.panelBorder}`, background: 'none', color: T.white40, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purple; (e.currentTarget as HTMLElement).style.color = T.purple; }}
+                            onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = T.panelBorder; (e.currentTarget as HTMLElement).style.color = T.white40; }}>
+                            <Plus style={{ width: 14, height: 14 }} />Add Your Own Outfit
+                          </button>
+                        </>
+                      ) : (
+                        <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 16 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: T.white, textTransform: 'uppercase' }}>Custom Outfit</span>
+                            <button onClick={() => setIsCustomClothing(false)} style={{ fontSize: 11, color: T.purple, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Back to presets</button>
+                          </div>
+                          <textarea value={customClothingText} onChange={handleCustomClothingTextChange} placeholder="Describe the outfit in detail..."
+                            style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 8, padding: 10, fontSize: 12, color: T.white, minHeight: 80, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                      )}
                     </div>
                   )}
-                  </div>
-                )}
-                </div>
-                )}
-              </section>
+                </SectionBlock>
               </div>
 
-              {/* ── SECTION 2: CHOOSE A BACKGROUND SCENE ── */}
+              {/* SECTION 2 — Background Scene */}
               <div ref={sectionRefs.sec2}>
-              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${clothingStyleGroup ? 'bg-indigo-950/40 border-indigo-800/50' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
-                <button
-                  type="button"
-                  disabled={!clothingStyleGroup}
-                  onClick={() => clothingStyleGroup && setSec2Open(p => !p)}
-                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-indigo-900/20 transition-colors disabled:cursor-not-allowed"
+                <SectionBlock num={2} icon={<Camera style={{ width: 16, height: 16 }} />} title="Background Scene" unlocked={!!clothingStyleGroup}
+                  isOpen={sec2Open} onToggle={() => clothingStyleGroup && setSec2Open(p => !p)}
+                  hint="Choose Clothing Style first"
+                  badge={sceneName || undefined}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${clothingStyleGroup ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                      <span className="text-sm font-bold text-white">2</span>
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <Camera className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-base font-semibold text-white">Choose a Background Scene</h3>
-                        {sceneId && <span className="text-[10px] text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ {sceneName}</span>}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!clothingStyleGroup && <span className="text-[10px] text-slate-500">Choose Clothing Style first</span>}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec2Open ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
-                {sec2Open && (
-                <div className="px-6 pb-6">
                   {!isCustomBackground ? (
                     <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }} className="scene-grid">
+                        <style>{`@media (max-width: 600px) { .scene-grid { grid-template-columns: repeat(2, 1fr) !important; } }`}</style>
                         {BRAND_DEFINITIONS[clothingStyleGroup!]?.sceneOptions.map((scene: any) => {
                           const isActive = sceneId === scene.id;
                           return (
-                            <button key={scene.id} type="button" onClick={() => handleSceneSelect(clothingStyleGroup!, scene.id, scene.name, scene.prompt)} className={`text-left p-3 rounded-xl border transition-all ${isActive ? 'bg-indigo-500/10 border-indigo-500 ring-1 ring-indigo-500' : 'bg-slate-900/40 border-slate-800 hover:border-slate-600 hover:bg-slate-800'}`}>
-                              <p className={`text-xs font-medium mb-1 ${isActive ? 'text-white' : 'text-slate-200'}`}>{scene.name}</p>
-                              <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{scene.prompt}</p>
+                            <button key={scene.id} type="button" onClick={() => handleSceneSelect(clothingStyleGroup!, scene.id, scene.name, scene.prompt)}
+                              style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 12, border: `1px solid ${isActive ? T.purpleBorder : T.panelBorder}`, background: isActive ? T.purpleDim : T.panel, cursor: 'pointer', transition: 'all 0.15s', boxShadow: isActive ? `0 0 0 1px ${T.purpleDeep}` : 'none' }}>
+                              <p style={{ fontSize: 12, fontWeight: 500, color: isActive ? T.white : T.white80, marginBottom: 4 }}>{scene.name}</p>
+                              <p style={{ fontSize: 10, color: T.white40, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{scene.prompt}</p>
                             </button>
                           );
                         })}
                       </div>
-                      <div className="mt-6 pt-4 border-t border-slate-800">
-                        <button onClick={handleCustomBackgroundToggle} className="w-full py-3 rounded-xl border border-dashed border-slate-700 hover:border-indigo-500 hover:bg-slate-800/50 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2 text-xs font-medium">
-                          <Plus className="w-4 h-4" />Add Your Own Background
-                        </button>
-                      </div>
+                      <button onClick={handleCustomBackgroundToggle}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 14, padding: '12px', borderRadius: 10, border: `1px dashed ${T.panelBorder}`, background: 'none', color: T.white40, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}
+                        onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purple; (e.currentTarget as HTMLElement).style.color = T.purple; }}
+                        onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = T.panelBorder; (e.currentTarget as HTMLElement).style.color = T.white40; }}>
+                        <Plus style={{ width: 14, height: 14 }} />Add Your Own Background
+                      </button>
                     </>
                   ) : (
-                    <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-xs font-bold text-white uppercase">Custom Background</span>
-                        <button onClick={() => setIsCustomBackground(false)} className="text-xs text-slate-400 hover:text-white underline">Back to presets</button>
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: T.white, textTransform: 'uppercase' }}>Custom Background</span>
+                        <button onClick={() => setIsCustomBackground(false)} style={{ fontSize: 11, color: T.purple, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Back to presets</button>
                       </div>
-                      <div className="flex gap-2 mb-4 bg-slate-950 p-1 rounded-lg w-fit">
+                      <div style={{ display: 'flex', gap: 4, background: T.bg, padding: 4, borderRadius: 8, width: 'fit-content', marginBottom: 14 }}>
                         {(['prompt','color','upload'] as const).map((mode) => (
-                          <button key={mode} onClick={() => { setCustomBgMode(mode); updateCustomBackground(mode); }} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${customBgMode === mode ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>
+                          <button key={mode} onClick={() => { setCustomBgMode(mode); updateCustomBackground(mode); }}
+                            style={{ padding: '6px 14px', borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s', background: customBgMode === mode ? T.purpleGrad : 'none', border: 'none', color: customBgMode === mode ? T.white : T.white40 }}>
                             {mode === 'prompt' ? 'Describe' : mode === 'color' ? 'Color' : 'Upload'}
                           </button>
                         ))}
                       </div>
                       {customBgMode === 'prompt' && (
-                        <textarea value={customBgText} onChange={(e) => { setCustomBgText(e.target.value); setScenePrompt(e.target.value); updateConfig({ backgroundType: e.target.value }); }} placeholder="e.g. A futuristic mars colony interior..." className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-white min-h-[80px]" />
+                        <textarea value={customBgText} onChange={(e) => { setCustomBgText(e.target.value); setScenePrompt(e.target.value); updateConfig({ backgroundType: e.target.value }); }} placeholder="e.g. A futuristic mars colony interior..."
+                          style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 8, padding: 10, fontSize: 12, color: T.white, minHeight: 80, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
                       )}
                       {customBgMode === 'color' && (
-                        <div className="w-1/2">
+                        <div style={{ width: '50%' }}>
                           {renderColorPicker('customBg', customBgColor, (color) => {
                             setCustomBgColor(color);
                             const prompt = `Solid background color: ${color}`;
@@ -994,464 +970,394 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         </div>
                       )}
                       {customBgMode === 'upload' && (
-                        <div className="border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-indigo-500 transition-colors cursor-pointer relative">
-                          <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        <div style={{ border: `2px dashed ${T.panelBorder}`, borderRadius: 10, padding: 24, textAlign: 'center', cursor: 'pointer', position: 'relative', transition: 'border-color 0.15s' }}>
+                          <input type="file" accept="image/*" onChange={handleFileUpload} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} />
                           {customBgImage ? (
-                            <div className="flex items-center justify-center gap-3">
-                              <img src={customBgImage} alt="Preview" className="h-12 w-12 object-cover rounded-md" />
-                              <span className="text-xs text-green-400">Image Loaded</span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                              <img src={customBgImage} alt="Preview" style={{ height: 48, width: 48, objectFit: 'cover', borderRadius: 6 }} />
+                              <span style={{ fontSize: 12, color: T.teal }}>Image Loaded</span>
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center gap-2 text-slate-400">
-                              <Upload className="w-6 h-6" />
-                              <span className="text-xs">Click to upload image</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: T.white40 }}>
+                              <Upload style={{ width: 22, height: 22 }} />
+                              <span style={{ fontSize: 12 }}>Click to upload image</span>
                             </div>
                           )}
                         </div>
                       )}
                     </div>
                   )}
-                </div>
-                )}
-              </section>
+                </SectionBlock>
               </div>
 
-              {/* ── SECTION 3: FINE-TUNING ── */}
+              {/* SECTION 3 — Fine-Tune */}
               <div ref={sectionRefs.sec3}>
-              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${sceneId ? 'bg-slate-900/60 border-slate-700/80' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
-                <button
-                  type="button"
-                  disabled={!sceneId}
-                  onClick={() => sceneId && setSec3Open(p => !p)}
-                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-800/30 transition-colors disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${sceneId ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                      <span className="text-sm font-bold text-white">3</span>
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-base font-semibold text-white">Fine-Tune Your Look</h3>
-                        <span className="text-[10px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Optional</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!aboutYouComplete && <span className="text-[10px] text-slate-500">Complete About You first</span>}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec3Open ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
-                {sec3Open && (
-                <div className="px-6 pb-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {/* LEFT: Retouch, Variation, Glasses */}
-                    <div className="space-y-4">
-                      {/* Retouch */}
-                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3"><Droplet className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Retouch Level</p></div>
-                        <div className="grid grid-cols-2 gap-2">
-                          {['None','Natural','Polished','Airbrushed'].map((r) => (
-                            <button key={r} type="button" onClick={() => handleRetouchChange(r as any)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.retouchLevel||'None')===r ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>{r}</button>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Variation */}
-                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Variation</p></div>
-                        <p className="text-[10px] text-slate-400 mb-3">How different each image will look.</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {[{label:'Low',value:'low'},{label:'Medium',value:'medium'},{label:'High',value:'high'}].map((opt) => (
-                            <button key={opt.value} type="button" onClick={() => setVariationLevel(opt.value as VariationLevel)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${variationLevel===opt.value ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>{opt.label}</button>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Glasses */}
-                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3"><Glasses className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Glasses</p></div>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={() => handleKeepGlassesChange(true)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses!==false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Same as photo</button>
-                          <button type="button" onClick={() => handleKeepGlassesChange(false)} className={`flex-1 text-[11px] rounded-lg px-3 py-2 transition ${config.keepGlasses===false ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60 hover:bg-slate-900'}`}>Remove</button>
-                        </div>
-                      </div>
-                    </div>
-                    {/* RIGHT: Images for this Look, Brand Colors, Body Size */}
-                    <div className="space-y-4">
-                      {/* Images for this Look */}
-                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3"><ImageIcon className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Images for this Look</p></div>
-                        <div className="flex items-center gap-3">
-                          <input type="range" min={1} max={10} step={1} value={imageCount} onChange={(e) => setImageCount(parseInt(e.target.value, 10))} className="flex-1 accent-indigo-500" />
-                          <div className="w-8 text-center bg-slate-800 rounded px-1.5 py-0.5 text-xs font-bold text-white border border-slate-600">{imageCount}</div>
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-1">Generating {imageCount} unique variation{imageCount !== 1 ? 's' : ''}.</p>
-                      </div>
-                      {/* Brand Colors */}
-                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-3"><Palette className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Brand Colors</p></div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div><p className="text-[10px] mb-1.5 text-slate-300">Primary</p>{renderColorPicker('primary', config.brandColor||'', handleBrandColorChange, 'Choose Primary')}</div>
-                          <div><p className="text-[10px] mb-1.5 text-slate-300">Secondary</p>{renderColorPicker('secondary', config.secondaryBrandColor||'', handleSecondaryBrandColorChange, 'Choose Secondary')}</div>
-                        </div>
-                      </div>
-                      {/* Body Size */}
-                      <div className="bg-slate-950/60 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2"><ImageIcon className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide font-bold" style={{ color: ORANGE }}>Body Size</p></div>
-                        <p className="text-[10px] text-slate-400 mb-3">0 = same as reference photo.</p>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[11px] text-slate-400 w-6 text-right">-3</span>
-                          <input type="range" min={-3} max={3} step={1} value={bodySizeOffset} onChange={(e) => setBodySizeOffset(parseInt(e.target.value,10))} className="flex-1 accent-indigo-500" />
-                          <span className="text-[11px] text-slate-400 w-6">+3</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-slate-400 mt-1">
-                          <span>Current: <span className="text-indigo-300">{bodySizeOffset}</span></span>
-                          <button type="button" onClick={() => setBodySizeOffset(0)} className="text-[11px] text-indigo-300 hover:text-indigo-200 underline">Reset</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <SectionBlock num={3} icon={<Sparkles style={{ width: 16, height: 16 }} />} title="Fine-Tune Your Look" badge="Optional" unlocked={!!sceneId}
+                  isOpen={sec3Open} onToggle={() => sceneId && setSec3Open(p => !p)} hint="Choose a Background first">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="finetune-grid">
+                    <style>{`@media (max-width: 600px) { .finetune-grid { grid-template-columns: 1fr !important; } }`}</style>
 
-                </div>
-                )}
-              </section>
+                    {/* Retouch */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Droplet style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Retouch Level</p>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                        {['None','Natural','Polished','Airbrushed'].map((r) => (
+                          <button key={r} type="button" onClick={() => handleRetouchChange(r as any)} style={pill((config.retouchLevel||'None')===r)}>{r}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Variation */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <Sparkles style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Variation</p>
+                      </div>
+                      <p style={{ fontSize: 10, color: T.white40, marginBottom: 10 }}>How different each image will look.</p>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {[{label:'Low',value:'low'},{label:'Medium',value:'medium'},{label:'High',value:'high'}].map((opt) => (
+                          <button key={opt.value} type="button" onClick={() => setVariationLevel(opt.value as VariationLevel)} style={{ ...pill(variationLevel===opt.value), flex: 1, justifyContent: 'center' }}>{opt.label}</button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Glasses */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Glasses style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Glasses</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button type="button" onClick={() => handleKeepGlassesChange(true)} style={{ ...pill(config.keepGlasses!==false), flex: 1, justifyContent: 'center' }}>Same as photo</button>
+                        <button type="button" onClick={() => handleKeepGlassesChange(false)} style={{ ...pill(config.keepGlasses===false), flex: 1, justifyContent: 'center' }}>Remove</button>
+                      </div>
+                    </div>
+
+                    {/* Images count */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <ImageIcon style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Images for this Look</p>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <input type="range" min={1} max={10} step={1} value={imageCount} onChange={(e) => setImageCount(parseInt(e.target.value, 10))} style={{ flex: 1, accentColor: T.purple }} />
+                        <div style={{ width: 32, textAlign: 'center', background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 6, padding: '2px 0', fontSize: 13, fontWeight: 700, color: T.white }}>{imageCount}</div>
+                      </div>
+                      <p style={{ fontSize: 10, color: T.white40, marginTop: 6 }}>Generating {imageCount} unique variation{imageCount !== 1 ? 's' : ''}.</p>
+                    </div>
+
+                    {/* Brand Colors */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Palette style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Brand Colors</p>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div><p style={{ fontSize: 10, color: T.white60, marginBottom: 6 }}>Primary</p>{renderColorPicker('primary', config.brandColor||'', handleBrandColorChange, 'Choose Primary')}</div>
+                        <div><p style={{ fontSize: 10, color: T.white60, marginBottom: 6 }}>Secondary</p>{renderColorPicker('secondary', config.secondaryBrandColor||'', handleSecondaryBrandColorChange, 'Choose Secondary')}</div>
+                      </div>
+                    </div>
+
+                    {/* Body Size */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <ImageIcon style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Body Size</p>
+                      </div>
+                      <p style={{ fontSize: 10, color: T.white40, marginBottom: 10 }}>0 = same as reference photo.</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontSize: 11, color: T.white40, width: 20, textAlign: 'right' }}>-3</span>
+                        <input type="range" min={-3} max={3} step={1} value={bodySizeOffset} onChange={(e) => setBodySizeOffset(parseInt(e.target.value,10))} style={{ flex: 1, accentColor: T.purple }} />
+                        <span style={{ fontSize: 11, color: T.white40, width: 20 }}>+3</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                        <span style={{ fontSize: 11, color: T.white40 }}>Current: <span style={{ color: T.purple }}>{bodySizeOffset}</span></span>
+                        <button type="button" onClick={() => setBodySizeOffset(0)} style={{ fontSize: 11, color: T.purple, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Reset</button>
+                      </div>
+                    </div>
+                  </div>
+                </SectionBlock>
               </div>
 
-              {/* ── SECTION 4: CAMERA, LIGHTING & COMPOSITION ── */}
+              {/* SECTION 4 — Camera & Composition */}
               <div ref={sectionRefs.sec4}>
-              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${sceneId ? 'bg-indigo-950/30 border-indigo-900/60' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
-                <button
-                  type="button"
-                  disabled={!sceneId}
-                  onClick={() => sceneId && setSec4Open(p => !p)}
-                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-indigo-900/20 transition-colors disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${sceneId ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                      <span className="text-sm font-bold text-white">4</span>
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <Aperture className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-base font-semibold text-white">Camera, Lighting & Composition Settings</h3>
-                        <span className="text-[10px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Optional</span>
+                <SectionBlock num={4} icon={<Aperture style={{ width: 16, height: 16 }} />} title="Camera, Lighting & Composition" badge="Optional" unlocked={!!sceneId}
+                  isOpen={sec4Open} onToggle={() => sceneId && setSec4Open(p => !p)} hint="Choose a Background first">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="camera-grid">
+                    <style>{`@media (max-width: 600px) { .camera-grid { grid-template-columns: 1fr !important; } }`}</style>
+
+                    {/* Aspect Ratio */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Maximize style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Aspect Ratio</p>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!sceneId && <span className="text-[10px] text-slate-500">Choose a Background first</span>}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec4Open ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
-                {sec4Open && (
-                <div className="px-6 pb-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2"><Maximize className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Aspect Ratio</p><span className="text-[10px] text-slate-200 ml-1">Width : Height</span></div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                         {['1:1','16:9','9:16','4:5'].map((ratio) => (
-                          <button key={ratio} type="button" onClick={() => handleAspectRatioChange(ratio as AspectRatio)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.aspectRatio||'1:1')===ratio ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60'}`}>{ratio}</button>
+                          <button key={ratio} type="button" onClick={() => handleAspectRatioChange(ratio as AspectRatio)} style={pill((config.aspectRatio||'1:1')===ratio)}>{ratio}</button>
                         ))}
                       </div>
                     </div>
-                    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2"><Focus className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Pose / Framing</p></div>
-                      <div className="grid grid-cols-2 gap-2">
+
+                    {/* Framing */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Focus style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Pose / Framing</p>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                         {['Headshot','Waist Up','Three-Quarter','Full Body'].map((frame) => (
-                          <button key={frame} type="button" onClick={() => handleFramingChange(frame)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.framing||'Waist Up')===frame ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60'}`}>{frame}</button>
+                          <button key={frame} type="button" onClick={() => handleFramingChange(frame)} style={pill((config.framing||'Waist Up')===frame)}>{frame}</button>
                         ))}
                       </div>
                     </div>
-                    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2"><Sun className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Lighting & Mood</p></div>
-                      <div className="grid grid-cols-2 gap-2">
+
+                    {/* Mood */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Sun style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Lighting & Mood</p>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                         {['Polished Professional','Daylight','Cinematic','Dark & Moody'].map((m) => (
-                          <button key={m} type="button" onClick={() => handleMoodChange(m)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.mood||'Polished Professional')===m ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60'}`}>{m}</button>
+                          <button key={m} type="button" onClick={() => handleMoodChange(m)} style={pill((config.mood||'Polished Professional')===m)}>{m}</button>
                         ))}
                       </div>
                     </div>
-                    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2"><Camera className="w-4 h-4 text-indigo-300" /><p className="text-[11px] uppercase tracking-wide" style={{ color: ORANGE }}>Camera Angle</p></div>
-                      <div className="grid grid-cols-2 gap-2">
+
+                    {/* Camera Angle */}
+                    <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, padding: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Camera style={{ width: 13, height: 13, color: T.purple }} />
+                        <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Camera Angle</p>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {['Eye Level','High Angle','Low Angle (Power)'].map((angle) => (
-                          <button key={angle} type="button" onClick={() => handleCameraAngleChange(angle)} className={`text-[11px] rounded-lg px-2.5 py-1.5 transition ${(config.cameraAngle||'Eye Level')===angle ? 'border-2 border-indigo-500 bg-indigo-500/10 text-white' : 'border border-slate-700 bg-slate-900/60 text-slate-200 hover:border-indigo-400/60'}`}>{angle}</button>
+                          <button key={angle} type="button" onClick={() => handleCameraAngleChange(angle)} style={pill((config.cameraAngle||'Eye Level')===angle)}>{angle}</button>
                         ))}
                       </div>
                     </div>
                   </div>
-                  </div>
-                )}
-              </section>
+                </SectionBlock>
               </div>
 
-              {/* ── AMBER DIVIDER: Shot List shortcut ── */}
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex-1 h-px bg-amber-500/30" />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30">
-                  <ListChecks className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-[11px] font-semibold text-amber-300">Use the Shot List Generator to craft your perfect looks</span>
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', margin: '4px 0' }}>
+                <div style={{ flex: 1, height: 1, background: T.amberBorder }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 100, background: T.amberDim, border: `1px solid ${T.amberBorder}` }}>
+                  <ListChecks style={{ width: 13, height: 13, color: T.amber }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: T.amber }}>Use the Shot List Generator to craft your perfect looks</span>
                 </div>
-                <div className="flex-1 h-px bg-amber-500/30" />
+                <div style={{ flex: 1, height: 1, background: T.amberBorder }} />
               </div>
 
-              {/* ── SECTION 5: SHOT LIST GENERATOR ── */}
+              {/* SECTION 5 — Shot List */}
               <div ref={sectionRefs.sec5}>
-              <section className={`border-2 rounded-2xl shadow-inner overflow-hidden transition-all ${aboutYouComplete ? 'bg-emerald-950/30 border-emerald-900/40' : 'bg-slate-900/30 border-slate-800/50 opacity-60'}`}>
-                <button
-                  type="button"
-                  disabled={!aboutYouComplete}
-                  onClick={() => aboutYouComplete && setSec5Open(p => !p)}
-                  className="w-full flex items-center justify-between px-6 py-5 hover:bg-emerald-900/20 transition-colors disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-9 w-9 rounded-full flex items-center justify-center shadow-md flex-shrink-0 ${aboutYouComplete ? 'bg-amber-500' : 'bg-slate-700'}`}>
-                      <span className="text-sm font-bold text-white">5</span>
-                    </div>
-                    <div className="text-left">
-                      <div className="flex items-center gap-2">
-                        <ListChecks className="w-5 h-5 text-emerald-400" />
-                        <h3 className="text-base font-semibold text-white">Personal Brand Shot List</h3>
-                        <span className="text-[10px] text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Optional</span>
-                      </div>
+                <SectionBlock num={5} icon={<ListChecks style={{ width: 16, height: 16 }} />} title="Personal Brand Shot List" badge="Optional" unlocked={aboutYouComplete}
+                  isOpen={sec5Open} onToggle={() => aboutYouComplete && setSec5Open(p => !p)} hint="Complete About You first">
+
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>Describe your work</p>
+                    <textarea value={shotListDescription} onChange={e => setShotListDescription(e.target.value)}
+                      placeholder="e.g. I'm a real estate agent in St. Louis specializing in luxury homes..."
+                      rows={3}
+                      style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: T.white, resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
+                  </div>
+
+                  <div style={{ marginBottom: 14 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.white40, marginBottom: 8 }}>How many shots?</p>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {([3,5,10] as const).map(n => (
+                        <button key={n} type="button" onClick={() => setShotListCount(n)}
+                          style={{ ...pill(shotListCount===n), flex: 1, justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>{n}</button>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {!sceneId && <span className="text-[10px] text-slate-500">Choose a Background first</span>}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${sec5Open ? 'rotate-180' : ''}`} />
-                  </div>
-                </button>
 
-                {sec5Open && (
-                  <div className="px-6 pb-6">
-                      {/* Description input */}
-                      <div className="mb-4">
-                        <label className="block text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: ORANGE }}>Describe your work and we'll create a list of images to build your brand.</label>
-                        <textarea
-                          value={shotListDescription}
-                          onChange={e => setShotListDescription(e.target.value)}
-                          placeholder="e.g. I'm a real estate agent in St. Louis specializing in luxury homes..."
-                          rows={3}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder:text-slate-600 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
-                        />
-                      </div>
-                      {/* Shot count selector */}
-                      <div className="mb-4">
-                        <p className="text-[11px] font-bold uppercase tracking-wide mb-2 text-slate-400">How many shots?</p>
-                        <div className="flex gap-2">
-                          {([3,5,10] as const).map(n => (
-                            <button key={n} type="button"
-                              onClick={() => setShotListCount(n)}
-                              className={`flex-1 text-sm font-bold rounded-lg py-2 border transition ${shotListCount===n ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-emerald-600/50'}`}>
-                              {n}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {/* Generate button */}
-                      <button
-                        type="button"
-                        onClick={generateShotList}
-                        disabled={!shotListDescription.trim() || shotListLoading}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition bg-emerald-700 hover:bg-emerald-600 text-white disabled:opacity-40 disabled:cursor-not-allowed mb-4"
-                      >
-                        {shotListLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Generating your shot list…</> : <><Sparkle className="w-4 h-4" />Generate Shot List</>}
-                      </button>
-                      {shotListError && <p className="text-xs text-red-400 mb-3">{shotListError}</p>}
+                  <button type="button" onClick={generateShotList} disabled={!shotListDescription.trim() || shotListLoading}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '12px', borderRadius: 10, marginBottom: 14, fontSize: 13, fontWeight: 600, cursor: shotListDescription.trim() && !shotListLoading ? 'pointer' : 'not-allowed', transition: 'all 0.15s', background: shotListDescription.trim() && !shotListLoading ? T.tealDim : T.panel, border: `1px solid ${shotListDescription.trim() && !shotListLoading ? T.tealBorder : T.panelBorder}`, color: shotListDescription.trim() && !shotListLoading ? T.teal : T.white40, opacity: !shotListDescription.trim() || shotListLoading ? 0.5 : 1 }}>
+                    {shotListLoading ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Generating your shot list…</> : <><Sparkle style={{ width: 14, height: 14 }} />Generate Shot List</>}
+                  </button>
 
-                      {/* Shot list results */}
-                      {shotList.length > 0 && (
-                        <div className="space-y-2">
-                          {shotList.map((shot, i) => (
-                            <div key={shot.number} className="bg-slate-900/70 border border-slate-700 rounded-xl overflow-hidden">
-                              <button
-                                type="button"
-                                onClick={() => toggleShotCard(shot.number)}
-                                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-800/50 transition-colors"
-                              >
-                                <div className="h-6 w-6 rounded-full bg-emerald-700/60 border border-emerald-600/40 flex items-center justify-center flex-shrink-0">
-                                  <span className="text-[10px] font-bold text-emerald-200">{shot.number}</span>
-                                </div>
-                                <span className="flex-1 text-xs font-semibold text-white">{shot.name}</span>
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 border border-slate-600 text-slate-400">{shot.mood}</span>
-                                <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${shotListExpandedCards.has(shot.number) ? 'rotate-180' : ''}`} />
-                              </button>
-                              {shotListExpandedCards.has(shot.number) && (
-                                <div className="px-4 pb-4 border-t border-slate-700/50 pt-3 space-y-2">
-                                  <p className="text-[11px] text-slate-300 leading-relaxed">{shot.scene}</p>
-                                  <div className="bg-emerald-950/30 border border-emerald-900/40 rounded-lg p-2.5">
-                                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-1">Why this shot</p>
-                                    <p className="text-[11px] text-slate-300 leading-relaxed">{shot.why}</p>
-                                  </div>
-                                  <div className="bg-slate-950/60 border border-slate-700 rounded-lg p-2.5">
-                                    <div className="flex items-center justify-between mb-1.5">
-                                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Prompt</p>
-                                      <span className="text-[10px] text-slate-600 italic">Edit to fine-tune for your brand</span>
-                                    </div>
-                                    <textarea
-                                      value={shot.prompt}
-                                      onChange={(e) => {
-                                        const updated = shotList.map((s) =>
-                                          s.number === shot.number ? { ...s, prompt: e.target.value } : s
-                                        );
-                                        setShotList(updated);
-                                      }}
-                                      rows={4}
-                                      className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-[10px] text-slate-300 font-mono leading-relaxed focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none"
-                                    />
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[10px] text-slate-500 uppercase tracking-wide font-bold">Images</span>
-                                      <div className="flex gap-1">
-                                        {[1,2,3,4].map(n => (
-                                          <button
-                                            key={n}
-                                            type="button"
-                                            onClick={() => setShotImageCounts(prev => ({ ...prev, [shot.number]: n }))}
-                                            className={`w-6 h-6 rounded text-[10px] font-bold transition ${(shotImageCounts[shot.number] || 1) === n ? 'bg-emerald-600 text-white' : 'bg-slate-800 border border-slate-600 text-slate-400 hover:border-emerald-500'}`}
-                                          >{n}</button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleGenerateSingleShot(shot)}
-                                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 hover:bg-emerald-600 text-white transition"
-                                    >
-                                      <Zap className="w-3 h-3" />
-                                      Generate · {shotImageCounts[shot.number] || 1} credit{(shotImageCounts[shot.number] || 1) !== 1 ? 's' : ''}
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
+                  {shotListError && <p style={{ fontSize: 12, color: T.red, marginBottom: 12 }}>{shotListError}</p>}
+
+                  {shotList.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {shotList.map((shot) => (
+                        <div key={shot.number} style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 12, overflow: 'hidden' }}>
+                          <button type="button" onClick={() => toggleShotCard(shot.number)}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                            onMouseOver={e => (e.currentTarget as HTMLElement).style.background = T.panelHover}
+                            onMouseOut={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+                            <div style={{ width: 24, height: 24, borderRadius: '50%', background: T.tealDim, border: `1px solid ${T.tealBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: T.teal }}>{shot.number}</span>
                             </div>
-                          ))}
-
-                          {/* Generate All */}
-                          <div className="pt-3 border-t border-slate-700/50">
-                            <button
-                              type="button"
-                              onClick={handleGenerateAllShots}
-                              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white transition"
-                            >
-                              <Zap className="w-4 h-4" />
-                              Generate All {shotList.length} Shot{shotList.length !== 1 ? 's' : ''}{looks.length > 0 ? ` + ${looks.length} Saved Look${looks.length !== 1 ? 's' : ''}` : ''}
-                            </button>
-                            <p className="text-[10px] text-slate-500 text-center mt-1.5">
-                              {shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)} total credit{(shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)) !== 1 ? 's' : ''}
-                              {looks.length > 0 ? ` · includes ${looks.length} saved look${looks.length !== 1 ? 's' : ''}` : ''}
-                            </p>
-                          </div>
+                            <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: T.white, textAlign: 'left' }}>{shot.name}</span>
+                            <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 100, background: T.panel, border: `1px solid ${T.panelBorder}`, color: T.white40 }}>{shot.mood}</span>
+                            <ChevronDown style={{ width: 12, height: 12, color: T.white40, transition: 'transform 0.2s', transform: shotListExpandedCards.has(shot.number) ? 'rotate(180deg)' : 'none' }} />
+                          </button>
+                          {shotListExpandedCards.has(shot.number) && (
+                            <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${T.panelBorder}` }}>
+                              <p style={{ fontSize: 12, color: T.white60, lineHeight: 1.6, marginTop: 12, marginBottom: 10 }}>{shot.scene}</p>
+                              <div style={{ background: T.tealDim, border: `1px solid ${T.tealBorder}`, borderRadius: 8, padding: '10px 12px', marginBottom: 10 }}>
+                                <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: T.teal, marginBottom: 4 }}>Why this shot</p>
+                                <p style={{ fontSize: 11, color: T.white60, lineHeight: 1.5 }}>{shot.why}</p>
+                              </div>
+                              <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: T.white40 }}>Prompt</p>
+                                  <span style={{ fontSize: 10, color: T.white40, fontStyle: 'italic' }}>Edit to fine-tune</span>
+                                </div>
+                                <textarea value={shot.prompt}
+                                  onChange={(e) => { const updated = shotList.map((s) => s.number === shot.number ? { ...s, prompt: e.target.value } : s); setShotList(updated); }}
+                                  rows={4}
+                                  style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 6, padding: '8px 10px', fontSize: 10, color: T.white60, fontFamily: 'monospace', lineHeight: 1.5, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: T.white40 }}>Images</span>
+                                  <div style={{ display: 'flex', gap: 4 }}>
+                                    {[1,2,3,4].map(n => (
+                                      <button key={n} type="button" onClick={() => setShotImageCounts(prev => ({ ...prev, [shot.number]: n }))}
+                                        style={{ width: 26, height: 26, borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer', transition: 'all 0.1s', background: (shotImageCounts[shot.number] || 1) === n ? T.purpleGrad : T.panel, border: `1px solid ${(shotImageCounts[shot.number] || 1) === n ? T.purpleBorder : T.panelBorder}`, color: T.white }}>{n}</button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <button type="button" onClick={() => handleGenerateSingleShot(shot)}
+                                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: T.tealDim, border: `1px solid ${T.tealBorder}`, color: T.teal, transition: 'all 0.15s' }}>
+                                  <Zap style={{ width: 12, height: 12 }} />
+                                  Generate · {shotImageCounts[shot.number] || 1} credit{(shotImageCounts[shot.number] || 1) !== 1 ? 's' : ''}
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
+
+                      <div style={{ paddingTop: 12, borderTop: `1px solid ${T.panelBorder}` }}>
+                        <button type="button" onClick={handleGenerateAllShots}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 11, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: 'linear-gradient(135deg, rgba(13,148,136,0.2), rgba(76,29,149,0.2))', border: `1px solid ${T.tealBorder}`, color: T.white, transition: 'all 0.15s' }}>
+                          <Zap style={{ width: 14, height: 14, color: T.teal }} />
+                          Generate All {shotList.length} Shot{shotList.length !== 1 ? 's' : ''}{looks.length > 0 ? ` + ${looks.length} Saved Look${looks.length !== 1 ? 's' : ''}` : ''}
+                        </button>
+                        <p style={{ fontSize: 10, color: T.white40, textAlign: 'center', marginTop: 6 }}>
+                          {shotList.map((s) => shotImageCounts[s.number] || 1).reduce((a,b)=>a+b,0) + looks.reduce((s,l) => s + l.imageCount, 0)} total credits
+                          {looks.length > 0 ? ` · includes ${looks.length} saved look${looks.length !== 1 ? 's' : ''}` : ''}
+                        </p>
+                      </div>
                     </div>
                   )}
-                </section>
+                </SectionBlock>
               </div>
-
             </>
           )}
         </div>
 
-        {/* RIGHT COLUMN — sticky on desktop */}
-        <div className="lg:sticky lg:top-6 lg:self-start space-y-4">
+        {/* ── RIGHT COLUMN ── */}
+        <div style={{ position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Saved Looks list */}
-          <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 shadow-inner">
-            <div className="flex items-center gap-2 mb-3">
-              <LayoutTemplate className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-sm font-semibold text-white">Saved Looks ({looks.length}/{MAX_LOOKS})</h3>
+          {/* Saved Looks */}
+          <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <LayoutTemplate style={{ width: 14, height: 14, color: T.purple }} />
+              <span style={{ fontFamily: T.serif, fontSize: 17, fontWeight: 400, color: T.white }}>Saved Looks ({looks.length}/{MAX_LOOKS})</span>
             </div>
             {looks.length === 0 ? (
-              <p className="text-xs text-slate-500 leading-relaxed">No Looks saved yet. Choose your clothing, background, and click <span className="text-indigo-300 font-medium">Save Look</span> below.</p>
+              <p style={{ fontSize: 12, color: T.white40, lineHeight: 1.6 }}>No Looks saved yet. Choose your clothing, background, and click <span style={{ color: T.purple }}>Save Look</span> below.</p>
             ) : (
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {looks.map((look) => (
-                  <div key={look.id} className={`border rounded-xl px-3 py-2 text-xs flex items-center justify-between gap-3 ${activeLookId===look.id ? 'border-indigo-500 bg-indigo-500/5' : 'border-slate-700 bg-slate-900/40'}`}>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-white mb-0.5 truncate">{look.label}</p>
-                      <p className="text-slate-300 mb-0.5 truncate">{look.clothingOption} – {look.sceneName}</p>
-                      <p className="text-[10px] text-slate-500">{look.imageCount} image{look.imageCount>1?'s':''} · {look.config.framing} · {look.config.aspectRatio}</p>
+                  <div key={look.id} style={{ border: `1px solid ${activeLookId===look.id ? T.purpleBorder : T.panelBorder}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: activeLookId===look.id ? T.purpleDim : T.panel }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: T.white, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{look.label}</p>
+                      <p style={{ fontSize: 11, color: T.white60, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{look.clothingOption} – {look.sceneName}</p>
+                      <p style={{ fontSize: 10, color: T.white40 }}>{look.imageCount} image{look.imageCount>1?'s':''} · {look.config.framing} · {look.config.aspectRatio}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button type="button" onClick={() => handleEditLook(look)} className="p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200"><Edit3 className="w-3 h-3" /></button>
-                      <button type="button" onClick={() => handleDeleteLook(look.id)} className="p-1.5 rounded-full bg-slate-800 hover:bg-red-600/80 text-slate-200"><Trash2 className="w-3 h-3" /></button>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button type="button" onClick={() => handleEditLook(look)} style={{ width: 28, height: 28, borderRadius: '50%', background: T.panel, border: `1px solid ${T.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <Edit3 style={{ width: 11, height: 11, color: T.white60 }} />
+                      </button>
+                      <button type="button" onClick={() => handleDeleteLook(look.id)} style={{ width: 28, height: 28, borderRadius: '50%', background: T.panel, border: `1px solid ${T.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <Trash2 style={{ width: 11, height: 11, color: T.white60 }} />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </section>
+          </div>
 
-          {/* Save Look button — grayed until clothing + background chosen */}
+          {/* Save Look button */}
           {(() => {
             const canSave = !!clothingStyleGroup && !!clothingOption && !!sceneId;
             return (
-              <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 shadow-inner space-y-3">
+              <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 16 }}>
                 {!canSave && (
-                  <p className="text-[11px] text-slate-500 leading-relaxed text-center">
+                  <p style={{ fontSize: 11, color: T.white40, textAlign: 'center', marginBottom: 12 }}>
                     {!clothingStyleGroup ? 'Choose a Clothing Style to get started.' : !clothingOption ? 'Choose a clothing item next.' : 'Choose a Background Scene to unlock.'}
                   </p>
                 )}
-                <Button
-                  type="button"
-                  onClick={handleAddOrUpdateLook}
-                  disabled={!canSave}
-                  className={`w-full py-3 text-sm font-bold transition-all ${canSave ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/30' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}`}
-                >
+                <button type="button" onClick={handleAddOrUpdateLook} disabled={!canSave}
+                  style={{ width: '100%', padding: '13px', borderRadius: 11, fontSize: 13, fontWeight: 700, cursor: canSave ? 'pointer' : 'not-allowed', transition: 'all 0.2s', background: canSave ? T.purpleGrad : T.panel, border: `1px solid ${canSave ? T.purpleBorder : T.panelBorder}`, color: canSave ? T.white : T.white40, boxShadow: canSave ? '0 8px 24px rgba(46,16,101,0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   {activeLookId
-                    ? <><Edit3 className="w-4 h-4 mr-2 inline" />Update Look</>
-                    : <><Plus className="w-4 h-4 mr-2 inline" />Save Look</>}
-                </Button>
-              </section>
+                    ? <><Edit3 style={{ width: 14, height: 14 }} />Update Look</>
+                    : <><Plus style={{ width: 14, height: 14 }} />Save Look</>}
+                </button>
+              </div>
             );
           })()}
 
           {/* Stats + Continue */}
-          <section className="bg-slate-950/70 border border-slate-800 rounded-2xl p-5 shadow-inner space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Total images: <span className="text-indigo-300 font-semibold">{totalImages}</span></span>
-              <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-yellow-400" />1 credit each</span>
+          <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, fontSize: 12, color: T.white60 }}>
+              <span>Total images: <span style={{ color: T.purple, fontWeight: 600 }}>{totalImages}</span></span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Zap style={{ width: 12, height: 12, color: T.amber }} />1 credit each
+              </span>
             </div>
             {!aboutYouComplete && (
-              <div className="flex items-center gap-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs text-amber-300">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: T.amberDim, border: `1px solid ${T.amberBorder}`, borderRadius: 8, marginBottom: 12, fontSize: 11, color: T.amber }}>
+                <AlertCircle style={{ width: 13, height: 13, flexShrink: 0 }} />
                 Complete "About You" to continue.
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={onBack} className="border-slate-600 hover:bg-slate-800/50 text-xs">Back</Button>
-              <Button onClick={handleContinue} disabled={!canContinue} className="bg-indigo-600 hover:bg-indigo-500 text-xs disabled:opacity-50">Continue</Button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button type="button" onClick={onBack}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'none', border: `1px solid ${T.panelBorder}`, color: T.white60, fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}>
+                Back
+              </button>
+              <button onClick={handleContinue} disabled={!canContinue}
+                style={{ flex: 2, padding: '10px', borderRadius: 10, background: canContinue ? T.purpleGrad : T.panel, border: `1px solid ${canContinue ? T.purpleBorder : T.panelBorder}`, color: canContinue ? T.white : T.white40, fontSize: 12, fontWeight: 700, cursor: canContinue ? 'pointer' : 'not-allowed', transition: 'all 0.15s', boxShadow: canContinue ? '0 8px 24px rgba(46,16,101,0.4)' : 'none' }}>
+                Continue
+              </button>
             </div>
-          </section>
+          </div>
+
         </div>
       </div>
 
-      {/* MOBILE FIXED BOTTOM BAR */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800 px-4 py-3 flex items-center gap-3">
+      {/* Mobile bottom bar */}
+      <div className="lg:hidden" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: 'rgba(8,10,15,0.95)', backdropFilter: 'blur(12px)', borderTop: `1px solid ${T.panelBorder}`, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         {(() => {
           const canSave = !!clothingStyleGroup && !!clothingOption && !!sceneId;
           return (
             <>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-slate-500 truncate">
-                  {looks.length === 0 ? 'No Looks saved yet' : `${looks.length} Look${looks.length > 1 ? 's' : ''} saved · ${totalImages} image${totalImages !== 1 ? 's' : ''}`}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 10, color: T.white40, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {looks.length === 0 ? 'No Looks saved yet' : `${looks.length} Look${looks.length > 1 ? 's' : ''} · ${totalImages} image${totalImages !== 1 ? 's' : ''}`}
                 </p>
               </div>
-              <Button
-                type="button"
-                onClick={handleAddOrUpdateLook}
-                disabled={!canSave}
-                className={`flex-shrink-0 text-xs font-bold px-4 py-2 ${canSave ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}
-              >
+              <button type="button" onClick={handleAddOrUpdateLook} disabled={!canSave}
+                style={{ padding: '8px 16px', borderRadius: 9, fontSize: 12, fontWeight: 700, flexShrink: 0, cursor: canSave ? 'pointer' : 'not-allowed', background: canSave ? T.purpleGrad : T.panel, border: `1px solid ${canSave ? T.purpleBorder : T.panelBorder}`, color: canSave ? T.white : T.white40 }}>
                 {activeLookId ? 'Update Look' : 'Save Look'}
-              </Button>
-              <Button
-                onClick={handleContinue}
-                disabled={!canContinue}
-                className="flex-shrink-0 text-xs font-bold px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40"
-              >
+              </button>
+              <button onClick={handleContinue} disabled={!canContinue}
+                style={{ padding: '8px 16px', borderRadius: 9, fontSize: 12, fontWeight: 700, flexShrink: 0, cursor: canContinue ? 'pointer' : 'not-allowed', background: canContinue ? T.purpleGrad : T.panel, border: `1px solid ${canContinue ? T.purpleBorder : T.panelBorder}`, color: canContinue ? T.white : T.white40, opacity: canContinue ? 1 : 0.5 }}>
                 Continue
-              </Button>
+              </button>
             </>
           );
         })()}
