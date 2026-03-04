@@ -113,7 +113,7 @@ function App() {
         };
 
         for (let i = 0; i < countForThisLook; i++) {
-          setLoadingMessage(`Generating ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
+          setLoadingMessage(`Generating: ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
 
           const isExpertMode = !!finalConfigForThisLook.expertPrompt?.trim();
           const fullPrompt = isExpertMode
