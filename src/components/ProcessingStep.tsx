@@ -1,43 +1,195 @@
-import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 
-export const ProcessingStep: React.FC = () => {
-  const [textIndex, setTextIndex] = useState(0);
-  
-  const loadingTexts = [
-    "Analyzing facial structure...",
-    "Building 3D profile...",
-    "Setting up the virtual studio...",
-    "Adjusting lighting...",
-    "Rendering high-resolution textures...",
-    "Polishing final details..."
-  ];
+const LOADING_PHRASES = [
+  "Analyzing facial structure…",
+  "Building your visual profile…",
+  "Setting up the virtual studio…",
+  "Placing you in the scene…",
+  "Adjusting lighting and shadow…",
+  "Rendering high-resolution detail…",
+  "Polishing the final image…",
+  "Almost there…",
+];
 
+interface ProcessingStepProps {
+  message?: string; // Live override from App e.g. "Generating Look #2 (Image 1 of 3)..."
+}
+
+export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
+  const [idx, setIdx]         = useState(0);
+  const [visible, setVisible] = useState(true);
+  const [progress, setProgress] = useState(4);
+
+  // Rotate ambient status text every 2.8s
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTextIndex(prev => (prev + 1) % loadingTexts.length);
-    }, 2500);
-    return () => clearInterval(interval);
+    const iv = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIdx(p => (p + 1) % LOADING_PHRASES.length);
+        setVisible(true);
+      }, 300);
+    }, 2800);
+    return () => clearInterval(iv);
   }, []);
 
+  // Creep progress — slows near 92, never reaches 100 until done
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setProgress(p => {
+        if (p >= 88) return Math.min(p + 0.2, 92);
+        if (p >= 70) return p + 0.7;
+        return p + 1.3;
+      });
+    }, 300);
+    return () => clearInterval(iv);
+  }, []);
+
+  const pct         = Math.min(progress, 92);
+  const displayText = message || LOADING_PHRASES[idx];
+
   return (
-    <div className="w-full flex flex-col items-center justify-center min-h-[50vh] animate-fade-in">
-      <div className="relative mb-8">
-        <div className="absolute inset-0 rounded-full bg-indigo-500/20 blur-3xl animate-pulse"></div>
-        <Loader2 className="relative h-20 w-20 text-indigo-500 animate-spin" />
-      </div>
-      
-      <h2 className="text-3xl font-bold text-white mb-4">Building Your Brand Images</h2>
-      
-      <div className="h-8 overflow-hidden">
-        <p key={textIndex} className="text-slate-400 text-lg animate-slide-up">
-          {loadingTexts[textIndex]}
+    <div
+      className="flex-1 flex items-center justify-center px-8"
+      style={{ minHeight: '70vh' }}
+    >
+      <div className="flex flex-col items-center max-w-md w-full text-center">
+
+        {/* ── Spinner ring ── */}
+        <div className="relative mb-10" style={{ width: 96, height: 96 }}>
+          {/* Pulsing ambient glow */}
+          <div
+            className="absolute rounded-full animate-pulse"
+            style={{
+              inset: '-16px',
+              background: 'radial-gradient(ellipse, rgba(76,29,149,0.35) 0%, transparent 70%)',
+            }}
+          />
+          {/* Spinning gradient arc */}
+          <svg
+            className="absolute inset-0 animate-spin"
+            style={{ animationDuration: '1.4s' }}
+            width="96" height="96" viewBox="0 0 96 96"
+          >
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#7C3AED" />
+                <stop offset="100%" stopColor="#0D9488" />
+              </linearGradient>
+            </defs>
+            <circle cx="48" cy="48" r="44" fill="none" stroke="rgba(76,29,149,0.15)" strokeWidth="3" />
+            <circle
+              cx="48" cy="48" r="44" fill="none"
+              stroke="url(#ringGrad)" strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray="138 138"
+              strokeDashoffset="104"
+            />
+          </svg>
+          {/* Center ✦ */}
+          <div className="absolute inset-0 flex items-center justify-center text-3xl">✦</div>
+        </div>
+
+        {/* ── Headline ── */}
+        <h1
+          className="mb-3 leading-tight"
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontSize: '36px',
+            fontWeight: 400,
+            color: '#fff',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Building your<br />
+          <em style={{ color: 'rgba(159,103,255,0.9)' }}>brand images</em>
+        </h1>
+
+        {/* ── Rotating status text ── */}
+        <div
+          className="flex items-center justify-center gap-2.5 mb-10 overflow-hidden"
+          style={{ height: 28 }}
+        >
+          <p
+            className="text-[15px] font-light transition-all duration-300"
+            style={{
+              color: 'rgba(255,255,255,0.45)',
+              opacity: visible ? 1 : 0,
+              transform: visible ? 'translateY(0)' : 'translateY(-6px)',
+            }}
+          >
+            {displayText}
+          </p>
+          {/* Three animated dots */}
+          <div className="flex gap-1 items-center shrink-0">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: 'rgba(124,58,237,0.7)',
+                  animation: `dotPulse 1.4s ${i * 0.18}s ease-in-out infinite`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Progress bar ── */}
+        <div className="w-full mb-3">
+          <div
+            className="rounded-full overflow-hidden"
+            style={{ height: 3, background: 'rgba(255,255,255,0.07)' }}
+          >
+            <div
+              className="h-full rounded-full transition-all duration-700 ease-out"
+              style={{
+                width: `${pct}%`,
+                background: 'linear-gradient(90deg, #2E1065 0%, #7C3AED 45%, #0D9488 100%)',
+                backgroundSize: '300% 100%',
+                animation: 'shimmer 2.4s linear infinite',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* ── Percentage readout ── */}
+        <div className="flex items-center justify-between w-full">
+          <span
+            className="text-[11px] uppercase tracking-wider"
+            style={{ color: 'rgba(255,255,255,0.2)' }}
+          >
+            Generating
+          </span>
+          <span
+            className="text-[11px] font-medium tabular-nums"
+            style={{ color: 'rgba(124,58,237,0.7)' }}
+          >
+            {Math.round(pct)}%
+          </span>
+        </div>
+
+        {/* ── Reassurance copy ── */}
+        <p
+          className="text-[12px] leading-relaxed mt-9"
+          style={{ color: 'rgba(255,255,255,0.2)', maxWidth: 320 }}
+        >
+          This takes 30–90 seconds per image.<br />
+          Please keep this tab open.
         </p>
+
       </div>
 
-      <div className="mt-8 w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 w-full animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
-      </div>
+      {/* Keyframes */}
+      <style>{`
+        @keyframes dotPulse {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+          40%            { transform: scale(1);   opacity: 1; }
+        }
+        @keyframes shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+      `}</style>
     </div>
   );
 };
