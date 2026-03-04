@@ -138,7 +138,7 @@ const sectionStyle = (unlocked: boolean) => ({
   background: unlocked ? T.panel : 'rgba(255,255,255,0.01)',
   opacity: unlocked ? 1 : 0.45,
   transition: 'all 0.2s',
-  marginBottom: 12,
+  marginBottom: 24,
 });
 
 const sectionHeaderStyle = (unlocked: boolean) => ({
@@ -152,6 +152,46 @@ const sectionHeaderStyle = (unlocked: boolean) => ({
   cursor: unlocked ? 'pointer' : 'not-allowed',
   transition: 'background 0.15s',
 });
+
+// ── SectionBlock — defined OUTSIDE SettingsStep to prevent remount on state changes ──
+const SectionBlock: React.FC<{
+  num: number; icon: React.ReactNode; title: string; badge?: string; unlocked: boolean;
+  isOpen: boolean; onToggle: () => void; hint?: string; rightEl?: React.ReactNode; children: React.ReactNode;
+}> = ({ num, icon, title, badge, unlocked, isOpen, onToggle, hint, rightEl, children }) => (
+  <div style={sectionStyle(unlocked)}>
+    <button
+      type="button"
+      disabled={!unlocked}
+      onClick={onToggle}
+      style={sectionHeaderStyle(unlocked)}
+      onMouseOver={e => { if (unlocked) (e.currentTarget as HTMLElement).style.background = T.panelHover; }}
+      onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          background: unlocked ? T.purpleGrad : T.panel,
+          border: `1px solid ${unlocked ? 'rgba(76,29,149,0.5)' : T.panelBorder}`,
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: T.white }}>{num}</span>
+        </div>
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: T.purple }}>{icon}</span>
+            <span style={{ fontFamily: T.serif, fontSize: 18, fontWeight: 400, color: T.white }}>{title}</span>
+            {badge && <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 8px', borderRadius: 100, background: T.tealDim, border: `1px solid ${T.tealBorder}`, color: T.teal }}>{badge}</span>}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {rightEl}
+        {hint && !unlocked && <span style={{ fontSize: 11, color: T.white40 }}>{hint}</span>}
+        <ChevronDown style={{ width: 16, height: 16, color: T.white40, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }} />
+      </div>
+    </button>
+    {isOpen && <div style={{ padding: '0 24px 24px' }}>{children}</div>}
+  </div>
+);
 
 export const SettingsStep: React.FC<SettingsStepProps> = ({
   config,
@@ -674,51 +714,6 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     document.body
   ) : null;
 
-  // ── Section accordion wrapper ──────────────────────────────────
-  const SectionBlock = ({ num, icon, title, badge, unlocked, isOpen, onToggle, hint, rightEl, children }: {
-    num: number, icon: React.ReactNode, title: string, badge?: string, unlocked: boolean,
-    isOpen: boolean, onToggle: () => void, hint?: string, rightEl?: React.ReactNode, children: React.ReactNode
-  }) => (
-    <div style={sectionStyle(unlocked)}>
-      <button
-        type="button"
-        disabled={!unlocked}
-        onClick={onToggle}
-        style={sectionHeaderStyle(unlocked)}
-        onMouseOver={e => { if (unlocked) (e.currentTarget as HTMLElement).style.background = T.panelHover; }}
-        onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            background: unlocked ? T.purpleGrad : T.panel,
-            border: `1px solid ${unlocked ? 'rgba(76,29,149,0.5)' : T.panelBorder}`,
-          }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: T.white }}>{num}</span>
-          </div>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: T.purple }}>{icon}</span>
-              <span style={{ fontFamily: T.serif, fontSize: 18, fontWeight: 400, color: T.white }}>{title}</span>
-              {badge && <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 8px', borderRadius: 100, background: T.tealDim, border: `1px solid ${T.tealBorder}`, color: T.teal }}>{badge}</span>}
-            </div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {rightEl}
-          {hint && !unlocked && <span style={{ fontSize: 11, color: T.white40 }}>{hint}</span>}
-          <ChevronDown style={{ width: 16, height: 16, color: T.white40, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }} />
-        </div>
-      </button>
-      {isOpen && <div style={{ padding: '0 24px 24px' }}>{children}</div>}
-    </div>
-  );
-
-  // ── Toggle button (pill style) ─────────────────────────────────
-  const ToggleBtn = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button type="button" onClick={onClick} style={pill(active)}>{children}</button>
-  );
-
   return (
     <div style={{ width: '100%', maxWidth: 1080, margin: '0 auto', paddingBottom: 80 }} className="animate-fade-in">
       {confirmModal}
@@ -734,6 +729,17 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         <p style={{ fontSize: 15, fontWeight: 300, color: T.white40, margin: 0, maxWidth: 520, lineHeight: 1.6 }}>
           Build your Looks by choosing a clothing style, background scene, and fine-tuning details.
         </p>
+      </div>
+
+      {/* Shot List banner */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 14, marginBottom: 28, background: 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(76,29,149,0.08))', border: `1px solid ${T.amberBorder}` }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.amberDim, border: `1px solid ${T.amberBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <ListChecks style={{ width: 16, height: 16, color: T.amber }} />
+        </div>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: T.amber, margin: '0 0 2px' }}>Try the Shot List Generator ↓</p>
+          <p style={{ fontSize: 12, color: T.white40, margin: 0 }}>Describe your profession and we'll build a custom shot list tailored to your brand. Scroll to Section 5.</p>
+        </div>
       </div>
 
       {/* Two-column layout */}
@@ -856,12 +862,22 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                     <style>{`@media (max-width: 600px) { .style-grid { grid-template-columns: repeat(2, 1fr) !important; } }`}</style>
                     {Object.entries(BRAND_DEFINITIONS).map(([key, brand]) => {
                       const isActive = clothingStyleGroup === key;
-                      const Icon = (brand as any).icon || Briefcase;
+                      const iconTypeMap: Record<string, React.ReactNode> = {
+                        briefcase: <Briefcase style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        building:  <Aperture style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        mic:       <Sparkles style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        coffee:    <Sun style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        sparkles:  <Sparkles style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        camera:    <Camera style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        leaf:      <Focus style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                        heart:     <Droplet style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />,
+                      };
+                      const iconNode = iconTypeMap[(brand as any).iconType] || <Briefcase style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />;
                       return (
                         <button key={key} type="button" onClick={() => handleClothingStyleGroupSelect(key)}
                           style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 8px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.15s', background: isActive ? T.purpleGrad : T.panel, border: `1px solid ${isActive ? 'rgba(76,29,149,0.5)' : T.panelBorder}`, boxShadow: isActive ? '0 8px 24px rgba(46,16,101,0.35)' : 'none' }}>
                           <div style={{ marginBottom: 10, padding: 8, borderRadius: '50%', background: isActive ? 'rgba(255,255,255,0.15)' : T.panelHover }}>
-                            <Icon style={{ width: 18, height: 18, color: isActive ? T.white : T.purple }} />
+                            {iconNode}
                           </div>
                           <span style={{ fontSize: 11, fontWeight: 500, color: isActive ? T.white : T.white60 }}>{(brand as any).label}</span>
                         </button>
