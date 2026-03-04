@@ -375,6 +375,17 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     negativeConstraints += " NO rings on any fingers. Bare hands with no jewelry on fingers.";
   }
 
+  // ── NATURALISM: clothing, surfaces, and lighting should never look "too perfect" ──
+  negativeConstraints += ` AVOID: overly perfect clothing (no catalog-flat fabric, no CGI-smooth surfaces, no unnaturally pristine wrinkle-free garments). AVOID: studio-artifical lighting that looks computer-rendered or evenly lit without shadow falloff. AVOID: plastic-looking surfaces, unnaturally sharp fabric edges, or clothing that appears vacuum-pressed with zero natural drape.`;
+
+  const naturalismInstruction = `
+   NATURALISM & IMPERFECTION (IMPORTANT):
+   - CLOTHING: Fabric must show natural drape, subtle creases, and organic texture. A well-pressed professional garment still has slight fold variation and weight. It should NOT look like a CGI render or catalog photo with impossibly smooth surfaces.
+   - LIGHTING: Light should have natural falloff, subtle shadows in fabric folds, and directional quality. Avoid flat, even, "everywhere at once" lighting that removes all depth.
+   - SURFACES & ENVIRONMENT: Background elements should have slight material texture — wood grain, fabric weave, painted wall variation. Nothing should look plastic or artificially perfect.
+   - OVERALL FEEL: The final image should feel like it was taken by a skilled photographer on location — not assembled in 3D software. Slight, authentic imperfections are preferred over hyper-polished artificial perfection.
+  `;
+
   // ── EXPERT MODE: the user's prompt IS the brief. Don't bury it under defaults. ──
   if (config.expertPrompt?.trim()) {
     // Detect text-on-clothing requests and inject fabric rendering rules
@@ -410,9 +421,9 @@ ${fabricTextInstruction}
    ${aboutYouInstruction}
    ${bodyInstruction}
    ${textureInstruction}
+   ${naturalismInstruction}
 
    EXPRESSION & GAZE:
-   - Direct, engaged eye contact with the camera lens — as if listening intently to someone just behind it.
    - Expression: composed, present, attentive. Faintest natural smile or neutral composure. No forced grin.
    - Eyes: bright, focused, alive.
 
@@ -450,6 +461,7 @@ ${fabricTextInstruction}
    CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
    COMPOSITION SAFETY: Ensure clean figure-ground separation behind the head. Shift camera angle if needed.
    ${textureInstruction}
+   ${naturalismInstruction}
 
    COMPOSITION & FRAMING:
    ${framingInstruction}
