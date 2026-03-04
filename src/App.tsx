@@ -253,7 +253,7 @@ function App() {
             className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
             aria-label="VeraLooks Home"
           >
-            <img src="/logo.png" alt="VeraLooks" className="h-7 w-auto" />
+            <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
           </button>
 
           {/* Step nav */}
