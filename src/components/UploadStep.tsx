@@ -10,7 +10,7 @@ interface UploadStepProps {
   onNext: () => void;
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export const UploadStep: React.FC<UploadStepProps> = ({
   referenceImages,
@@ -24,7 +24,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   const [qualityWarnings, setQualityWarnings]         = useState<string[]>([]);
   const confirmationRef = useRef<HTMLDivElement>(null);
 
-  // Auto-trigger confirmation photo when main photo is uploaded
   useEffect(() => {
     if (referenceImages.main && !confirmationPhoto && !isGeneratingConfirmation) {
       handleGenerateConfirmation();
@@ -37,8 +36,8 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     setConfirmationError(null);
     setConfirmationPhoto(null);
     try {
-      const rawPhoto    = await generateConfirmationPhoto(referenceImages);
-      const composited  = await overlayLogoOnConfirmationPhoto(rawPhoto, '/VeraLooks_logo_white.png');
+      const rawPhoto   = await generateConfirmationPhoto(referenceImages);
+      const composited = await overlayLogoOnConfirmationPhoto(rawPhoto, '/VeraLooks_logo_white.png');
       setConfirmationPhoto(composited);
     } catch (err: any) {
       console.error('Confirmation photo failed:', err);
@@ -65,7 +64,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     setError(null);
     if (file.size > MAX_FILE_SIZE) { setError('File is too large. Max 10MB.'); return; }
     try {
-      const base64   = await processFile(file);
+      const base64  = await processFile(file);
       const newImage: ReferenceImage = {
         id: Date.now().toString(),
         fileName: file.name,
@@ -94,10 +93,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     }
   };
 
-  // ── Upload Slot ────────────────────────────────────────────────
-  const UploadSlot = ({
-    role, label, subLabel,
-  }: {
+  const UploadSlot = ({ role, label, subLabel }: {
     role: keyof MultiReferenceSet;
     label: string;
     subLabel?: string;
@@ -117,76 +113,45 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     };
 
     return (
-      <div className="flex flex-col gap-2">
-        {/* Label */}
-        <label className="flex flex-col" style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 500 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <label style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 500, display: 'flex', flexDirection: 'column' }}>
           {label}
-          {subLabel && (
-            <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-              {subLabel}
-            </span>
-          )}
+          {subLabel && <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{subLabel}</span>}
         </label>
 
         {image ? (
-          /* ── Filled ── */
-          <div
-            className="relative group aspect-[3/4] w-full overflow-hidden rounded-2xl"
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(13,148,136,0.35)' }}
-          >
-            <img
-              src={image.base64} alt={label}
-              className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-            />
+          <div className="relative group" style={{ aspectRatio: '3/4', width: '100%', overflow: 'hidden', borderRadius: '16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(13,148,136,0.35)' }}>
+            <img src={image.base64} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
             <button
               onClick={e => { e.stopPropagation(); removeImage(role); }}
               className="absolute top-2.5 right-2.5 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all"
-              style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+              style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: 'none', cursor: 'pointer' }}
             >
               <X className="w-3.5 h-3.5 text-white" />
             </button>
-            <div
-              className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium"
-              style={{
-                background: 'rgba(13,148,136,0.2)',
-                backdropFilter: 'blur(6px)',
-                border: '1px solid rgba(13,148,136,0.4)',
-                color: '#0D9488',
-              }}
-            >
+            <div className="absolute bottom-2.5 right-2.5" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '8px', background: 'rgba(13,148,136,0.2)', border: '1px solid rgba(13,148,136,0.4)', color: '#0D9488', fontSize: 11, fontWeight: 500 }}>
               <Check className="w-3 h-3" /> Added
             </div>
           </div>
         ) : (
-          /* ── Empty ── */
           <div
             onClick={() => inputRef.current?.click()}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
-            className="aspect-[3/4] w-full rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all"
             style={{
+              aspectRatio: '3/4', width: '100%', borderRadius: '16px', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               border: `2px dashed ${isDragOver ? 'rgba(76,29,149,0.7)' : 'rgba(255,255,255,0.1)'}`,
               background: isDragOver ? 'rgba(76,29,149,0.08)' : 'rgba(255,255,255,0.02)',
-            }}
-            onMouseOver={e => {
-              if (!isDragOver) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)';
-            }}
-            onMouseOut={e => {
-              if (!isDragOver) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)';
+              transition: 'all 0.15s',
             }}
           >
-            <input
-              type="file" ref={inputRef} onChange={onChange}
-              className="hidden" accept="image/jpeg, image/png, image/webp"
-            />
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center mb-3"
-              style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.25)' }}
-            >
+            <input type="file" ref={inputRef} onChange={onChange} style={{ display: 'none' }} accept="image/jpeg, image/png, image/webp" />
+            <div style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.25)' }}>
               <Upload className="w-4 h-4" style={{ color: '#9F67FF' }} />
             </div>
-            <p className="text-[12px] font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
               {isDragOver ? 'Drop here' : 'Click or drag photo'}
             </p>
           </div>
@@ -196,299 +161,217 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 animate-fade-in">
+    <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '0 32px' }} className="animate-fade-in">
 
-      {/* ── Page header ── */}
-      <div className="mb-10">
-        <div
-          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-4 text-[11px] font-medium uppercase tracking-wider"
-          style={{ background: 'rgba(76,29,149,0.12)', border: '1px solid rgba(76,29,149,0.25)', color: '#B98FFF' }}
-        >
+      {/* Page header */}
+      <div style={{ marginBottom: 40 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: '100px', padding: '4px 12px', marginBottom: 16, background: 'rgba(76,29,149,0.12)', border: '1px solid rgba(76,29,149,0.25)', color: '#B98FFF', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Step 1 of 4
         </div>
-        <h1
-          className="mb-3 leading-tight"
-          style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 40,
-            fontWeight: 400,
-            color: '#fff',
-            letterSpacing: '-0.02em',
-          }}
-        >
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 40, fontWeight: 400, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 12, marginTop: 0 }}>
           Upload your reference photos
         </h1>
-        <p className="text-[15px] font-light leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)', maxWidth: 520 }}>
-          The AI learns what you look like from these photos. One clear face photo is enough —
-          side angles and full body improve results.
+        <p style={{ fontSize: 15, fontWeight: 300, lineHeight: 1.6, color: 'rgba(255,255,255,0.45)', maxWidth: 520, margin: 0 }}>
+          The AI learns what you look like from these photos. One clear face photo is enough — side angles and full body improve results.
         </p>
       </div>
 
-      {/* ── Photo Tips ── */}
-      <div
-        className="mb-8 rounded-2xl p-5"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}
-      >
-        <h3 className="text-sm font-semibold flex items-center gap-2 mb-4" style={{ color: '#fff' }}>
-          <Camera className="w-4 h-4" style={{ color: '#9F67FF' }} />
-          Quick Tips for Best Results
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-          {/* Critical tip */}
-          <div
-            className="flex items-start gap-3 p-3 rounded-xl"
-            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
-          >
-            <span
-              className="mt-0.5 shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}
-            >
-              <ArrowUpDown className="w-3 h-3 text-red-400" />
-            </span>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                <p className="text-[12px] font-semibold text-red-300">CRITICAL: Keep the camera straight up and down</p>
-                <span
-                  className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                  style={{ background: 'rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.85)' }}
-                >Critical</span>
-              </div>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>
-                A tilted or angled camera causes distortion the AI can't correct.
-              </p>
-            </div>
-          </div>
-
-          {/* Standard tips */}
-          {[
-            { icon: <Maximize2 className="w-3 h-3" style={{ color: '#9F67FF' }} />, iconBg: 'rgba(76,29,149,0.2)', iconBorder: 'rgba(76,29,149,0.35)',
-              title: 'Face photos: fill about half the frame',
-              body: 'Your face should be the clear subject — not too distant, not too cropped.' },
-            { icon: <Upload className="w-3 h-3" style={{ color: '#0D9488' }} />, iconBg: 'rgba(13,148,136,0.15)', iconBorder: 'rgba(13,148,136,0.3)',
-              title: 'Full-body: lower the camera to belly or chest height',
-              body: 'Keep the camera upright — just lower it so your whole body fits in frame.' },
-            { icon: <Sun className="w-3 h-3" style={{ color: '#F59E0B' }} />, iconBg: 'rgba(245,158,11,0.15)', iconBorder: 'rgba(245,158,11,0.3)',
-              title: 'Light should shine onto the front of the subject',
-              body: 'Avoid backlighting. Even, natural light on your face works best.' },
-          ].map((tip, i) => (
-            <div
-              key={i}
-              className="flex items-start gap-3 p-3 rounded-xl"
-              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-            >
-              <span
-                className="mt-0.5 shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: tip.iconBg, border: `1px solid ${tip.iconBorder}` }}
-              >
-                {tip.icon}
-              </span>
-              <div>
-                <p className="text-[12px] font-semibold mb-0.5" style={{ color: 'rgba(255,255,255,0.8)' }}>{tip.title}</p>
-                <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.38)' }}>{tip.body}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Error ── */}
+      {/* Error */}
       {error && (
-        <div
-          className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl text-[13px]"
-          style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.85)' }}
-        >
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, marginBottom: 24, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.85)', fontSize: 13 }}>
+          <AlertCircle className="w-4 h-4" style={{ flexShrink: 0 }} />
           {error}
         </div>
       )}
 
-      {/* ── Quality warnings ── */}
+      {/* Quality warnings */}
       {qualityWarnings.length > 0 && (
-        <div
-          className="mb-6 px-4 py-3 rounded-xl space-y-1.5"
-          style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}
-        >
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: '#F59E0B' }} />
-            <p className="text-[12px] font-semibold" style={{ color: '#F59E0B' }}>Photo Quality Notice</p>
+        <div style={{ padding: '12px 16px', borderRadius: 12, marginBottom: 24, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <AlertCircle className="w-4 h-4" style={{ color: '#F59E0B', flexShrink: 0 }} />
+            <p style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B', margin: 0 }}>Photo Quality Notice</p>
           </div>
-          {qualityWarnings.map((w, i) => (
-            <p key={i} className="text-[12px] ml-6" style={{ color: 'rgba(245,158,11,0.75)' }}>{w}</p>
-          ))}
-          <p className="text-[11px] ml-6" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            You can still continue — but better quality photos produce better results.
-          </p>
+          {qualityWarnings.map((w, i) => <p key={i} style={{ fontSize: 12, color: 'rgba(245,158,11,0.75)', marginLeft: 24, marginBottom: 4 }}>{w}</p>)}
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 24, marginBottom: 0 }}>You can still continue — but better quality photos produce better results.</p>
         </div>
       )}
 
-      {/* ── Upload grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-        {/* Main photo — spans 2 cols/rows */}
-        <div className="sm:col-span-2 sm:row-span-2 relative">
-          <UploadSlot
-            role="main"
-            label="Main Photo (Required)"
-            subLabel="Face the camera, good lighting, no heavy filters."
-          />
-          {!referenceImages.main && (
-            <div className="absolute -bottom-8 left-0 right-0 text-center">
-              <span
-                className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(76,29,149,0.12)', border: '1px solid rgba(76,29,149,0.25)', color: '#B98FFF' }}
-              >
-                Required
-              </span>
+      {/* ── Two-column layout ── */}
+      <div className="upload-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '32px', alignItems: 'start' }}>
+        <style>{`.upload-grid { grid-template-columns: 1fr 300px; } @media (max-width: 900px) { .upload-grid { grid-template-columns: 1fr !important; } }`}</style>
+
+        {/* LEFT — upload slots */}
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: 24 }}>
+
+            {/* Main photo — spans 2 cols and 2 rows */}
+            <div style={{ gridColumn: 'span 2', gridRow: 'span 2', position: 'relative' }}>
+              <UploadSlot role="main" label="Main Photo (Required)" subLabel="Face the camera, good lighting, no heavy filters." />
+              {!referenceImages.main && (
+                <div style={{ position: 'absolute', bottom: -28, left: 0, right: 0, textAlign: 'center' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 10px', borderRadius: '100px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(239,68,68,0.85)' }}>
+                    Required
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <UploadSlot role="fullBody"  label="Full-Body Photo" subLabel="Optional — head to toe, camera at chest height, upright." />
+            <UploadSlot role="fullBody"  label="Full-Body Photo"  subLabel="Optional — head to toe, camera at chest height." />
+            <div /> {/* spacer */}
+            <UploadSlot role="sideLeft"  label="Your Left Side"   subLabel="Optional — turn so your left faces the camera." />
+            <UploadSlot role="sideRight" label="Your Right Side"  subLabel="Optional — turn so your right faces the camera." />
+          </div>
 
-        {/* Preview alert + Next button — desktop only */}
-        <div className="hidden md:flex flex-col justify-end gap-2">
+          {/* AI preview notification */}
           {referenceImages.main && (
             <button
               onClick={scrollToConfirmation}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-left group transition-all"
-              style={{ border: '1px solid rgba(76,29,149,0.4)', background: 'rgba(76,29,149,0.1)' }}
-              onMouseOver={e => (e.currentTarget.style.background = 'rgba(76,29,149,0.16)')}
-              onMouseOut={e => (e.currentTarget.style.background = 'rgba(76,29,149,0.1)')}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', borderRadius: 12, marginTop: 32, background: 'rgba(76,29,149,0.08)', border: '1px solid rgba(76,29,149,0.25)', cursor: 'pointer', transition: 'all 0.15s' }}
             >
-              <div className="flex items-center gap-2">
-                {isGeneratingConfirmation ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: '#9F67FF' }} />
-                ) : confirmationPhoto ? (
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: '#9F67FF' }} />
-                ) : (
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                )}
-                <span className="text-[12px] leading-snug" style={{ color: 'rgba(159,103,255,0.85)' }}>
-                  {isGeneratingConfirmation
-                    ? 'Generating your AI preview below…'
-                    : confirmationPhoto
-                    ? 'AI preview ready — scroll down to see it.'
-                    : confirmationError
-                    ? 'Preview failed — scroll down to retry.'
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {isGeneratingConfirmation
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#9F67FF', flexShrink: 0 }} />
+                  : confirmationPhoto
+                  ? <Sparkles className="w-3.5 h-3.5" style={{ color: '#9F67FF', flexShrink: 0 }} />
+                  : <AlertCircle className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                }
+                <span style={{ fontSize: 13, color: 'rgba(159,103,255,0.85)' }}>
+                  {isGeneratingConfirmation ? 'Generating your AI preview below…'
+                    : confirmationPhoto ? 'AI preview ready — scroll down to see it.'
+                    : confirmationError ? 'Preview failed — scroll down to retry.'
                     : 'Preparing your AI preview…'}
                 </span>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 shrink-0 group-hover:translate-y-0.5 transition-transform" style={{ color: '#9F67FF' }} />
+              <ChevronDown className="w-3.5 h-3.5" style={{ color: '#9F67FF', flexShrink: 0 }} />
             </button>
           )}
-          <button
-            onClick={onNext}
-            disabled={!referenceImages.main}
-            className="w-full py-3 rounded-xl text-[13px] font-semibold transition-all"
-            style={{
-              background:  referenceImages.main ? 'linear-gradient(135deg, #2E1065, #4C1D95)' : 'rgba(255,255,255,0.04)',
-              color:       referenceImages.main ? '#fff' : 'rgba(255,255,255,0.2)',
-              border:      referenceImages.main ? 'none' : '1px solid rgba(255,255,255,0.06)',
-              cursor:      referenceImages.main ? 'pointer' : 'not-allowed',
-              boxShadow:   referenceImages.main ? '0 8px 24px rgba(46,16,101,0.4)' : 'none',
-            }}
-          >
-            Next: Design Photoshoot
-          </button>
         </div>
 
-        <UploadSlot role="sideLeft"  label="Your Left Side"  subLabel="Optional — turn so your left faces the camera." />
-        <UploadSlot role="sideRight" label="Your Right Side" subLabel="Optional — turn so your right faces the camera." />
-      </div>
+        {/* RIGHT — tips + continue */}
+        <div style={{ position: 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-      {/* ── AI Confirmation Preview ── */}
+          {/* Tips panel */}
+          <div style={{ borderRadius: 16, padding: 20, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <Camera className="w-4 h-4" style={{ color: '#9F67FF' }} />
+              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 19, fontWeight: 500, color: '#fff' }}>Tips for best results</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { icon: <ArrowUpDown className="w-3 h-3 text-red-400" />, bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', titleColor: 'rgba(239,68,68,0.9)',
+                  title: 'CRITICAL: Keep camera straight', body: "A tilted camera causes distortion the AI can't correct.", badge: true },
+                { icon: <Sun className="w-3 h-3" style={{ color: '#F59E0B' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.75)',
+                  title: 'Light should shine on your face', body: 'Avoid backlighting. Even natural light works best.' },
+                { icon: <Maximize2 className="w-3 h-3" style={{ color: '#9F67FF' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.75)',
+                  title: 'Fill about half the frame', body: 'Not too distant, not too cropped.' },
+                { icon: <Upload className="w-3 h-3" style={{ color: '#0D9488' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.75)',
+                  title: 'Full-body: lower camera to chest', body: 'Keep it upright so your whole body fits.' },
+              ].map((tip, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 10, background: tip.bg, border: `1px solid ${tip.border}` }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, background: tip.bg, border: `1px solid ${tip.border}` }}>
+                    {tip.icon}
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: tip.titleColor, margin: 0 }}>{tip.title}</p>
+                      {tip.badge && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.85)' }}>Critical</span>}
+                    </div>
+                    <p style={{ fontSize: 11, lineHeight: 1.5, color: 'rgba(255,255,255,0.38)', margin: 0 }}>{tip.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Continue button */}
+          <div style={{ borderRadius: 16, padding: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            {!referenceImages.main && (
+              <p style={{ fontSize: 12, textAlign: 'center', marginBottom: 12, color: 'rgba(255,255,255,0.3)' }}>Upload a photo to continue</p>
+            )}
+            <button
+              onClick={onNext}
+              disabled={!referenceImages.main}
+              style={{
+                width: '100%', padding: '14px', borderRadius: 11, fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                background: referenceImages.main ? 'linear-gradient(135deg, #2E1065, #4C1D95)' : 'rgba(255,255,255,0.04)',
+                color: referenceImages.main ? '#fff' : 'rgba(255,255,255,0.25)',
+                border: referenceImages.main ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                cursor: referenceImages.main ? 'pointer' : 'not-allowed',
+                boxShadow: referenceImages.main ? '0 8px 24px rgba(46,16,101,0.4)' : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              Next: Design Photoshoot →
+            </button>
+          </div>
+
+        </div>{/* end RIGHT */}
+      </div>{/* end two-column grid */}
+
+      {/* AI Confirmation Preview */}
       {referenceImages.main && (
-        <div
-          ref={confirmationRef}
-          className="mb-8 rounded-2xl overflow-hidden"
-          style={{ border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}
-        >
-          {/* Header */}
-          <div
-            className="flex items-center justify-between px-5 py-3"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}
-          >
+        <div ref={confirmationRef} style={{ marginTop: 48, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div>
-              <h3 className="text-sm font-semibold text-white">AI Confirmation Preview</h3>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                A quick preview of how the AI reads your photo — before you design your full shoot.
-              </p>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0, marginBottom: 4 }}>AI Confirmation Preview</h3>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0 }}>A quick preview of how the AI reads your photo — before you design your full shoot.</p>
             </div>
             {!isGeneratingConfirmation && (
               <button
                 onClick={handleGenerateConfirmation}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)' }}
-                onMouseOver={e => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.2)'; }}
-                onMouseOut={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', transition: 'all 0.15s' }}
               >
                 <RefreshCw className="w-3 h-3" /> Regenerate
               </button>
             )}
           </div>
-
-          {/* Body */}
-          <div className="flex flex-col md:flex-row gap-6 p-5">
-            <div className="flex flex-col gap-2 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.35)' }}>Your Photo</p>
-              <div className="rounded-xl overflow-hidden aspect-square w-full" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
-                <img src={referenceImages.main.base64} alt="Your uploaded photo" className="w-full h-full object-cover" />
+          <div style={{ display: 'flex', gap: 24, padding: 20 }} className="flex-col md:flex-row">
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)', margin: 0 }}>Your Photo</p>
+              <div style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '1/1', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <img src={referenceImages.main.base64} alt="Your uploaded photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             </div>
-            <div className="flex flex-col gap-2 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.35)' }}>AI Preview</p>
-              <div
-                className="rounded-xl overflow-hidden aspect-square w-full flex items-center justify-center"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-              >
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)', margin: 0 }}>AI Preview</p>
+              <div style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '1/1', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isGeneratingConfirmation && (
-                  <div className="flex flex-col items-center gap-3 text-center px-4">
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', padding: '0 16px' }}>
                     <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#9F67FF' }} />
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Generating your preview…</p>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0 }}>Generating your preview…</p>
                   </div>
                 )}
                 {confirmationPhoto && !isGeneratingConfirmation && (
-                  <img src={confirmationPhoto} alt="AI confirmation preview" className="w-full h-full object-cover" />
+                  <img src={confirmationPhoto} alt="AI confirmation preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
                 {confirmationError && !isGeneratingConfirmation && (
-                  <div className="flex flex-col items-center gap-2 text-center px-4">
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', padding: '0 16px' }}>
                     <AlertCircle className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.2)' }} />
-                    <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{confirmationError}</p>
-                    <button
-                      onClick={handleGenerateConfirmation}
-                      className="text-xs underline mt-1 transition-colors"
-                      style={{ color: '#9F67FF' }}
-                    >
-                      Try again
-                    </button>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', margin: 0 }}>{confirmationError}</p>
+                    <button onClick={handleGenerateConfirmation} style={{ fontSize: 12, color: '#9F67FF', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginTop: 4 }}>Try again</button>
                   </div>
                 )}
               </div>
             </div>
           </div>
-
-          <div className="px-5 pb-4">
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              This preview uses a standard VeraLooks studio setup. Your actual generated photos will reflect the
-              style, clothing, and scene you choose on the next screen.
+          <div style={{ padding: '0 20px 16px' }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
+              This preview uses a standard VeraLooks studio setup. Your actual generated photos will reflect the style, clothing, and scene you choose on the next screen.
             </p>
           </div>
         </div>
       )}
 
-      {/* ── Mobile action bar ── */}
-      <div
-        className="flex justify-end pt-6 border-t md:hidden"
-        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-      >
+      {/* Mobile continue button */}
+      <div className="md:hidden" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 24, marginTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <button
           onClick={onNext}
           disabled={!referenceImages.main}
-          className="px-8 py-3 rounded-xl text-[14px] font-semibold transition-all"
           style={{
+            padding: '12px 32px', borderRadius: 11, fontSize: 14, fontWeight: 600,
             background: referenceImages.main ? 'linear-gradient(135deg, #2E1065, #4C1D95)' : 'rgba(255,255,255,0.04)',
-            color:      referenceImages.main ? '#fff' : 'rgba(255,255,255,0.25)',
-            cursor:     referenceImages.main ? 'pointer' : 'not-allowed',
+            color: referenceImages.main ? '#fff' : 'rgba(255,255,255,0.25)',
+            border: 'none', cursor: referenceImages.main ? 'pointer' : 'not-allowed',
           }}
         >
           Next: Design Photoshoot
