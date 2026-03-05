@@ -28,11 +28,18 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     setIsLoading(true);
     setError(null);
     try {
-      await onLogin?.('email', { email, password }, mode === 'signup');
+      if (mode === 'verify') {
+        await onLogin?.('verify' as any, { email: pendingEmail, password: otpCode });
+      } else {
+        await onLogin?.('email', { email, password }, mode === 'signup');
+      }
     } catch (err: any) {
+      if (err.message === 'VERIFY_EMAIL') {
+        setPendingEmail(email);
+        setMode('verify');
+        return;
+      }
       setError(err.message || 'Sign-in failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
     }
   };
 

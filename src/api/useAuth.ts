@@ -47,14 +47,15 @@ export const useAuth = () => {
       try {
         if (isSignup) {
           await auth.register({ email: credentials.email, password: credentials.password });
-          return;
+          throw new Error('VERIFY_EMAIL');
         }
         const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
         auth.setToken(response.access_token);
         const currentUser = await auth.me();
         setUser(currentUser);
-      } catch (err: any) {
+       } catch (err: any) {
         console.error('Auth error:', err);
+        if (err.message === 'VERIFY_EMAIL') throw err;
         throw new Error(err?.response?.data?.message || err?.message || 'Invalid email or password');
       }
     }
