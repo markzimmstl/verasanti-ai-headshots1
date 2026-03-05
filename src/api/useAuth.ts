@@ -36,19 +36,24 @@ export const useAuth = () => {
     checkAuth();
   }, []);
 
-    const login = async (provider: 'google' | 'email', credentials?: { email: string; password: string }, isSignup?: boolean) => {
-       if (provider === 'google') {
-          auth.redirectToLogin('https://app.veralooks.com');
-       } else if (credentials) {
-          if (isSignup) {
+      const login = async (provider: 'google' | 'email', credentials?: { email: string; password: string }, isSignup?: boolean) => {
+    if (provider === 'google') {
+      auth.redirectToLogin('https://app.veralooks.com');
+    } else if (credentials) {
+      try {
+        if (isSignup) {
           await auth.register({ email: credentials.email, password: credentials.password });
         }
         const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
         auth.setToken(response.access_token);
         const currentUser = await auth.me();
         setUser(currentUser);
+      } catch (err: any) {
+        console.error('Auth error:', err);
+        throw new Error(err?.response?.data?.message || err?.message || 'Invalid email or password');
       }
-    };
+    }
+  };
 
   const logout = async () => {
     await auth.logout();
