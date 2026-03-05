@@ -14,9 +14,17 @@ export const useAuth = () => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+ useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check for token in URL (returned after Base44 OAuth redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('access_token');
+        if (urlToken) {
+          auth.setToken(urlToken);
+          // Clean token from URL
+          window.history.replaceState({}, '', window.location.pathname);
+        }
         const currentUser = await auth.me();
         setUser(currentUser);
       } catch {
