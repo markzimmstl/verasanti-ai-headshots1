@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-type LoginFn = (provider: 'google' | 'email', credentials?: { email: string; password: string }) => Promise<void>;
+type LoginFn = (provider: 'google' | 'email', credentials?: { email: string; password: string }, isSignup?: boolean) => Promise<void>;
 
 export { AuthScreen };
 export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
