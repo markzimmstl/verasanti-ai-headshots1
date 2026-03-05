@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@base44/sdk": "^0.8.20",
     "@google/genai": "^1.33.0",
     "lucide-react": "^0.344.0",
     "react": "latest",

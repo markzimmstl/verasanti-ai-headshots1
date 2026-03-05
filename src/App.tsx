@@ -4,6 +4,8 @@ import { PaymentStep } from './components/PaymentStep';
 import { SettingsStep } from './components/SettingsStep';
 import { ProcessingStep } from './components/ProcessingStep';
 import ResultsStep from './components/ResultsStep';
+import { AuthScreen } from './components/AuthScreen';
+import { useAuth } from './api/useAuth';
 import { 
   GenerationConfig, 
   GeneratedImage, 
@@ -11,7 +13,7 @@ import {
   MultiReferenceSet 
 } from './types';
 import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, LogOut } from 'lucide-react';
 
 // @ts-ignore
 import { BRAND_DEFINITIONS } from './data/brandDefinitions';
@@ -35,18 +37,20 @@ export const DEFAULT_CONFIG: GenerationConfig = {
 const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
 
 function App() {
-  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>(() => {
-    return (localStorage.getItem('veralooks_step') as any) || 'upload';
-  });
+  const { user, isLoading, login, logout } = useAuth();
 
-  const [credits, setCredits] = useState(() => {
-    return parseInt(localStorage.getItem('veralooks_credits') || '0', 10);
-  });
+  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
+
+  const [credits, setCredits] = useState(0);
   
-  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(() => {
-    const saved = localStorage.getItem('veralooks_pending');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // Sync credits from Base44 user object when user loads
+  useEffect(() => {
+    if (user?.creditsBalance !== undefined) {
+      setCredits(user.creditsBalance);
+    }
+  }, [user]);
+
+  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
 
   // FIX: Reference images kept in memory only — Base64 images are too large for localStorage.
   const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
@@ -57,13 +61,6 @@ function App() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [settingsKey, setSettingsKey] = useState(0);
-
-  useEffect(() => { localStorage.setItem('veralooks_step', currentStep); }, [currentStep]);
-  useEffect(() => { localStorage.setItem('veralooks_credits', credits.toString()); }, [credits]);
-  useEffect(() => { 
-    if (pendingGeneration) localStorage.setItem('veralooks_pending', JSON.stringify(pendingGeneration));
-    else localStorage.removeItem('veralooks_pending');
-  }, [pendingGeneration]);
 
   const handleGoHome = () => {
     setCurrentStep('upload');
@@ -240,6 +237,20 @@ function App() {
   return (
     <div className="min-h-screen text-white font-sans flex flex-col" style={{ background: '#080A0F' }}>
 
+      {/* ── AUTH GATE ── */}
+      {isLoading && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
+        </div>
+      )}
+
+      {!isLoading && !user && (
+        <AuthScreen onLogin={login} />
+      )}
+
+      {!isLoading && user && (
+        <div className="min-h-screen flex flex-col">
+
       {/* ── HEADER ── */}
       <header
         className="border-b sticky top-0 z-40 shrink-0 backdrop-blur-xl"
@@ -303,15 +314,25 @@ function App() {
             })}
           </div>
 
-          {/* Credits pill */}
-          <div
-            className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
-            style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.3)' }}
-          >
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#9F67FF' }} />
-            <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
-              {credits} Credits
-            </span>
+          {/* Credits pill + logout */}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
+              style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.3)' }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#9F67FF' }} />
+              <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                {credits} Credits
+              </span>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign out"
+              className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:opacity-80"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <LogOut style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.4)' }} />
+            </button>
           </div>
         </div>
       </header>
@@ -393,6 +414,8 @@ function App() {
           </div>
         )}
       </main>
+      </div>
+      )}
     </div>
   );
 }
