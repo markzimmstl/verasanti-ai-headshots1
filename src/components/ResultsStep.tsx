@@ -97,9 +97,10 @@ const EDIT_CATEGORIES: { category: string; presets: EditPreset[] }[] = [
     presets: [
       { label: '📱 Phone pic look', prompt: 'Recreate this image to look like it was taken on a smartphone camera by a friend — slightly casual framing, natural ambient or available light, no professional lighting setup, slight lens distortion typical of a phone camera, authentic and candid feel, deep depth of field so nearly everything is in focus (as phones render), no vignette, no lens blur, no shallow bokeh. If the scene suggests evening or night, simulate on-camera flash: harsh direct flash lighting, slight red-eye reduction glow, flat frontal illumination, slightly overexposed face against a darker background. NEGATIVE: no vignette, no heavy vignette, no dark edges, no bokeh blur.', mode: 'edit' },
       { label: '🎨 Graphic Novel', prompt: 'Reimagine this portrait in a graphic novel illustration style — bold dark ink outlines defining the subject and all features, flat areas of color with minimal shading, high contrast between light and shadow, dramatic comic-book composition. The entire image including background should be fully illustrated, not photographic.', mode: 'edit' },
-      { label: '🖼️ Oil Painting', prompt: 'Transform this portrait into a classical oil painting — thick visible impasto brushstrokes, rich warm palette, painterly texture across the entire canvas including background, subtle glazing in shadows, the look of a museum-quality painted portrait. No photographic elements should remain.', mode: 'edit' },
-      { label: '🌊 Watercolor Portrait', prompt: 'Transform this portrait into a delicate watercolor painting — soft wet-on-wet washes of color, loose and slightly undefined edges, light and airy tones, visible paper texture beneath the pigment, gentle bleeds of color in the background. The style should feel hand-painted and impressionistic throughout.', mode: 'edit' },
-      { label: '✨ Studio Ghibli Style', prompt: 'Reimagine this portrait in the style of Studio Ghibli animation — soft anime-inspired illustration with clean linework, warm natural lighting, expressive but gentle features, lush painterly background, a sense of warmth and magic. The entire image should be fully illustrated in this style, not photographic.', mode: 'edit' },
+      { label: '🖼️ Oil Painting', prompt: 'Fully repaint this portrait as a classical oil painting. The ENTIRE image — face, clothing, hands, and background — must be rendered in oil paint with no photographic elements remaining. Use thick, visible impasto brushstrokes throughout. Rich, saturated warm palette. Deep shadows with layered glazing. Highlights built up with textured paint. The canvas texture must be visible beneath the pigment. The face should retain likeness but be clearly painted, not photographic. Background should be loose, expressive brushwork — not a blurred photo.', mode: 'edit' },
+      { label: '🌊 Watercolor Portrait', prompt: 'Fully repaint this portrait as a hand-painted watercolor illustration. The ENTIRE image must be rendered in watercolor — no photographic elements should remain. Use wet-on-wet washes with visible color bleeds and blooms. Edges should be soft and slightly undefined where wash meets wash. Visible paper texture throughout. Colors should be luminous and slightly transparent. Shadows built from layered washes, not solid fills. The face should retain likeness but be clearly illustrated in watercolor. Background should dissolve into loose, expressive washes of color.', mode: 'edit' },
+      { label: '✨ Studio Ghibli Style', prompt: 'Fully reimagine this portrait as a Studio Ghibli animated film cel. The ENTIRE image — subject, clothing, hair, skin, and background — must be hand-drawn animation illustration with NO photographic elements remaining. Clean anime linework outlining every feature. Skin rendered with flat anime shading and soft blush tones. Hair with distinct animated highlight shapes. Eyes large, expressive, luminous with anime-style catchlights. Clothing with simplified folds typical of Ghibli character design. Background fully illustrated as a lush painterly Ghibli environment — not a blurred photo backdrop. The overall image should look like a production cel from a Ghibli film.', mode: 'edit' },
+      { label: '🧊 3D Cartoon', prompt: 'Reimagine this portrait as a high-quality 3D animated character — the style of Pixar or DreamWorks feature films. The ENTIRE image must be 3D rendered illustration with no photographic elements remaining. Smooth, slightly exaggerated 3D character with rounded features and stylized proportions. Large expressive eyes with subsurface scattering skin. Simplified but detailed clothing with clean 3D shading and subtle ambient occlusion. Background fully rendered as a 3D animated environment with soft depth of field. Global illumination lighting — warm key light, cool fill, subtle rim. The overall image should look like a still from a major 3D animated feature film.', mode: 'edit' },
     ],
   },
   {
@@ -182,6 +183,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
 
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [showDownloadTip, setShowDownloadTip] = useState(false);
+  const [downloadAllFormat, setDownloadAllFormat] = useState<'png' | 'webp' | 'both'>('png');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -336,9 +338,20 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
       const JSZip = await loadJSZip();
       const zip = new JSZip(); const folder = zip.folder('VeraLooks-Photos');
       await Promise.all(displayImages.map(async (img, idx) => {
-        const blob = await fetch(img.imageUrl).then(r => r.blob());
-        const ext = img.imageUrl.includes('image/png') ? 'png' : 'jpg';
-        folder?.file(`VeraLooks-${String(idx + 1).padStart(2, '0')}-${img.styleName.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30)}.${ext}`, blob);
+        const res = await fetch(img.imageUrl);
+        const sourceBlob = await res.blob();
+        const bitmap = await createImageBitmap(sourceBlob);
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width; canvas.height = bitmap.height;
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
+        const baseName = `VeraLooks-${String(idx + 1).padStart(2, '0')}-${img.styleName.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30)}`;
+        const addFormat = async (fmt: 'png' | 'webp') => {
+          const mimeType = fmt === 'webp' ? 'image/webp' : 'image/png';
+          const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('fail')), mimeType, fmt === 'webp' ? 0.85 : undefined));
+          folder?.file(`${baseName}.${fmt}`, blob);
+        };
+        if (downloadAllFormat === 'both') { await addFormat('png'); await addFormat('webp'); }
+        else { await addFormat(downloadAllFormat); }
       }));
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(zipBlob); a.download = 'VeraLooks-Photos.zip';
@@ -498,13 +511,18 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
 
                         {editError && <div style={{ fontSize: 12, padding: '10px 14px', borderRadius: 10, marginBottom: 14, background: T.amberDim, border: `1px solid ${T.amberBorder}`, color: T.amber }}>{editError}</div>}
 
+                        {/* Tip */}
+                        <div style={{ fontSize: 12, color: T.white40, padding: '9px 13px', borderRadius: 9, background: T.panel, border: `1px solid ${T.panelBorder}`, marginBottom: 10, lineHeight: 1.6 }}>
+                          <span style={{ color: T.amber, fontWeight: 600 }}>Tip:</span> Use <strong style={{ color: T.white60 }}>Apply Edit</strong> for lighting, background & color. Use <strong style={{ color: T.white60 }}>Regenerate</strong> for body shape — re-runs from your original photos.
+                        </div>
+
                         <div style={{ display: 'flex', gap: 10 }}>
                           <button type="button" onClick={handleApplyEdit} disabled={!editPrompt.trim() || isRefining}
                             style={{ ...btnBase(T.panel, T.panelBorder, T.white60, !editPrompt.trim() || isRefining), flex: 1 }}>
                             {isRefining ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Working…</> : <><Wand2 style={{ width: 14, height: 14 }} />Apply Edit</>}
                           </button>
                           <button type="button" onClick={handleRegenerate} disabled={!editPrompt.trim() || isRefining}
-                            style={{ ...btnBase(T.purpleGrad, 'rgba(76,29,149,0.6)', T.white, !editPrompt.trim() || isRefining), flex: 1, boxShadow: '0 4px 16px rgba(46,16,101,0.3)' }}>
+                            style={{ ...btnBase(T.panel, T.panelBorder, T.white60, !editPrompt.trim() || isRefining), flex: 1 }}>
                             {isRefining ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Working…</> : <><RefreshCw style={{ width: 14, height: 14 }} />Regenerate</>}
                           </button>
                         </div>
@@ -606,11 +624,27 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
                 style={btnBase(T.panel, T.panelBorder, T.white60, !selectedImage)}>
                 <Download style={{ width: 16, height: 16 }} />Download Web WebP
               </button>
+
+              {/* Format selector for Download All */}
+              <div style={{ padding: '10px 12px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}` }}>
+                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 8px' }}>Download All — Format</p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {(['png', 'webp', 'both'] as const).map(fmt => (
+                    <button key={fmt} type="button" onClick={() => setDownloadAllFormat(fmt)}
+                      style={{ flex: 1, padding: '6px 4px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: T.sans, transition: 'all 0.15s', textTransform: 'uppercase' as const, letterSpacing: '0.04em', background: downloadAllFormat === fmt ? T.purpleGrad : T.panel, border: `1px solid ${downloadAllFormat === fmt ? 'rgba(76,29,149,0.6)' : T.panelBorder}`, color: downloadAllFormat === fmt ? T.white : T.white40 }}>
+                      {fmt === 'both' ? 'Both' : fmt.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: 10, color: T.white20, margin: '6px 0 0', lineHeight: 1.5 }}>
+                  {downloadAllFormat === 'png' ? 'Hi-res PNG — best for print & editing' : downloadAllFormat === 'webp' ? 'Smaller file size, great for web' : 'Both formats included in the ZIP'}
+                </p>
+              </div>
+
               <button type="button" onClick={handleDownloadAll} disabled={!displayImages.length || isDownloadingAll}
                 style={btnBase(T.tealDim, T.tealBorder, T.teal, !displayImages.length || isDownloadingAll)}>
                 {isDownloadingAll ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />Zipping…</> : <><Archive style={{ width: 16, height: 16 }} />Download All ({displayImages.length})</>}
-              </button>
-            </div>
+              </button>            </div>
 
             {showDownloadTip && (
               <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}`, fontSize: 12, color: T.white40, lineHeight: 1.7 }}>
