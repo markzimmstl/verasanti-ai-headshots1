@@ -39,9 +39,12 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
       if (err.message === 'VERIFY_EMAIL') {
         setPendingEmail(email);
         setMode('verify');
+        setIsLoading(false);
         return;
       }
       setError(err.message || 'Sign-in failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
