@@ -30,12 +30,13 @@ export const useAuth = () => {
 
   const login = async (provider: 'google' | 'email', credentials?: { email: string; password: string }) => {
     if (provider === 'google') {
-      auth.loginWithProvider('google', window.location.pathname);
+      auth.redirectToLogin(window.location.href);
     } else if (credentials) {
-      await auth.loginViaEmailPassword(credentials.email, credentials.password);
+      const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
+      auth.setToken(response.access_token);
+      const currentUser = await auth.me();
+      setUser(currentUser);
     }
-    const currentUser = await auth.me();
-    setUser(currentUser);
   };
 
   const logout = async () => {
