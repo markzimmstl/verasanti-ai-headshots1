@@ -18,6 +18,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   onNext,
 }) => {
   const [error, setError]                             = useState<string | null>(null);
+  const [compressingFile, setCompressingFile]         = useState<string | null>(null);
   const [confirmationPhoto, setConfirmationPhoto]     = useState<string | null>(null);
   const [isGeneratingConfirmation, setIsGeneratingConfirmation] = useState(false);
   const [confirmationError, setConfirmationError]     = useState<string | null>(null);
@@ -60,11 +61,63 @@ export const UploadStep: React.FC<UploadStepProps> = ({
     });
   };
 
+  const compressImage = (file: File, maxSizeMB: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          // Scale down if very large — max 2400px on longest side
+          const MAX_DIM = 2400;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+          // Try progressively lower quality until under maxSizeMB
+          let quality = 0.85;
+          const tryCompress = () => {
+            canvas.toBlob(blob => {
+              if (!blob) { reject(new Error('Compression failed')); return; }
+              if (blob.size <= maxSizeMB * 1024 * 1024 || quality < 0.3) {
+                const r2 = new FileReader();
+                r2.onload = () => resolve(r2.result as string);
+                r2.onerror = reject;
+                r2.readAsDataURL(blob);
+              } else {
+                quality -= 0.1;
+                tryCompress();
+              }
+            }, 'image/jpeg', quality);
+          };
+          tryCompress();
+        };
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileSelect = async (file: File, role: keyof MultiReferenceSet) => {
     setError(null);
-    if (file.size > MAX_FILE_SIZE) { setError('File is too large. Max 10MB.'); return; }
+    const COMPRESS_THRESHOLD = 4 * 1024 * 1024; // compress anything over 4MB
+    const HARD_LIMIT = 30 * 1024 * 1024; // reject anything over 30MB
+    if (file.size > HARD_LIMIT) { setError('File is too large (over 30MB). Please use a smaller photo.'); return; }
     try {
-      const base64  = await processFile(file);
+      let base64: string;
+      if (file.size > COMPRESS_THRESHOLD) {
+        setCompressingFile(`Optimizing your photo (${(file.size / 1024 / 1024).toFixed(1)}MB)…`);
+        base64 = await compressImage(file, 4);
+        setCompressingFile(null);
+      } else {
+        base64 = await processFile(file);
+      }
       const newImage: ReferenceImage = {
         id: Date.now().toString(),
         fileName: file.name,
@@ -79,6 +132,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         if (!quality.passed) setQualityWarnings(quality.warnings);
       }
     } catch {
+      setCompressingFile(null);
       setError('Failed to process image. Please try again.');
     }
   };
@@ -175,6 +229,14 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           The AI learns what you look like from these photos. One clear face photo is enough — side angles and full body improve results.
         </p>
       </div>
+
+      {/* Compression status */}
+      {compressingFile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, marginBottom: 24, background: 'rgba(13,148,136,0.08)', border: '1px solid rgba(13,148,136,0.25)', color: '#0D9488', fontSize: 13 }}>
+          <Loader2 className="w-4 h-4 animate-spin" style={{ flexShrink: 0 }} />
+          {compressingFile} We're optimizing it for you automatically.
+        </div>
+      )}
 
       {/* Error */}
       {error && (
