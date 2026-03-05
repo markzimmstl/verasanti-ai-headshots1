@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-type LoginFn = (provider: 'google' | 'email' | 'verify', credentials?: { email: string; password: string }, isSignup?: boolean) => Promise<void>;
+type LoginFn = (provider: 'google' | 'email' | 'verify', credentials?: { email: string; password: string; otpCode?: string }, isSignup?: boolean) => Promise<void>;
 
 export { AuthScreen };
 export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
@@ -12,6 +12,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
   const [focused, setFocused] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
+  const [pendingPassword, setPendingPassword] = useState('');
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -25,19 +26,20 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
       if (mode === 'verify') {
-        await onLogin?.('verify' as any, { email: pendingEmail, password: otpCode });
+        await onLogin?.('verify' as any, { email: pendingEmail, password: pendingPassword, otpCode } as any);
       } else {
         await onLogin?.('email', { email, password }, mode === 'signup');
       }
     } catch (err: any) {
       if (err.message === 'VERIFY_EMAIL') {
         setPendingEmail(email);
+        setPendingPassword(password);
         setMode('verify');
         setIsLoading(false);
         return;

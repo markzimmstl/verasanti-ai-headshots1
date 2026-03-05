@@ -34,11 +34,11 @@ export const useAuth = () => {
     checkAuth();
   }, []);
 
-  const login = async (provider: 'google' | 'email' | 'verify', credentials?: { email: string; password: string }, isSignup?: boolean) => {
+   const login = async (provider: 'google' | 'email' | 'verify', credentials?: { email: string; password: string; otpCode?: string }, isSignup?: boolean) => {
     if (provider === 'google') {
       auth.redirectToLogin('https://app.veralooks.com');
     } else if (provider === 'verify' && credentials) {
-      await auth.verifyOtp({ email: credentials.email, otpCode: credentials.password });
+      await auth.verifyOtp({ email: credentials.email, otpCode: credentials.otpCode || '' });
       const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
       auth.setToken(response.access_token);
       const currentUser = await auth.me();
@@ -53,7 +53,7 @@ export const useAuth = () => {
         auth.setToken(response.access_token);
         const currentUser = await auth.me();
         setUser(currentUser);
-       } catch (err: any) {
+      } catch (err: any) {
         console.error('Auth error:', err);
         if (err.message === 'VERIFY_EMAIL') throw err;
         throw new Error(err?.response?.data?.message || err?.message || 'Invalid email or password');
