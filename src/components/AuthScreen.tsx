@@ -4,12 +4,14 @@ type LoginFn = (provider: 'google' | 'email' | 'verify', credentials?: { email: 
 
 export { AuthScreen };
 export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
-  const [mode, setMode] = useState<'login' | 'signup'>('signup');
+  const [mode, setMode] = useState<'login' | 'signup' | 'verify'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState('');
+  const [pendingEmail, setPendingEmail] = useState('');
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
