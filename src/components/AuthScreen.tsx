@@ -28,7 +28,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     setIsLoading(true);
     setError(null);
     try {
-      await onLogin?.('email', { email, password });
+      await onLogin?.('email', { email, password }, mode === 'signup');
     } catch (err: any) {
       setError(err.message || 'Sign-in failed. Please check your credentials.');
     } finally {

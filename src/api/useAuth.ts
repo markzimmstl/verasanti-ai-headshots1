@@ -36,16 +36,19 @@ export const useAuth = () => {
     checkAuth();
   }, []);
 
-  const login = async (provider: 'google' | 'email', credentials?: { email: string; password: string }) => {
-    if (provider === 'google') {
-      auth.redirectToLogin(window.location.href);
-    } else if (credentials) {
-      const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
-      auth.setToken(response.access_token);
-      const currentUser = await auth.me();
-      setUser(currentUser);
-    }
-  };
+    const login = async (provider: 'google' | 'email', credentials?: { email: string; password: string }, isSignup?: boolean) => {
+       if (provider === 'google') {
+          auth.redirectToLogin('https://app.veralooks.com');
+       } else if (credentials) {
+          if (isSignup) {
+          await auth.register({ email: credentials.email, password: credentials.password });
+        }
+        const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
+        auth.setToken(response.access_token);
+        const currentUser = await auth.me();
+        setUser(currentUser);
+      }
+    };
 
   const logout = async () => {
     await auth.logout();
