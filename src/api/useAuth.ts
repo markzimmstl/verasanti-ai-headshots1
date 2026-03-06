@@ -39,8 +39,8 @@ export const useAuth = () => {
   }, []);
 
    const login = async (provider: 'google' | 'email' | 'verify', credentials?: { email: string; password: string; otpCode?: string }, isSignup?: boolean) => {
-    if (provider === 'google') {
-      auth.redirectToLogin('https://app.veralooks.com');
+      if (provider === 'google') {
+        window.location.href = `https://base44.app/login?app_id=69a99628831bf76209f4646d&from_url=${encodeURIComponent(window.location.origin)}`;
     } else if (provider === 'verify' && credentials) {
       await auth.verifyOtp({ email: credentials.email, otpCode: credentials.otpCode || '' });
       const response = await auth.loginViaEmailPassword(credentials.email, credentials.password);
