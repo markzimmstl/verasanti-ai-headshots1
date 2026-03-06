@@ -23,6 +23,10 @@ export const useAuth = () => {
           auth.setToken(urlToken);
           window.history.replaceState({}, '', window.location.pathname);
         }
+        const storedToken = localStorage.getItem('base44_access_token');
+        if (storedToken) {
+          auth.setToken(storedToken);
+        }
         const currentUser = await auth.me();
         setUser(currentUser);
       } catch {
