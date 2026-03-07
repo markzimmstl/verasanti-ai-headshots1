@@ -42,9 +42,12 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
       minHeight: '100vh',
       background: '#080A0F',
       display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       fontFamily: "'DM Sans', sans-serif",
       overflow: 'hidden',
       position: 'relative',
+      padding: '40px 24px',
     }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
@@ -122,12 +125,10 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        .fade-up { animation: fadeUp 0.6s ease forwards; }
         .fade-up-1 { animation: fadeUp 0.6s 0.1s ease both; }
         .fade-up-2 { animation: fadeUp 0.6s 0.2s ease both; }
         .fade-up-3 { animation: fadeUp 0.6s 0.3s ease both; }
         .fade-up-4 { animation: fadeUp 0.6s 0.4s ease both; }
-        .fade-up-5 { animation: fadeUp 0.6s 0.5s ease both; }
 
         .spinner {
           width: 18px; height: 18px;
@@ -139,21 +140,21 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         }
 
         .sample-photo {
-          width: 52px; height: 52px;
+          width: 48px; height: 48px;
           border-radius: 50%;
           border: 2px solid rgba(255,255,255,0.15);
-          object-fit: cover;
           background: rgba(255,255,255,0.06);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 20px;
+          font-size: 18px;
           overflow: hidden;
         }
       `}</style>
 
       <div className="noise-overlay" />
 
+      {/* Ambient glows */}
       <div style={{
         position: 'fixed', top: '-20%', left: '-10%',
         width: '60%', height: '60%',
@@ -167,191 +168,219 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         pointerEvents: 'none', zIndex: 0,
       }} />
 
-      {/* Left panel */}
+      {/* Two-column card, centered on page */}
       <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        justifyContent: 'space-between', padding: '48px 56px',
-        position: 'relative', zIndex: 2,
-        borderRight: '1px solid rgba(255,255,255,0.05)',
+        display: 'flex',
+        width: '100%',
+        maxWidth: '900px',
+        minHeight: '580px',
+        borderRadius: '24px',
+        border: '1px solid rgba(255,255,255,0.07)',
+        overflow: 'hidden',
+        position: 'relative',
+        zIndex: 2,
       }}>
-        <div className="fade-up" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: 36, height: 36,
-            background: 'linear-gradient(135deg, #7C3AED, #9F67FF)',
-            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '16px', fontWeight: '700', color: '#fff',
-            fontFamily: "'Cormorant Garamond', serif", letterSpacing: '-0.02em',
-          }}>V</div>
-          <span style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '22px',
-            fontWeight: '500', color: '#fff', letterSpacing: '0.02em',
-          }}>VeraLooks</span>
-        </div>
 
-        <div style={{ maxWidth: '420px' }}>
-          <div className="fade-up-1" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
-            borderRadius: '100px', padding: '5px 12px', marginBottom: '28px',
-          }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9F67FF' }} />
-            <span style={{ fontSize: '12px', color: '#B98FFF', fontWeight: '500', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              AI Brand Photography
-            </span>
+        {/* Left panel — brand story */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '48px 44px',
+          background: 'rgba(255,255,255,0.02)',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          {/* Logo */}
+          <div className="fade-up-1" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: 34, height: 34,
+              background: 'linear-gradient(135deg, #7C3AED, #9F67FF)',
+              borderRadius: '8px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '15px', fontWeight: '700', color: '#fff',
+              fontFamily: "'Cormorant Garamond', serif",
+            }}>V</div>
+            <span style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: '20px', fontWeight: '500', color: '#fff', letterSpacing: '0.02em',
+            }}>VeraLooks</span>
           </div>
 
-          <h1 className="fade-up-2" style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '52px',
-            lineHeight: '1.1', fontWeight: '400', color: '#fff',
-            letterSpacing: '-0.02em', marginBottom: '20px',
-          }}>
-            Your brand,<br />
-            <em style={{ color: 'rgba(159,103,255,0.9)' }}>beautifully</em><br />
-            photographed.
-          </h1>
-
-          <p className="fade-up-3" style={{
-            fontSize: '16px', lineHeight: '1.65',
-            color: 'rgba(255,255,255,0.45)', fontWeight: '300', maxWidth: '360px',
-          }}>
-            Professional brand photos generated from your photos. Built by a working photographer, not a software company.
-          </p>
-        </div>
-
-        <div className="fade-up-4">
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '16px',
-            padding: '20px 24px', background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)', borderRadius: '14px', maxWidth: '380px',
-          }}>
-            <div style={{ display: 'flex' }}>
-              {['👩‍💼', '👨‍💻', '👩‍🎨', '👨‍⚕️'].map((emoji, i) => (
-                <div key={i} className="sample-photo" style={{ marginLeft: i > 0 ? '-10px' : '0', zIndex: 4 - i }}>
-                  {emoji}
-                </div>
-              ))}
+          {/* Headline block */}
+          <div style={{ maxWidth: '340px' }}>
+            <div className="fade-up-1" style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
+              borderRadius: '100px', padding: '5px 12px', marginBottom: '24px',
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9F67FF' }} />
+              <span style={{ fontSize: '11px', color: '#B98FFF', fontWeight: '500', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                AI Brand Photography
+              </span>
             </div>
-            <div>
-              <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
-                {[1,2,3,4,5].map(i => <span key={i} style={{ color: '#F59E0B', fontSize: '13px' }}>★</span>)}
-              </div>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.4' }}>
-                Trusted by professionals across<br />industries and brands
-              </p>
-            </div>
+
+            <h1 className="fade-up-2" style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: '44px', lineHeight: '1.1', fontWeight: '400', color: '#fff',
+              letterSpacing: '-0.02em', marginBottom: '16px',
+            }}>
+              Your brand,<br />
+              <em style={{ color: 'rgba(159,103,255,0.9)' }}>beautifully</em><br />
+              created.
+            </h1>
+
+            <p className="fade-up-3" style={{
+              fontSize: '15px', lineHeight: '1.7',
+              color: 'rgba(255,255,255,0.45)', fontWeight: '300',
+            }}>
+              Your very own Personal Brand Image System.<br />
+              Built by a professional photographer,<br />not a software company.
+            </p>
           </div>
-        </div>
-      </div>
 
-      {/* Right panel — auth form */}
-      <div style={{
-        width: '440px', display: 'flex', flexDirection: 'column',
-        justifyContent: 'center', padding: '48px 52px',
-        position: 'relative', zIndex: 2,
-      }}>
-        <div className="fade-up-1" style={{ marginBottom: '36px' }}>
-          <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: '30px',
-            fontWeight: '500', color: '#fff', letterSpacing: '-0.02em', marginBottom: '8px',
-          }}>
-            {mode === 'verify' ? 'Check your email' : mode === 'signup' ? 'Create your account' : 'Welcome back'}
-          </h2>
-          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>
-            {mode === 'verify'
-              ? 'Enter the verification code we sent you.'
-              : mode === 'signup'
-              ? 'Your credits are ready — sign up to start generating.'
-              : 'Sign in to access your credits and brand photos.'}
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-          {error && (
-            <div style={{ fontSize: 13, color: '#F87171', padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {mode !== 'verify' && (
-              <>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                    Email
-                  </label>
-                  <input
-                    type="email" className="auth-input" placeholder="name@company.com"
-                    value={email} onChange={e => setEmail(e.target.value)} required autoFocus
-                  />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <label style={{ fontSize: '12px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                      Password
-                    </label>
-                    {mode === 'login' && (
-                      <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.35)' }}>
-                        Forgot password?
-                      </button>
-                    )}
+          {/* Social proof */}
+          <div className="fade-up-4">
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '14px',
+              padding: '16px 20px',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '12px',
+            }}>
+              <div style={{ display: 'flex' }}>
+                {['👩‍💼', '👨‍💻', '👩‍🎨', '👨‍⚕️'].map((emoji, i) => (
+                  <div key={i} className="sample-photo" style={{ marginLeft: i > 0 ? '-8px' : '0', zIndex: 4 - i }}>
+                    {emoji}
                   </div>
-                  <input
-                    type="password" className="auth-input"
-                    placeholder={mode === 'signup' ? 'Create a password' : 'Your password'}
-                    value={password} onChange={e => setPassword(e.target.value)} required
-                  />
-                </div>
-              </>
-            )}
-
-            {mode === 'verify' && (
+                ))}
+              </div>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.04em', textTransform: 'uppercase' as const }}>
-                  Verification Code
-                </label>
-                <input
-                  type="text" className="auth-input"
-                  placeholder="Enter code from your email"
-                  value={otpCode} onChange={e => setOtpCode(e.target.value)} autoFocus
-                />
-                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>
-                  Check your email for the verification code.
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
+                  {[1,2,3,4,5].map(i => <span key={i} style={{ color: '#F59E0B', fontSize: '12px' }}>★</span>)}
+                </div>
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.4' }}>
+                  Trusted by professionals across<br />industries and brands
                 </p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel — auth form */}
+        <div style={{
+          width: '400px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          padding: '48px 44px',
+          background: '#0D0F17',
+        }}>
+          <div className="fade-up-1" style={{ marginBottom: '32px' }}>
+            <h2 style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: '28px', fontWeight: '500', color: '#fff',
+              letterSpacing: '-0.02em', marginBottom: '8px',
+            }}>
+              {mode === 'verify' ? 'Check your email' : mode === 'signup' ? 'Create your account' : 'Welcome back'}
+            </h2>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>
+              {mode === 'verify'
+                ? 'Enter the verification code we sent you.'
+                : mode === 'signup'
+                ? 'Sign up to start building your brand.'
+                : 'Sign in to access your credits and brand photos.'}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {error && (
+              <div style={{ fontSize: 13, color: '#F87171', padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                {error}
+              </div>
             )}
 
-            <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
-              {isLoading ? (
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                  <span className="spinner" />
-                  {mode === 'signup' ? 'Creating account...' : 'Signing in...'}
-                </span>
-              ) : (
-                mode === 'verify' ? 'Verify & Continue' :
-                mode === 'signup' ? 'Create Account & Get Started' : 'Sign In'
+            <form onSubmit={handleSubmit} className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {mode !== 'verify' && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      Email
+                    </label>
+                    <input
+                      type="email" className="auth-input" placeholder="name@company.com"
+                      value={email} onChange={e => setEmail(e.target.value)} required autoFocus
+                    />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        Password
+                      </label>
+                      {mode === 'login' && (
+                        <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.3)' }}>
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="password" className="auth-input"
+                      placeholder={mode === 'signup' ? 'Create a password' : 'Your password'}
+                      value={password} onChange={e => setPassword(e.target.value)} required
+                    />
+                  </div>
+                </>
               )}
-            </button>
-          </form>
 
-          {mode !== 'verify' && (
-            <div className="fade-up-3" style={{ textAlign: 'center', marginTop: '8px' }}>
-              <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>
-                {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-              </span>
-              <button className="mode-toggle" onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}>
-                {mode === 'signup' ? 'Sign in' : 'Sign up'}
+              {mode === 'verify' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+                    Verification Code
+                  </label>
+                  <input
+                    type="text" className="auth-input"
+                    placeholder="Enter code from your email"
+                    value={otpCode} onChange={e => setOtpCode(e.target.value)} autoFocus
+                  />
+                  <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>
+                    Check your email for the verification code.
+                  </p>
+                </div>
+              )}
+
+              <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
+                {isLoading ? (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                    <span className="spinner" />
+                    {mode === 'signup' ? 'Creating account...' : 'Signing in...'}
+                  </span>
+                ) : (
+                  mode === 'verify' ? 'Verify & Continue' :
+                  mode === 'signup' ? 'Create Account & Get Started' : 'Sign In'
+                )}
               </button>
-            </div>
-          )}
+            </form>
 
-          <div className="fade-up-4" style={{ textAlign: 'center', marginTop: '4px' }}>
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', lineHeight: '1.5' }}>
-              By continuing, you agree to our{' '}
-              <a href="#" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Terms</a>
-              {' '}and{' '}
-              <a href="#" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacy Policy</a>
-            </p>
+            {mode !== 'verify' && (
+              <div className="fade-up-3" style={{ textAlign: 'center', marginTop: '6px' }}>
+                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>
+                  {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
+                </span>
+                <button className="mode-toggle" onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}>
+                  {mode === 'signup' ? 'Sign in' : 'Sign up'}
+                </button>
+              </div>
+            )}
+
+            <div className="fade-up-4" style={{ textAlign: 'center', marginTop: '4px' }}>
+              <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', lineHeight: '1.5' }}>
+                By continuing, you agree to our{' '}
+                <a href="#" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Terms</a>
+                {' '}and{' '}
+                <a href="#" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacy Policy</a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
