@@ -10,7 +10,8 @@ import {
   GenerationConfig, 
   GeneratedImage, 
   StyleOption, 
-  MultiReferenceSet 
+  MultiReferenceSet,
+  ReferenceImage,
 } from './types';
 import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
 import { AlertCircle, LogOut } from 'lucide-react';
@@ -36,8 +37,73 @@ export const DEFAULT_CONFIG: GenerationConfig = {
 
 const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
 
-// Key for saving pending generation across Stripe redirect
-const PENDING_GEN_KEY = 'veralooks_pending_generation';
+const PENDING_GEN_KEY   = 'veralooks_pending_generation';
+const REF_IMAGES_KEY    = 'veralooks_ref_images';
+
+// Compress a base64 image to target size in MB
+const compressBase64 = (base64: string, targetMB = 0.4): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+      const MAX_DIM = 1200;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+        width  = Math.round(width  * ratio);
+        height = Math.round(height * ratio);
+      }
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      let quality = 0.7;
+      const tryCompress = () => {
+        canvas.toBlob(blob => {
+          if (!blob) { resolve(base64); return; } // fallback to original
+          if (blob.size <= targetMB * 1024 * 1024 || quality < 0.2) {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(base64);
+            reader.readAsDataURL(blob);
+          } else {
+            quality -= 0.1;
+            tryCompress();
+          }
+        }, 'image/jpeg', quality);
+      };
+      tryCompress();
+    };
+    img.onerror = () => resolve(base64); // fallback to original
+    img.src = base64;
+  });
+};
+
+// Save reference images to localStorage, compressing each to ~400KB
+const saveRefImagesToStorage = async (images: MultiReferenceSet): Promise<void> => {
+  try {
+    const compressed: Record<string, any> = {};
+    for (const [role, img] of Object.entries(images)) {
+      if (img?.base64) {
+        const compressedBase64 = await compressBase64(img.base64, 0.4);
+        compressed[role] = { ...img, base64: compressedBase64 };
+      }
+    }
+    localStorage.setItem(REF_IMAGES_KEY, JSON.stringify(compressed));
+  } catch (e) {
+    console.warn('Could not save reference images to localStorage:', e);
+  }
+};
+
+// Restore reference images from localStorage
+const loadRefImagesFromStorage = (): MultiReferenceSet | null => {
+  try {
+    const saved = localStorage.getItem(REF_IMAGES_KEY);
+    if (!saved) return null;
+    return JSON.parse(saved) as MultiReferenceSet;
+  } catch {
+    return null;
+  }
+};
 
 function App() {
   const { user, isLoading, login, logout } = useAuth();
@@ -45,8 +111,6 @@ function App() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
   const [credits, setCredits] = useState(0);
   const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
-
-  // FIX: Reference images kept in memory only — Base64 images are too large for localStorage.
   const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -73,19 +137,24 @@ function App() {
       const newCredits = credits + purchasedCredits;
       setCredits(newCredits);
       localStorage.setItem('veralooks_credits', newCredits.toString());
-
-      // Clean the URL immediately
       window.history.replaceState({}, '', window.location.pathname);
 
-      // Restore pendingGeneration that was saved before Stripe redirect
+      // Restore reference images saved before redirect
+      const restoredImages = loadRefImagesFromStorage();
+      if (restoredImages && Object.keys(restoredImages).length > 0) {
+        setReferenceImages(restoredImages);
+        localStorage.removeItem(REF_IMAGES_KEY);
+      }
+
+      // Restore pending generation and execute
       const savedPending = localStorage.getItem(PENDING_GEN_KEY);
       if (savedPending) {
         try {
           const restored = JSON.parse(savedPending);
           localStorage.removeItem(PENDING_GEN_KEY);
           setPendingGeneration(restored);
-          // Pass newCredits directly — state hasn't updated yet
-          executeGeneration(restored.styles, restored.config, newCredits);
+          // Pass restored images directly since state hasn't updated yet
+          executeGeneration(restored.styles, restored.config, newCredits, restoredImages || {});
         } catch {
           localStorage.removeItem(PENDING_GEN_KEY);
           setCurrentStep('settings');
@@ -121,24 +190,31 @@ function App() {
   const handleGenerateRequest = async (styles: StyleOption[], config: GenerationConfig) => {
     const totalImagesRequested = styles.reduce((sum, style) => sum + (style.imageCount || 1), 0);
     if (credits < totalImagesRequested) {
-      // Save to localStorage before going to payment so it survives Stripe redirect
       const pending = { styles, config };
       setPendingGeneration(pending);
+      // Save pending generation AND reference images before Stripe redirect
       localStorage.setItem(PENDING_GEN_KEY, JSON.stringify(pending));
+      await saveRefImagesToStorage(referenceImages);
       setCurrentStep('payment');
       window.scrollTo(0, 0);
       return;
     }
-    await executeGeneration(styles, config, credits);
+    await executeGeneration(styles, config, credits, referenceImages);
   };
 
-  // creditOverride lets us pass freshly-purchased credits before React state updates
-  const executeGeneration = async (styles: StyleOption[], config: GenerationConfig, creditOverride?: number) => {
+  // refOverride lets us pass freshly-restored images before state updates
+  const executeGeneration = async (
+    styles: StyleOption[],
+    config: GenerationConfig,
+    creditOverride?: number,
+    refOverride?: MultiReferenceSet
+  ) => {
     setIsGenerating(true);
     setError(null);
     const newImages: GeneratedImage[] = [];
     let globalImageIndex = 0;
     let currentCredits = creditOverride ?? credits;
+    const refsToUse = refOverride ?? referenceImages;
 
     try {
       for (const style of styles) {
@@ -159,7 +235,7 @@ function App() {
           let imageUrl: string | null = null;
           try {
             imageUrl = await generateBrandPhotoWithRefsSafe(
-              referenceImages,
+              refsToUse,
               fullPrompt,
               finalConfigForThisLook,
               undefined,
@@ -220,7 +296,7 @@ function App() {
     setCredits(newCredits);
     localStorage.setItem('veralooks_credits', newCredits.toString());
     if (pendingGeneration) {
-      executeGeneration(pendingGeneration.styles, pendingGeneration.config, newCredits);
+      executeGeneration(pendingGeneration.styles, pendingGeneration.config, newCredits, referenceImages);
     } else {
       setCurrentStep('settings');
     }
