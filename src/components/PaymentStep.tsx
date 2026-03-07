@@ -51,18 +51,10 @@ const TIERS: PricingTier[] = [
 ];
 
 export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentComplete, onBack }) => {
-  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const [selectedTierId, setSelectedTierId] = useState<string>('professional');
   const [email, setEmail] = useState('');
   const [isEmailSaved, setIsEmailSaved] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  React.useEffect(() => {
-    if (!selectedTierId) {
-      if (imageCount > 100) setSelectedTierId('brandkit');
-      else if (imageCount > 35) setSelectedTierId('professional');
-      else setSelectedTierId('starter');
-    }
-  }, [imageCount, selectedTierId]);
 
   const selectedTier = TIERS.find(t => t.id === selectedTierId) || TIERS[1];
   const insufficientCredits = selectedTier.credits < imageCount;
@@ -87,7 +79,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
   return (
     <div className="w-full max-w-6xl mx-auto animate-fade-in px-4 pb-12 relative">
 
-      {/* Email capture modal */}
+      {/* Email capture modal — centered vertically */}
       {!isEmailSaved && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full shadow-2xl">
@@ -125,10 +117,13 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
 
         {/* Header */}
         <div className="text-center mb-10">
-          <h2 className="text-4xl font-bold text-white mb-6">Invest in Your Personal Brand</h2>
-          <div className="inline-flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/30 rounded-full px-6 py-2">
-            <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-            <p className="text-indigo-200 text-xl font-bold">1 Credit = 1 AI-Generated Image</p>
+          <h2 className="text-4xl font-bold text-white mb-4">Build Your Personal Brand</h2>
+          <div className="flex flex-col items-center gap-2">
+            <div className="inline-flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/30 rounded-full px-6 py-2">
+              <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+              <p className="text-indigo-200 text-xl font-bold">1 Credit = 1 AI-Generated Image</p>
+            </div>
+            <p className="text-slate-400 text-sm font-medium tracking-wide">Your very own Personal Brand Image System</p>
           </div>
         </div>
 
@@ -176,61 +171,68 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
           ))}
         </div>
 
-        {/* Checkout box */}
-        <div className="max-w-2xl mx-auto bg-white text-slate-900 rounded-3xl p-8 shadow-2xl">
-          <h3 className="text-2xl font-bold text-slate-900 mb-2">Ready to Continue?</h3>
-          <p className="text-slate-500 text-sm mb-6">
-            You'll be securely redirected to Stripe to complete your purchase. Have a promo code? Enter it there. You'll return here automatically after payment.
-          </p>
+        {/* Checkout box — centered vertically on screen */}
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-20"
+             style={{ display: isEmailSaved ? 'flex' : 'none' }}>
+          <div className="pointer-events-auto max-w-lg w-full mx-4 bg-white text-slate-900 rounded-3xl p-8 shadow-2xl relative">
+            {/* Close / collapse hint */}
+            <h3 className="text-2xl font-bold text-slate-900 mb-1">Continue</h3>
+            <p className="text-slate-500 text-sm mb-6">
+              You'll be securely redirected to Stripe. Promo codes can be entered there. You'll return here automatically after payment.
+            </p>
 
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-slate-700">{selectedTier.name}</span>
-              <span className="font-bold text-slate-900">${selectedTier.price}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm text-slate-500">
-              <span>Credits included</span>
-              <span>{selectedTier.credits}</span>
-            </div>
-            {insufficientCredits && (
-              <div className="mt-4 flex gap-2 bg-amber-50 text-amber-700 p-3 rounded-lg text-xs border border-amber-200">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <p>Your selected image count exceeds this plan's credits. Consider upgrading to Professional or Brand Kit.</p>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold text-slate-700">{selectedTier.name}</span>
+                <span className="font-bold text-slate-900">${selectedTier.price}</span>
               </div>
-            )}
+              <div className="flex justify-between items-center text-sm text-slate-500">
+                <span>Credits included</span>
+                <span>{selectedTier.credits}</span>
+              </div>
+              {insufficientCredits && (
+                <div className="mt-4 flex gap-2 bg-amber-50 text-amber-700 p-3 rounded-lg text-xs border border-amber-200">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <p>Your selected image count exceeds this plan's credits. Consider upgrading to Professional or Brand Kit.</p>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handlePay} className="space-y-4">
+              <div className="opacity-60 pointer-events-none">
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  readOnly
+                  className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-3 text-slate-600"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isProcessing}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70"
+              >
+                {isProcessing ? 'Redirecting to Stripe...' : `Continue to Secure Checkout — $${selectedTier.price}`}
+              </button>
+
+              <div className="flex items-center justify-center gap-3 text-slate-400 text-xs">
+                <div className="flex items-center gap-1">
+                  <Shield className="w-3 h-3 text-green-600" />
+                  <span>Secured by Stripe</span>
+                </div>
+                <span>·</span>
+                <span>Promo codes accepted at checkout</span>
+              </div>
+            </form>
           </div>
-
-          <form onSubmit={handlePay} className="space-y-4">
-            <div className="opacity-60 pointer-events-none">
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                readOnly
-                className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-3 text-slate-600"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isProcessing}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70"
-            >
-              {isProcessing ? 'Redirecting to Stripe...' : `Continue to Secure Checkout — $${selectedTier.price}`}
-            </button>
-
-            <div className="flex items-center justify-center gap-3 text-slate-400 text-xs">
-              <div className="flex items-center gap-1">
-                <Shield className="w-3 h-3 text-green-600" />
-                <span>Secured by Stripe</span>
-              </div>
-              <span>·</span>
-              <span>Promo codes accepted at checkout</span>
-            </div>
-          </form>
         </div>
 
-        <div className="mt-8 text-center">
+        {/* Spacer so page scrolls enough to not hide content behind fixed checkout */}
+        <div className="h-96" />
+
+        <div className="mt-8 text-center relative z-30">
           <Button variant="outline" onClick={onBack} disabled={isProcessing}>Back</Button>
         </div>
       </div>
