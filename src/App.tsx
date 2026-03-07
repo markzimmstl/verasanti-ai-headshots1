@@ -36,13 +36,25 @@ export const DEFAULT_CONFIG: GenerationConfig = {
 
 const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
 
+// Key for saving pending generation across Stripe redirect
+const PENDING_GEN_KEY = 'veralooks_pending_generation';
+
 function App() {
   const { user, isLoading, login, logout } = useAuth();
 
   const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
-
   const [credits, setCredits] = useState(0);
-  
+  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
+
+  // FIX: Reference images kept in memory only — Base64 images are too large for localStorage.
+  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
+  const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [settingsKey, setSettingsKey] = useState(0);
+
   // Sync credits from Base44 user object when user loads
   useEffect(() => {
     if (user?.creditsBalance !== undefined) {
@@ -55,31 +67,34 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const payment = urlParams.get('payment');
     const creditsParam = urlParams.get('credits');
+
     if (payment === 'success' && creditsParam && user) {
       const purchasedCredits = parseInt(creditsParam, 10);
       const newCredits = credits + purchasedCredits;
       setCredits(newCredits);
       localStorage.setItem('veralooks_credits', newCredits.toString());
+
+      // Clean the URL immediately
       window.history.replaceState({}, '', window.location.pathname);
-      if (pendingGeneration) {
-        executeGeneration(pendingGeneration.styles, pendingGeneration.config);
+
+      // Restore pendingGeneration that was saved before Stripe redirect
+      const savedPending = localStorage.getItem(PENDING_GEN_KEY);
+      if (savedPending) {
+        try {
+          const restored = JSON.parse(savedPending);
+          localStorage.removeItem(PENDING_GEN_KEY);
+          setPendingGeneration(restored);
+          // Pass newCredits directly — state hasn't updated yet
+          executeGeneration(restored.styles, restored.config, newCredits);
+        } catch {
+          localStorage.removeItem(PENDING_GEN_KEY);
+          setCurrentStep('settings');
+        }
       } else {
         setCurrentStep('settings');
       }
     }
   }, [user]);
-
-  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
-
-  // FIX: Reference images kept in memory only — Base64 images are too large for localStorage.
-  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
-  const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
-  
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [settingsKey, setSettingsKey] = useState(0);
 
   const handleGoHome = () => {
     setCurrentStep('upload');
@@ -106,19 +121,24 @@ function App() {
   const handleGenerateRequest = async (styles: StyleOption[], config: GenerationConfig) => {
     const totalImagesRequested = styles.reduce((sum, style) => sum + (style.imageCount || 1), 0);
     if (credits < totalImagesRequested) {
-      setPendingGeneration({ styles, config });
+      // Save to localStorage before going to payment so it survives Stripe redirect
+      const pending = { styles, config };
+      setPendingGeneration(pending);
+      localStorage.setItem(PENDING_GEN_KEY, JSON.stringify(pending));
       setCurrentStep('payment');
       window.scrollTo(0, 0);
       return;
     }
-    await executeGeneration(styles, config);
+    await executeGeneration(styles, config, credits);
   };
 
-  const executeGeneration = async (styles: StyleOption[], config: GenerationConfig) => {
+  // creditOverride lets us pass freshly-purchased credits before React state updates
+  const executeGeneration = async (styles: StyleOption[], config: GenerationConfig, creditOverride?: number) => {
     setIsGenerating(true);
     setError(null);
     const newImages: GeneratedImage[] = [];
     let globalImageIndex = 0;
+    let currentCredits = creditOverride ?? credits;
 
     try {
       for (const style of styles) {
@@ -157,7 +177,8 @@ function App() {
           }
 
           // Only deduct credit when image actually succeeds
-          setCredits(prev => Math.max(0, prev - 1));
+          currentCredits = Math.max(0, currentCredits - 1);
+          setCredits(currentCredits);
 
           newImages.push({
             id: Date.now().toString() + Math.random().toString(),
@@ -179,6 +200,7 @@ function App() {
       if (newImages.length > 0) {
         setGeneratedImages(prev => [...newImages, ...prev]);
         setPendingGeneration(null);
+        localStorage.removeItem(PENDING_GEN_KEY);
         setCurrentStep('results');
         window.scrollTo(0, 0);
       } else {
@@ -197,11 +219,12 @@ function App() {
     const newCredits = credits + purchasedCredits;
     setCredits(newCredits);
     localStorage.setItem('veralooks_credits', newCredits.toString());
-    setCurrentStep('results');
-    window.scrollTo(0, 0);
     if (pendingGeneration) {
-      executeGeneration(pendingGeneration.styles, pendingGeneration.config);
+      executeGeneration(pendingGeneration.styles, pendingGeneration.config, newCredits);
+    } else {
+      setCurrentStep('settings');
     }
+    window.scrollTo(0, 0);
   };
 
   const handlePaymentBack = () => {
@@ -209,7 +232,6 @@ function App() {
   };
 
   const handleReset = () => {
-    // Preserve About You fields — users shouldn't re-enter gender/age/hair every time
     setGenerationConfig(prev => ({
       ...DEFAULT_CONFIG,
       genderPresentation: prev.genderPresentation,
@@ -217,7 +239,6 @@ function App() {
       hairColor: prev.hairColor,
       includeRing: prev.includeRing,
     }));
-    // Force SettingsStep to fully remount with clean local state
     setSettingsKey(k => k + 1);
     setCurrentStep('settings');
     window.scrollTo(0, 0);
@@ -246,17 +267,16 @@ function App() {
     ? pendingGeneration.styles.reduce((sum, s) => sum + (s.imageCount || 1), 0)
     : 0;
 
-  // Map app state to step nav index
   const stepNavIndex = isGenerating ? 2
     : currentStep === 'upload'   ? 0
     : currentStep === 'settings' ? 1
     : currentStep === 'results'  ? 3
-    : 1; // payment sits on step 1 visually
+    : 1;
 
   return (
     <div className="min-h-screen text-white font-sans flex flex-col" style={{ background: '#080A0F' }}>
 
-      {/* ── AUTH GATE ── */}
+      {/* AUTH GATE */}
       {isLoading && (
         <div className="min-h-screen flex items-center justify-center">
           <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
@@ -270,170 +290,167 @@ function App() {
       {!isLoading && user && (
         <div className="min-h-screen flex flex-col">
 
-      {/* ── HEADER ── */}
-      <header
-        className="border-b sticky top-0 z-40 shrink-0 backdrop-blur-xl"
-        style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(8,10,15,0.92)' }}
-      >
-        <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
-
-          {/* Logo */}
-          <button
-            onClick={handleGoHome}
-            className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
-            aria-label="VeraLooks Home"
+          {/* HEADER */}
+          <header
+            className="border-b sticky top-0 z-40 shrink-0 backdrop-blur-xl"
+            style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(8,10,15,0.92)' }}
           >
-            <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
-          </button>
+            <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
 
-          {/* Step nav */}
-          <div className="hidden md:flex items-center gap-1.5">
-            {STEP_LABELS.map((label, i) => {
-              const isActive   = i === stepNavIndex;
-              const isComplete = i < stepNavIndex;
-              return (
-                <React.Fragment key={label}>
-                  <div className="flex flex-col items-center gap-1">
-                    <div
-                      className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[11px] font-semibold transition-all"
-                      style={{
-                        background: isActive   ? 'linear-gradient(135deg, #2E1065, #4C1D95)'
-                                  : isComplete ? 'rgba(13,148,136,0.2)'
-                                  :              'rgba(255,255,255,0.05)',
-                        color:     isActive   ? '#fff'
-                                  : isComplete ? '#0D9488'
-                                  :              'rgba(255,255,255,0.25)',
-                        border:    isComplete ? '1px solid rgba(13,148,136,0.35)'
-                                  : isActive  ? 'none'
-                                  :             '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      {isComplete ? '✓' : i + 1}
-                    </div>
-                    <span
-                      className="text-[9px] uppercase tracking-wider"
-                      style={{
-                        fontWeight: isActive ? 600 : 400,
-                        color: isActive   ? 'rgba(159,103,255,0.9)'
-                             : isComplete ? 'rgba(13,148,136,0.65)'
-                             :              'rgba(255,255,255,0.2)',
-                      }}
-                    >
-                      {label}
-                    </span>
-                  </div>
-                  {i < STEP_LABELS.length - 1 && (
-                    <div
-                      className="w-8 h-px mb-3.5"
-                      style={{ background: isComplete ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.07)' }}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
+              <button
+                onClick={handleGoHome}
+                className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
+                aria-label="VeraLooks Home"
+              >
+                <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
+              </button>
 
-          {/* Credits pill + logout */}
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
-              style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.3)' }}
-            >
-              <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#9F67FF' }} />
-              <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                {credits} Credits
-              </span>
-            </div>
-            <button
-              onClick={logout}
-              title="Sign out"
-              className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:opacity-80"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <LogOut style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.4)' }} />
-            </button>
-          </div>
-        </div>
-      </header>
+              <div className="hidden md:flex items-center gap-1.5">
+                {STEP_LABELS.map((label, i) => {
+                  const isActive   = i === stepNavIndex;
+                  const isComplete = i < stepNavIndex;
+                  return (
+                    <React.Fragment key={label}>
+                      <div className="flex flex-col items-center gap-1">
+                        <div
+                          className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[11px] font-semibold transition-all"
+                          style={{
+                            background: isActive   ? 'linear-gradient(135deg, #2E1065, #4C1D95)'
+                                      : isComplete ? 'rgba(13,148,136,0.2)'
+                                      :              'rgba(255,255,255,0.05)',
+                            color:     isActive   ? '#fff'
+                                      : isComplete ? '#0D9488'
+                                      :              'rgba(255,255,255,0.25)',
+                            border:    isComplete ? '1px solid rgba(13,148,136,0.35)'
+                                      : isActive  ? 'none'
+                                      :             '1px solid rgba(255,255,255,0.08)',
+                          }}
+                        >
+                          {isComplete ? '✓' : i + 1}
+                        </div>
+                        <span
+                          className="text-[9px] uppercase tracking-wider"
+                          style={{
+                            fontWeight: isActive ? 600 : 400,
+                            color: isActive   ? 'rgba(159,103,255,0.9)'
+                                 : isComplete ? 'rgba(13,148,136,0.65)'
+                                 :              'rgba(255,255,255,0.2)',
+                          }}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      {i < STEP_LABELS.length - 1 && (
+                        <div
+                          className="w-8 h-px mb-3.5"
+                          style={{ background: isComplete ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.07)' }}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
 
-      {/* ── ERROR MODAL ── */}
-      {error && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div
-            className="rounded-2xl p-6 max-w-md w-full shadow-2xl"
-            style={{ background: '#0D0F16', border: '1px solid rgba(239,68,68,0.3)' }}
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-red-300 mb-1">Generation Error</p>
-                <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{error}</p>
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
+                  style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.3)' }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#9F67FF' }} />
+                  <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                    {credits} Credits
+                  </span>
+                </div>
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:opacity-80"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <LogOut style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.4)' }} />
+                </button>
               </div>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setError(null); window.scrollTo(0, 0); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition"
-                style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
-                onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-                onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                Dismiss
-              </button>
-              <button
-                onClick={() => { setError(null); window.scrollTo(0, 0); }}
-                className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #2E1065, #4C1D95)' }}
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </header>
 
-      {/* ── MAIN ── */}
-      <main className="flex-1 flex flex-col relative">
-        {isGenerating ? (
-          <ProcessingStep message={loadingMessage} />
-        ) : (
-          <div className="py-10 w-full">
-            {currentStep === 'upload' && (
-              <UploadStep
-                referenceImages={referenceImages}
-                onUpdate={handleReferenceUpdate}
-                onNext={handleUploadContinue}
-              />
+          {/* ERROR MODAL */}
+          {error && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+              <div
+                className="rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                style={{ background: '#0D0F16', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-300 mb-1">Generation Error</p>
+                    <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{error}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setError(null); window.scrollTo(0, 0); }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium transition"
+                    style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                    onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    onClick={() => { setError(null); window.scrollTo(0, 0); }}
+                    className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, #2E1065, #4C1D95)' }}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MAIN */}
+          <main className="flex-1 flex flex-col relative">
+            {isGenerating ? (
+              <ProcessingStep message={loadingMessage} />
+            ) : (
+              <div className="py-10 w-full">
+                {currentStep === 'upload' && (
+                  <UploadStep
+                    referenceImages={referenceImages}
+                    onUpdate={handleReferenceUpdate}
+                    onNext={handleUploadContinue}
+                  />
+                )}
+                {currentStep === 'settings' && (
+                  <SettingsStep
+                    key={settingsKey}
+                    config={generationConfig}
+                    credits={credits}
+                    onChange={handleConfigChange}
+                    onNext={handleGenerateRequest}
+                    onBack={handleBackToUpload}
+                  />
+                )}
+                {currentStep === 'payment' && (
+                  <PaymentStep
+                    imageCount={pendingImageCount || 20}
+                    onPaymentComplete={handlePaymentComplete}
+                    onBack={handlePaymentBack}
+                  />
+                )}
+                {currentStep === 'results' && (
+                  <ResultsStep
+                    images={generatedImages}
+                    onRestart={handleReset}
+                    refs={referenceImages}
+                    baseConfig={generationConfig}
+                  />
+                )}
+              </div>
             )}
-            {currentStep === 'settings' && (
-              <SettingsStep
-                key={settingsKey}
-                config={generationConfig}
-                credits={credits}
-                onChange={handleConfigChange}
-                onNext={handleGenerateRequest}
-                onBack={handleBackToUpload}
-              />
-            )}
-            {currentStep === 'payment' && (
-              <PaymentStep
-                imageCount={pendingImageCount || 20}
-                onPaymentComplete={handlePaymentComplete}
-                onBack={handlePaymentBack}
-              />
-            )}
-            {currentStep === 'results' && (
-              <ResultsStep
-                images={generatedImages}
-                onRestart={handleReset}
-                refs={referenceImages}
-                baseConfig={generationConfig}
-              />
-            )}
-          </div>
-        )}
-      </main>
-      </div>
+          </main>
+        </div>
       )}
     </div>
   );

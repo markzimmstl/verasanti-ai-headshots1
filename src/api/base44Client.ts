@@ -5,3 +5,5 @@ export const base44 = createClient({
 });
 
 export const auth = base44.auth;
+
+console.log('Base44 auth methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(auth)));
