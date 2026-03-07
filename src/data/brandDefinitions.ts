@@ -505,7 +505,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'boutique-shop',
         name: 'Boutique / Shop Front',
         prompt:
-          'standing inside or just outside a charming upscale boutique retail shop — polished wood shelving with neatly folded clothing or curated products, decorative window displays with mannequins or merchandise, warm accent lighting, and tasteful branded signage; the space feels intimate, stylish, and inviting like a high-end clothing or gift boutique on a pedestrian shopping street; absolutely NOT a warehouse, storage facility, industrial space, loading dock, or big-box retail store',
+          'standing in a beautiful upscale independent clothing boutique — think a high-end fashion shop carrying men\'s, women\'s, and children\'s clothing; the space has warm honey-colored wood shelving displaying neatly folded garments, clothing racks with curated fashion pieces, a chandelier or decorative pendant lighting, a tufted velvet chair or small sofa as a fitting area accent, a marble or herringbone tile floor, and a large glass storefront window letting in soft natural light; the overall mood is elegant, intimate, and aspirational retail — this is unmistakably a chic independent clothing boutique interior, not a warehouse, storage facility, department store, or industrial space',
         iconType: 'building',
       },
       {
