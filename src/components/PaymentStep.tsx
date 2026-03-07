@@ -21,31 +21,31 @@ interface PricingTier {
 
 const TIERS: PricingTier[] = [
   {
-    id: 'essential',
-    name: 'Professional Starter',
+    id: 'starter',
+    name: 'Starter',
     price: 49,
     credits: 40,
-    description: 'Perfect for a LinkedIn profile.',
-    features: ['40 AI Credits', '20+ Photos', 'Commercial License'],
+    description: 'Perfect for a LinkedIn profile or headshot refresh.',
+    features: ['40 AI Credits', '20+ Brand Photos', 'Commercial License'],
     stripeLink: 'https://buy.stripe.com/eVq28sc6b0Ft2hn17pdUY02',
   },
   {
-    id: 'pro',
-    name: 'Executive Growth',
+    id: 'professional',
+    name: 'Professional',
     price: 79,
     credits: 120,
-    description: 'Variety for website & social.',
+    description: 'Variety across scenes for your website and social media.',
     isPopular: true,
-    features: ['120 AI Credits', '60-100 Photos', 'Priority Processing'],
+    features: ['120 AI Credits', '60–100 Brand Photos', 'Multiple Scenes & Styles', 'Priority Processing'],
     stripeLink: 'https://buy.stripe.com/7sY3cwb27ewjcW16rJdUY01',
   },
   {
-    id: 'exec',
+    id: 'brandkit',
     name: 'Brand Kit',
     price: 119,
     credits: 300,
-    description: 'Maximum options.',
-    features: ['300 AI Credits', '150+ Photos', 'Highest Priority', 'Team License'],
+    description: 'Maximum variety for a full brand launch or team.',
+    features: ['300 AI Credits', '150+ Brand Photos', 'Highest Priority', 'Team License'],
     stripeLink: 'https://buy.stripe.com/4gM5kEb27ag3e053fxdUY00',
   },
 ];
@@ -54,14 +54,13 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [isEmailSaved, setIsEmailSaved] = useState(false);
-  const [companyCode, setCompanyCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   React.useEffect(() => {
     if (!selectedTierId) {
-      if (imageCount > 100) setSelectedTierId('exec');
-      else if (imageCount > 35) setSelectedTierId('pro');
-      else setSelectedTierId('essential');
+      if (imageCount > 100) setSelectedTierId('brandkit');
+      else if (imageCount > 35) setSelectedTierId('professional');
+      else setSelectedTierId('starter');
     }
   }, [imageCount, selectedTierId]);
 
@@ -80,19 +79,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-
-    // Handle promo/test codes — bypass Stripe
-    const normalizedCode = companyCode.trim().toUpperCase();
-    if (normalizedCode === 'VIP-TEST' || normalizedCode === 'PARTNER-2026') {
-      setIsProcessing(true);
-      setTimeout(() => {
-        setIsProcessing(false);
-        onPaymentComplete(normalizedCode === 'PARTNER-2026' ? 300 : 120);
-      }, 1000);
-      return;
-    }
-
-    // Redirect to Stripe with prefilled email
     setIsProcessing(true);
     const stripeUrl = `${selectedTier.stripeLink}?prefilled_email=${encodeURIComponent(email)}`;
     window.location.href = stripeUrl;
@@ -110,11 +96,11 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                 <Sparkles className="h-8 w-8 text-indigo-400" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-white text-center mb-2">Save Your Brand Kit</h3>
-            <p className="text-slate-400 text-center mb-6">Enter your email to save your configuration and view pricing.</p>
+            <h3 className="text-2xl font-bold text-white text-center mb-2">Almost There</h3>
+            <p className="text-slate-400 text-center mb-6">Enter your email to save your brand configuration and view pricing.</p>
             <form onSubmit={handleSaveEmail} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Work Email</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                   <input
@@ -129,7 +115,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                   />
                 </div>
               </div>
-              <Button className="w-full py-3">Save & Continue</Button>
+              <Button className="w-full py-3">View Pricing</Button>
             </form>
           </div>
         </div>
@@ -140,11 +126,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
         {/* Header */}
         <div className="text-center mb-10">
           <h2 className="text-4xl font-bold text-white mb-6">Invest in Your Personal Brand</h2>
-          <div className="flex flex-col items-center gap-4">
-            <div className="inline-flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/30 rounded-full px-6 py-2">
-              <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <p className="text-indigo-200 text-xl font-bold">1 Credit = 1 Image Generation</p>
-            </div>
+          <div className="inline-flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/30 rounded-full px-6 py-2">
+            <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+            <p className="text-indigo-200 text-xl font-bold">1 Credit = 1 AI-Generated Image</p>
           </div>
         </div>
 
@@ -162,7 +146,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
             >
               {tier.isPopular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                  RECOMMENDED
+                  MOST POPULAR
                 </div>
               )}
               <div className="mb-4">
@@ -170,17 +154,15 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                 <p className="text-slate-400 text-sm mt-1">{tier.description}</p>
               </div>
               <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-white">${tier.price}</span>
-                </div>
-                <div className="mt-2 inline-block bg-slate-800 text-indigo-300 text-xs font-bold px-2 py-1 rounded">
+                <span className="text-4xl font-bold text-white">${tier.price}</span>
+                <div className="mt-2 inline-block bg-slate-800 text-indigo-300 text-xs font-bold px-2 py-1 rounded ml-2">
                   {tier.credits} Credits
                 </div>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {tier.features.map((feat, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
-                    <Check className="h-4 w-4 shrink-0 text-slate-600" />
+                    <Check className="h-4 w-4 shrink-0 text-indigo-400 mt-0.5" />
                     <span>{feat}</span>
                   </li>
                 ))}
@@ -188,17 +170,17 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
               <div className={`w-full py-2 rounded-lg text-center text-sm font-bold transition-colors ${
                 selectedTierId === tier.id ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
               }`}>
-                {selectedTierId === tier.id ? 'Selected' : 'Select Plan'}
+                {selectedTierId === tier.id ? '✓ Selected' : 'Select Plan'}
               </div>
             </div>
           ))}
         </div>
 
-        {/* Checkout section */}
+        {/* Checkout box */}
         <div className="max-w-2xl mx-auto bg-white text-slate-900 rounded-3xl p-8 shadow-2xl">
           <h3 className="text-2xl font-bold text-slate-900 mb-2">Ready to Continue?</h3>
           <p className="text-slate-500 text-sm mb-6">
-            You'll be securely redirected to Stripe to complete your purchase, then brought right back to generate your images.
+            You'll be securely redirected to Stripe to complete your purchase. Have a promo code? Enter it there. You'll return here automatically after payment.
           </p>
 
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
@@ -213,13 +195,12 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
             {insufficientCredits && (
               <div className="mt-4 flex gap-2 bg-amber-50 text-amber-700 p-3 rounded-lg text-xs border border-amber-200">
                 <AlertCircle className="w-4 h-4 shrink-0" />
-                <p>You need more credits for your selected image count. Consider upgrading.</p>
+                <p>Your selected image count exceeds this plan's credits. Consider upgrading to Professional or Brand Kit.</p>
               </div>
             )}
           </div>
 
           <form onSubmit={handlePay} className="space-y-4">
-            {/* Read-only email confirmation */}
             <div className="opacity-60 pointer-events-none">
               <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
               <input
@@ -230,33 +211,21 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Promo Code</label>
-              <input
-                type="text"
-                placeholder="Optional promo code"
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 outline-none"
-                value={companyCode}
-                onChange={(e) => setCompanyCode(e.target.value)}
-                onFocus={handleInputFocus}
-              />
-            </div>
-
             <button
               type="submit"
               disabled={isProcessing}
-              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70"
             >
               {isProcessing ? 'Redirecting to Stripe...' : `Continue to Secure Checkout — $${selectedTier.price}`}
             </button>
 
-            <div className="flex items-center justify-center gap-4 text-slate-400 text-xs pt-1">
+            <div className="flex items-center justify-center gap-3 text-slate-400 text-xs">
               <div className="flex items-center gap-1">
                 <Shield className="w-3 h-3 text-green-600" />
                 <span>Secured by Stripe</span>
               </div>
               <span>·</span>
-              <span>You'll return here automatically after payment</span>
+              <span>Promo codes accepted at checkout</span>
             </div>
           </form>
         </div>
