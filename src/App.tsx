@@ -50,6 +50,25 @@ function App() {
     }
   }, [user]);
 
+  // Handle Stripe payment return
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const creditsParam = urlParams.get('credits');
+    if (payment === 'success' && creditsParam && user) {
+      const purchasedCredits = parseInt(creditsParam, 10);
+      const newCredits = credits + purchasedCredits;
+      setCredits(newCredits);
+      localStorage.setItem('veralooks_credits', newCredits.toString());
+      window.history.replaceState({}, '', window.location.pathname);
+      if (pendingGeneration) {
+        executeGeneration(pendingGeneration.styles, pendingGeneration.config);
+      } else {
+        setCurrentStep('settings');
+      }
+    }
+  }, [user]);
+
   const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
 
   // FIX: Reference images kept in memory only — Base64 images are too large for localStorage.
