@@ -378,6 +378,17 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   // ── NATURALISM: clothing, surfaces, and lighting should never look "too perfect" ──
   negativeConstraints += ` AVOID: overly perfect clothing (no catalog-flat fabric, no CGI-smooth surfaces, no unnaturally pristine wrinkle-free garments). AVOID: studio-artifical lighting that looks computer-rendered or evenly lit without shadow falloff. AVOID: plastic-looking surfaces, unnaturally sharp fabric edges, or clothing that appears vacuum-pressed with zero natural drape.`;
 
+  const likenessInstruction = `
+   LIKENESS FIDELITY (CRITICAL):
+   - FACE: Preserve the subject's exact facial structure from the reference photo — bone structure, face shape, jawline, forehead proportions. Do not idealize, slim, or alter facial geometry.
+   - SKIN TONE: Match the subject's precise skin tone exactly. Do NOT lighten, brighten, darken, or shift the complexion in any direction. This is non-negotiable.
+   - FACIAL FEATURES: Retain exact eye shape, nose structure, lip shape, and any distinctive features (moles, freckles, facial hair). These are identity markers — preserve them.
+   - ETHNICITY: Never alter the subject's apparent ethnicity or racial features. The generated person must be unmistakably the same individual as in the reference photo.
+   - HAIR: Match the reference photo's hair texture, curl pattern, and color exactly. Do not straighten, smooth, or alter natural hair texture.
+   - AGE: Maintain the subject's actual apparent age. Do not youthen or age the subject beyond what is natural.
+   - OVERALL: A person who knows this individual should immediately recognize them in the generated image.
+  `;
+
   const naturalismInstruction = `
    NATURALISM & IMPERFECTION (IMPORTANT):
    - CLOTHING: Fabric must show natural drape, subtle creases, and organic texture. A well-pressed professional garment still has slight fold variation and weight. It should NOT look like a CGI render or catalog photo with impossibly smooth surfaces.
@@ -422,6 +433,7 @@ ${fabricTextInstruction}
    ${bodyInstruction}
    ${textureInstruction}
    ${naturalismInstruction}
+   ${likenessInstruction}
 
    EXPRESSION & GAZE:
    - Expression: composed, present, attentive. Faintest natural smile or neutral composure. No forced grin.
@@ -458,10 +470,11 @@ ${fabricTextInstruction}
    - Subtle forward lean or weight shift toward camera to convey engagement and energy.
    - Eyes: bright, focused, alive — not glazed or distant.
 
-   CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
+    CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
    COMPOSITION SAFETY: Ensure clean figure-ground separation behind the head. Shift camera angle if needed.
    ${textureInstruction}
    ${naturalismInstruction}
+   ${likenessInstruction}
 
    COMPOSITION & FRAMING:
    ${framingInstruction}
