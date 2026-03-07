@@ -154,7 +154,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'outdoor-wellness',
         name: 'Outdoor Park / Trail',
         prompt:
-          'outdoors on a scenic park path or trail with lush greenery and natural light; a healthy outdoor setting, not an urban street or industrial yard',
+          'outdoors on a scenic tree-lined park path or nature trail with lush green foliage, soft dappled natural light filtering through trees, and a clearly recreational outdoor environment; this is a peaceful park or nature setting — NOT an urban sidewalk, city street, industrial yard, or generic outdoor plaza',
         iconType: 'leaf',
       },
       {
@@ -225,7 +225,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'modern-arch',
         name: 'Modern Architecture',
         prompt:
-          'in front of a striking modern residential or mixed‑use building with glass and clean lines; real estate architecture, not a hospital or logistics warehouse',
+          'standing in front of a striking contemporary residential building or luxury condominium complex with clean architectural lines, glass facades, and upscale landscaping; this is clearly an upscale residential real estate setting — NOT a hospital, office tower, warehouse, or commercial building',
         iconType: 'building',
       },
       {
@@ -381,7 +381,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'creative-urban',
         name: 'Urban Creative Vibe',
         prompt:
-          'in an outdoor urban setting with murals or textured walls in soft focus, flattering overcast light, subtle arts‑district atmosphere; clearly a creative neighborhood, not a generic city street or industrial yard',
+          'in an outdoor arts district setting with large colorful murals painted on brick walls, creative street art, and warm overcast light; the neighborhood feels like a vibrant creative arts district with independent galleries and studios — NOT a generic alley, industrial yard, or corporate plaza',
         iconType: 'building',
       },
     ],
@@ -438,7 +438,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'coworking',
         name: 'Co-working Space',
         prompt:
-          'in a vibrant modern co‑working space with open desks, laptops, and a creative atmosphere; a relaxed professional setting, not a formal boardroom',
+          'in a vibrant modern co-working space with open wooden desks, laptop computers, exposed brick or concrete walls, hanging Edison bulb lights, and a creative startup atmosphere; clearly an independent co-working space for freelancers and entrepreneurs — NOT a formal corporate office, cubicle farm, or boardroom',
         iconType: 'building',
       },
       {
@@ -505,14 +505,14 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'boutique-shop',
         name: 'Boutique / Shop Front',
         prompt:
-          'in front of or inside a stylish local boutique or small business storefront with clean branding and window displays; clearly a local retail setting, not a warehouse or office tower',
+          'standing inside or just outside a charming upscale boutique retail shop — polished wood shelving with neatly folded clothing or curated products, decorative window displays with mannequins or merchandise, warm accent lighting, and tasteful branded signage; the space feels intimate, stylish, and inviting like a high-end clothing or gift boutique on a pedestrian shopping street; absolutely NOT a warehouse, storage facility, industrial space, loading dock, or big-box retail store',
         iconType: 'building',
       },
       {
         id: 'community-space',
         name: 'Community Center / Studio',
         prompt:
-          'in a welcoming community studio or service space with warm lighting, branded signage, and a friendly atmosphere; a local business environment, not a corporate boardroom',
+          'inside a warm, welcoming local business studio or community space with wood accents, branded signage on the wall, comfortable seating, and soft warm lighting; feels like a cozy independent yoga studio, tutoring center, or wellness space — NOT a corporate boardroom, hospital, or generic office',
         iconType: 'heart',
       },
       {
@@ -578,13 +578,6 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         prompt:
           'professional portrait on a construction site; subject standing upright on flat ground, camera lens at the subject\'s eye height shooting straight ahead; construction equipment and steel structures visible at the same horizontal level as the subject in the mid-ground and background — not towering overhead; hard hat optional; natural daylight; clearly an active job site, not a city sidewalk or studio',
         iconType: 'building',
-      },
-      {
-        id: 'solar-farm',
-        name: 'Green Energy Field',
-        prompt:
-          'standing firmly on a gravel maintenance path between rows of solar panels in a solar farm, realistic perspective with feet on the ground; clearly an energy installation, not an office or studio',
-        iconType: 'sun',
       },
       {
         id: 'warehouse',
