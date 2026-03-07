@@ -15,26 +15,29 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+     const checkAuth = async () => {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('access_token');
-        if (urlToken) {
-          auth.setToken(urlToken);
-          window.history.replaceState({}, '', window.location.pathname);
-        }
-        const storedToken = localStorage.getItem('base44_access_token');
-        if (storedToken) {
-          auth.setToken(storedToken);
-        }
-        const currentUser = await auth.me();
-        setUser(currentUser);
-      } catch {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+         const urlParams = new URLSearchParams(window.location.search);
+       const urlToken = urlParams.get('access_token');
+      if (urlToken) {
+      auth.setToken(urlToken);
+      window.history.replaceState({}, '', window.location.pathname);
       }
-    };
+     const storedToken = localStorage.getItem('base44_access_token');
+     if (storedToken) {
+      auth.setToken(storedToken);
+     }
+     const currentUser = await auth.me();
+    setUser(currentUser);
+  } catch {
+       // Clear stale tokens so user gets a clean login screen
+     localStorage.removeItem('base44_access_token');
+     localStorage.removeItem('token');
+     setUser(null);
+      } finally {
+     setIsLoading(false);
+   }
+  };
     checkAuth();
   }, []);
 

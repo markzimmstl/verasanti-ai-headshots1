@@ -731,16 +731,16 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         </p>
       </div>
 
-      {/* Shot List banner */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 14, marginBottom: 28, background: 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(76,29,149,0.08))', border: `1px solid ${T.amberBorder}` }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.amberDim, border: `1px solid ${T.amberBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <ListChecks style={{ width: 16, height: 16, color: T.amber }} />
+       {/* Shot List banner */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 14, marginBottom: 28, background: 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(76,29,149,0.08))', border: `1px solid ${T.amberBorder}` }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: T.amberDim, border: `1px solid ${T.amberBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <ListChecks style={{ width: 16, height: 16, color: T.amber }} />
         </div>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: T.amber, margin: '0 0 2px' }}>Try the Shot List Generator ↓</p>
-          <p style={{ fontSize: 12, color: T.white40, margin: 0 }}>Describe your profession and we'll build a custom shot list tailored to your brand. Scroll to Section 5.</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: T.amber, margin: '0 0 2px' }}>Try the Personal Brand Shot List & Image Generator ↓</p>
+            <p style={{ fontSize: 12, color: T.white40, margin: 0 }}>Describe your profession and we'll build a custom shot list tailored to your brand. Scroll to Section 5.</p>
+          </div>
         </div>
-      </div>
 
       {/* Two-column layout */}
       <div className="settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>
@@ -1172,7 +1172,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
               {/* SECTION 5 — Shot List */}
               <div ref={sectionRefs.sec5}>
-                <SectionBlock num={5} icon={<ListChecks style={{ width: 16, height: 16 }} />} title="Personal Brand Shot List" badge="Optional" unlocked={aboutYouComplete}
+                <SectionBlock num={5} icon={<ListChecks style={{ width: 16, height: 16 }} />} title="Personal Brand Shot List & Image Generator" badge="Optional" unlocked={aboutYouComplete}
                   isOpen={sec5Open} onToggle={() => aboutYouComplete && setSec5Open(p => !p)} hint="Complete About You first">
 
                   <div style={{ marginBottom: 14 }}>
