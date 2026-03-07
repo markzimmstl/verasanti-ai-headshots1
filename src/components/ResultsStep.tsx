@@ -40,6 +40,7 @@ const T = {
 };
 
 interface ResultsStepProps {
+  onGenerateMore?: () => void;
   images: GeneratedImage[];
   onRestart: () => void;
   refs: MultiReferenceSet;
@@ -163,7 +164,7 @@ const PresetPill: React.FC<{ active: boolean; onClick: () => void; isRegen?: boo
 );
 
 // ── Main component ────────────────────────────────────────────────────────────
-const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, baseConfig }) => {
+const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig }) => {
   const [displayImages, setDisplayImages] = useState<GeneratedImage[]>(images);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(images[0] ?? null);
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
@@ -393,7 +394,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, refs, base
             </p>
           </div>
           <button
-            type="button" onClick={onRestart}
+            type="button" onClick={onGenerateMore || onRestart}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: T.panel, border: `1px solid ${T.panelBorder}`, color: T.white60 }}
             onMouseOver={e => (e.currentTarget.style.background = T.panelHover)}
             onMouseOut={e => (e.currentTarget.style.background = T.panel)}

@@ -519,6 +519,7 @@ function App() {
                   <ResultsStep
                     images={generatedImages}
                     onRestart={handleReset}
+                    onGenerateMore={handleGenerateMore}
                     refs={referenceImages}
                     baseConfig={generationConfig}
                   />

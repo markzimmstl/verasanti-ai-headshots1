@@ -145,7 +145,7 @@ const buildPrompt = (
    - The background must be the ENVIRONMENT ONLY. 
    - CLOTHING TEXT: No text, no logos, no lettering, no graphics on any garment.
    - (Exception: If the scene description specifically asks for a "photo studio set" with visible gear, ignore the lighting equipment constraint).
-   - POSE: Subject must stand upright with good posture. NEVER bent forward at the waist. NEVER hunched over. NEVER leaning dramatically downward. No awkward or contorted body positions. Natural, confident, professional stance only.
+   - POSE: Subject must stand PERFECTLY UPRIGHT with confident posture. *** ABSOLUTE RULE: NEVER bent forward at the waist. NEVER hunched over. NEVER leaning dramatically downward. NEVER a bowing posture. NEVER a cowering posture. *** No awkward or contorted body positions. Natural, confident, professional stance ONLY. Gravity pulls the subject straight DOWN, not forward.
    - CAMERA ANGLE: NEVER a worm's-eye view. NEVER shoot upward from below the subject's waist. If Eye Level is selected, the lens is at the subject's eye height — not low, not looking up.
  `;
   // Glasses — default is to preserve whatever is in the reference photo
@@ -244,23 +244,24 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
       }
       framingInstruction = `**COMPOSITION: MEDIUM CLOSE-UP (HEAD AND SHOULDERS)** - FRAMING: Capture head, neck, and full shoulders. CRITICAL: DO NOT CUT OFF THE TOP OF THE HEAD. Leave headroom above hair. Show upper chest and shirt collar. - Pose: ${poseInstruction} - Expression: Engaged, slight forward lean.`;
       lensInstruction = "85mm Telephoto Portrait Lens";
-      negativeConstraints += " Do NOT create a three-quarter shot. Do NOT show the belt. Do NOT show hands. Do NOT create a full body shot.";
+      negativeConstraints += " *** FRAMING VIOLATION — FORBIDDEN: full body shot, three-quarter shot, visible belt or waist, visible hands. This MUST be a tight head-and-shoulders crop only. ***";
       break;
     }
 
     case "Waist Up": {
       const rot = getRuleOfThirdsVariant(globalIndex);
       negativeConstraints += rot.negativeAddition;
-      framingInstruction = `**COMPOSITION: MEDIUM SHOT (WAIST UP) - RULE OF THIRDS**
-       - Visual Anchor: Top of head to hips/mid-thigh. Crop at mid-thigh, NOT at the belt line.
-       - Hands visible if natural. Never crop through fingers.
+      framingInstruction = `**COMPOSITION: MEDIUM SHOT (WAIST UP) — THIS IS THE MOST IMPORTANT FRAMING RULE**
+       *** ABSOLUTE MANDATE: Bottom edge of frame MUST fall between the subject's HIPS and MID-THIGH. The subject's knees, shins, and feet must NOT appear in the image. ***
+       - Visual Anchor: Top of head (with headroom) down to hips/upper-thigh only. NOT a full body shot.
+       - Hands MAY be visible if natural. Never crop through fingers.
        RULE OF THIRDS PLACEMENT:
        - ${rot.placement}
        - Body angle: ${rot.bodyAngle}
        - Gaze: ${rot.gaze}
        - This is a PROFESSIONAL EDITORIAL PORTRAIT. The composition must feel intentional and dynamic.`;
-      lensInstruction = "50mm Standard Lens";
-      negativeConstraints += " Do NOT create a full body shot. Do NOT show knees or shoes. Do NOT create a tight headshot.";
+      lensInstruction = "50mm Standard Lens — zoom in so frame crops at hip/waist level, NOT a wide shot";
+      negativeConstraints += " *** FRAMING VIOLATION — FORBIDDEN: full body shot, visible knees, visible shins, visible feet, visible shoes. The frame MUST end between the hips and mid-thigh. This is non-negotiable. ***";
       break;
     }
 
@@ -378,17 +379,6 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   // ── NATURALISM: clothing, surfaces, and lighting should never look "too perfect" ──
   negativeConstraints += ` AVOID: overly perfect clothing (no catalog-flat fabric, no CGI-smooth surfaces, no unnaturally pristine wrinkle-free garments). AVOID: studio-artifical lighting that looks computer-rendered or evenly lit without shadow falloff. AVOID: plastic-looking surfaces, unnaturally sharp fabric edges, or clothing that appears vacuum-pressed with zero natural drape.`;
 
-  const likenessInstruction = `
-   LIKENESS FIDELITY (CRITICAL):
-   - FACE: Preserve the subject's exact facial structure from the reference photo — bone structure, face shape, jawline, forehead proportions. Do not idealize, slim, or alter facial geometry.
-   - SKIN TONE: Match the subject's precise skin tone exactly. Do NOT lighten, brighten, darken, or shift the complexion in any direction. This is non-negotiable.
-   - FACIAL FEATURES: Retain exact eye shape, nose structure, lip shape, and any distinctive features (moles, freckles, facial hair). These are identity markers — preserve them.
-   - ETHNICITY: Never alter the subject's apparent ethnicity or racial features. The generated person must be unmistakably the same individual as in the reference photo.
-   - HAIR: Match the reference photo's hair texture, curl pattern, and color exactly. Do not straighten, smooth, or alter natural hair texture.
-   - AGE: Maintain the subject's actual apparent age. Do not youthen or age the subject beyond what is natural.
-   - OVERALL: A person who knows this individual should immediately recognize them in the generated image.
-  `;
-
   const naturalismInstruction = `
    NATURALISM & IMPERFECTION (IMPORTANT):
    - CLOTHING: Fabric must show natural drape, subtle creases, and organic texture. A well-pressed professional garment still has slight fold variation and weight. It should NOT look like a CGI render or catalog photo with impossibly smooth surfaces.
@@ -433,7 +423,6 @@ ${fabricTextInstruction}
    ${bodyInstruction}
    ${textureInstruction}
    ${naturalismInstruction}
-   ${likenessInstruction}
 
    EXPRESSION & GAZE:
    - Expression: composed, present, attentive. Faintest natural smile or neutral composure. No forced grin.
@@ -470,11 +459,10 @@ ${fabricTextInstruction}
    - Subtle forward lean or weight shift toward camera to convey engagement and energy.
    - Eyes: bright, focused, alive — not glazed or distant.
 
-    CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
+   CONCEPT: THIS IS THE FINAL PUBLISHED IMAGE. Focus strictly on the subject and simulated location.
    COMPOSITION SAFETY: Ensure clean figure-ground separation behind the head. Shift camera angle if needed.
    ${textureInstruction}
    ${naturalismInstruction}
-   ${likenessInstruction}
 
    COMPOSITION & FRAMING:
    ${framingInstruction}

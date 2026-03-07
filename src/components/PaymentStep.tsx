@@ -1,241 +1,536 @@
-import React, { useState } from 'react';
-import { Button } from './Button.tsx';
-import { Check, Shield, Sparkles, AlertCircle, Zap, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UploadStep } from './components/UploadStep';
+import { PaymentStep } from './components/PaymentStep';
+import { SettingsStep } from './components/SettingsStep';
+import { ProcessingStep } from './components/ProcessingStep';
+import ResultsStep from './components/ResultsStep';
+import { AuthScreen } from './components/AuthScreen';
+import { useAuth } from './api/useAuth';
+import { 
+  GenerationConfig, 
+  GeneratedImage, 
+  StyleOption, 
+  MultiReferenceSet,
+  ReferenceImage,
+} from './types';
+import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
+import { AlertCircle, LogOut } from 'lucide-react';
 
-interface PaymentStepProps {
-  imageCount: number;
-  onPaymentComplete: (purchasedCredits: number) => void;
-  onBack: () => void;
-}
+// @ts-ignore
+import { BRAND_DEFINITIONS } from './data/brandDefinitions';
 
-interface PricingTier {
-  id: string;
-  name: string;
-  price: number;
-  credits: number;
-  description: string;
-  isPopular?: boolean;
-  features: string[];
-  stripeLink: string;
-}
+export const DEFAULT_CONFIG: GenerationConfig = {
+  clothing: 'Business Casual',
+  backgroundType: 'Modern Office',
+  aspectRatio: '1:1',
+  framing: 'Waist Up',
+  cameraAngle: 'Eye Level',
+  mood: 'Polished Professional',
+  lighting: 'Pro Studio',
+  retouchLevel: 'None',
+  variationsCount: 1,
+  clothingColor: 'Neutral',
+  brandColor: '',
+  secondaryBrandColor: '',
+  keepGlasses: true,
+};
 
-const TIERS: PricingTier[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 49,
-    credits: 40,
-    description: 'Perfect for a LinkedIn profile or headshot refresh.',
-    features: ['40 AI Credits', '20+ Brand Photos', 'Commercial License'],
-    stripeLink: 'https://buy.stripe.com/eVq28sc6b0Ft2hn17pdUY02',
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    price: 79,
-    credits: 120,
-    description: 'Variety across scenes for your website and social media.',
-    isPopular: true,
-    features: ['120 AI Credits', '60–100 Brand Photos', 'Multiple Scenes & Styles', 'Priority Processing'],
-    stripeLink: 'https://buy.stripe.com/7sY3cwb27ewjcW16rJdUY01',
-  },
-  {
-    id: 'brandkit',
-    name: 'Brand Kit',
-    price: 119,
-    credits: 300,
-    description: 'Maximum variety for a full brand launch or team.',
-    features: ['300 AI Credits', '150+ Brand Photos', 'Highest Priority', 'Team License'],
-    stripeLink: 'https://buy.stripe.com/4gM5kEb27ag3e053fxdUY00',
-  },
-];
+const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
 
-export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentComplete, onBack }) => {
-  const [selectedTierId, setSelectedTierId] = useState<string>('professional');
-  const [email, setEmail] = useState('');
-  const [isEmailSaved, setIsEmailSaved] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
+const PENDING_GEN_KEY   = 'veralooks_pending_generation';
+const REF_IMAGES_KEY    = 'veralooks_ref_images';
 
-  const selectedTier = TIERS.find(t => t.id === selectedTierId) || TIERS[1];
-  const insufficientCredits = selectedTier.credits < imageCount;
+// Compress a base64 image to target size in MB
+const compressBase64 = (base64: string, targetMB = 0.4): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+      const MAX_DIM = 1200;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+        width  = Math.round(width  * ratio);
+        height = Math.round(height * ratio);
+      }
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      let quality = 0.7;
+      const tryCompress = () => {
+        canvas.toBlob(blob => {
+          if (!blob) { resolve(base64); return; } // fallback to original
+          if (blob.size <= targetMB * 1024 * 1024 || quality < 0.2) {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(base64);
+            reader.readAsDataURL(blob);
+          } else {
+            quality -= 0.1;
+            tryCompress();
+          }
+        }, 'image/jpeg', quality);
+      };
+      tryCompress();
+    };
+    img.onerror = () => resolve(base64); // fallback to original
+    img.src = base64;
+  });
+};
 
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+// Save reference images to localStorage, compressing each to ~400KB
+const saveRefImagesToStorage = async (images: MultiReferenceSet): Promise<void> => {
+  try {
+    const compressed: Record<string, any> = {};
+    for (const [role, img] of Object.entries(images)) {
+      if (img?.base64) {
+        const compressedBase64 = await compressBase64(img.base64, 0.4);
+        compressed[role] = { ...img, base64: compressedBase64 };
+      }
+    }
+    localStorage.setItem(REF_IMAGES_KEY, JSON.stringify(compressed));
+  } catch (e) {
+    console.warn('Could not save reference images to localStorage:', e);
+  }
+};
+
+// Restore reference images from localStorage
+const loadRefImagesFromStorage = (): MultiReferenceSet | null => {
+  try {
+    const saved = localStorage.getItem(REF_IMAGES_KEY);
+    if (!saved) return null;
+    return JSON.parse(saved) as MultiReferenceSet;
+  } catch {
+    return null;
+  }
+};
+
+function App() {
+  const { user, isLoading, login, logout } = useAuth();
+
+  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
+  const [credits, setCredits] = useState(0);
+  const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
+  const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
+  const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [settingsKey, setSettingsKey] = useState(0);
+
+  // Sync credits from Base44 user object when user loads
+  useEffect(() => {
+    if (user?.creditsBalance !== undefined) {
+      setCredits(user.creditsBalance);
+    }
+  }, [user]);
+
+  // Handle Stripe payment return
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const payment = urlParams.get('payment');
+    const creditsParam = urlParams.get('credits');
+
+    if (payment === 'success' && creditsParam && user) {
+      const purchasedCredits = parseInt(creditsParam, 10);
+      const newCredits = credits + purchasedCredits;
+      setCredits(newCredits);
+      localStorage.setItem('veralooks_credits', newCredits.toString());
+      window.history.replaceState({}, '', window.location.pathname);
+
+      // Restore reference images saved before redirect
+      const restoredImages = loadRefImagesFromStorage();
+      if (restoredImages && Object.keys(restoredImages).length > 0) {
+        setReferenceImages(restoredImages);
+        localStorage.removeItem(REF_IMAGES_KEY);
+      }
+
+      // Restore pending generation and execute
+      const savedPending = localStorage.getItem(PENDING_GEN_KEY);
+      if (savedPending) {
+        try {
+          const restored = JSON.parse(savedPending);
+          localStorage.removeItem(PENDING_GEN_KEY);
+          setPendingGeneration(restored);
+          // Pass restored images directly since state hasn't updated yet
+          executeGeneration(restored.styles, restored.config, newCredits, restoredImages || {});
+        } catch {
+          localStorage.removeItem(PENDING_GEN_KEY);
+          setCurrentStep('settings');
+        }
+      } else {
+        setCurrentStep('settings');
+      }
+    }
+  }, [user]);
+
+  const handleGoHome = () => {
+    setCurrentStep('upload');
+    window.scrollTo(0, 0);
   };
 
-  const handleSaveEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && email.includes('@')) setIsEmailSaved(true);
+  const handleReferenceUpdate = (newImages: MultiReferenceSet) => {
+    setReferenceImages(newImages);
   };
 
-  const handlePay = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    setIsProcessing(true);
-    const stripeUrl = `${selectedTier.stripeLink}?prefilled_email=${encodeURIComponent(email)}`;
-    window.location.href = stripeUrl;
+  const handleUploadContinue = () => {
+    setCurrentStep('settings');
+    window.scrollTo(0, 0);
   };
+
+  const handleConfigChange = (newConfig: GenerationConfig) => {
+    setGenerationConfig(newConfig);
+  };
+
+  const handleBackToUpload = () => {
+    setCurrentStep('upload');
+  };
+
+  const handleGenerateRequest = async (styles: StyleOption[], config: GenerationConfig) => {
+    const totalImagesRequested = styles.reduce((sum, style) => sum + (style.imageCount || 1), 0);
+    if (credits < totalImagesRequested) {
+      const pending = { styles, config };
+      setPendingGeneration(pending);
+      // Save pending generation AND reference images before Stripe redirect
+      localStorage.setItem(PENDING_GEN_KEY, JSON.stringify(pending));
+      await saveRefImagesToStorage(referenceImages);
+      setCurrentStep('payment');
+      window.scrollTo(0, 0);
+      return;
+    }
+    await executeGeneration(styles, config, credits, referenceImages);
+  };
+
+  // refOverride lets us pass freshly-restored images before state updates
+  const executeGeneration = async (
+    styles: StyleOption[],
+    config: GenerationConfig,
+    creditOverride?: number,
+    refOverride?: MultiReferenceSet
+  ) => {
+    setIsGenerating(true);
+    setError(null);
+    const newImages: GeneratedImage[] = [];
+    let globalImageIndex = 0;
+    let currentCredits = creditOverride ?? credits;
+    const refsToUse = refOverride ?? referenceImages;
+
+    try {
+      for (const style of styles) {
+        const countForThisLook = style.imageCount || 1;
+        const finalConfigForThisLook: GenerationConfig = {
+          ...config,
+          ...(style.overrides || {}),
+        };
+
+        for (let i = 0; i < countForThisLook; i++) {
+          setLoadingMessage(`Generating: ${style.name} (Image ${i + 1} of ${countForThisLook})...`);
+
+          const isExpertMode = !!finalConfigForThisLook.expertPrompt?.trim();
+          const fullPrompt = isExpertMode
+            ? finalConfigForThisLook.expertPrompt!.trim()
+            : `${finalConfigForThisLook.clothing}, ${finalConfigForThisLook.backgroundType || "in a professional corporate setting"}`;
+
+          let imageUrl: string | null = null;
+          try {
+            imageUrl = await generateBrandPhotoWithRefsSafe(
+              refsToUse,
+              fullPrompt,
+              finalConfigForThisLook,
+              undefined,
+              globalImageIndex
+            );
+          } catch (imgErr: any) {
+            console.warn(`Image failed for ${style.name} #${i + 1}:`, imgErr.message);
+            globalImageIndex++;
+            continue;
+          }
+
+          if (!imageUrl) {
+            globalImageIndex++;
+            continue;
+          }
+
+          // Only deduct credit when image actually succeeds
+          currentCredits = Math.max(0, currentCredits - 1);
+          setCredits(currentCredits);
+
+          newImages.push({
+            id: Date.now().toString() + Math.random().toString(),
+            originalUrl: imageUrl,
+            imageUrl: imageUrl,
+            styleName: `${style.name} ${i + 1}`,
+            styleId: style.id,
+            createdAt: Date.now(),
+            aspectRatio: finalConfigForThisLook.aspectRatio || '1:1',
+            stylePrompt: fullPrompt,
+            originalConfig: { ...finalConfigForThisLook },
+          });
+
+          globalImageIndex++;
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
+
+      if (newImages.length > 0) {
+        setGeneratedImages(prev => [...newImages, ...prev]);
+        setPendingGeneration(null);
+        localStorage.removeItem(PENDING_GEN_KEY);
+        setCurrentStep('results');
+        window.scrollTo(0, 0);
+      } else {
+        setError("No images were generated successfully. Please check your reference photo and try again.");
+      }
+    } catch (err: any) {
+      console.error("Generation Error:", err);
+      setError(err.message || "Something went wrong during generation. Please try again.");
+    } finally {
+      setIsGenerating(false);
+      setLoadingMessage('');
+    }
+  };
+
+  const handlePaymentComplete = (purchasedCredits: number) => {
+    const newCredits = credits + purchasedCredits;
+    setCredits(newCredits);
+    localStorage.setItem('veralooks_credits', newCredits.toString());
+    if (pendingGeneration) {
+      executeGeneration(pendingGeneration.styles, pendingGeneration.config, newCredits, referenceImages);
+    } else {
+      setCurrentStep('settings');
+    }
+    window.scrollTo(0, 0);
+  };
+
+  const handlePaymentBack = () => {
+    setCurrentStep('settings');
+  };
+
+  const handleReset = () => {
+    setGenerationConfig(prev => ({
+      ...DEFAULT_CONFIG,
+      genderPresentation: prev.genderPresentation,
+      ageRange: prev.ageRange,
+      hairColor: prev.hairColor,
+      includeRing: prev.includeRing,
+    }));
+    setSettingsKey(k => k + 1);
+    setCurrentStep('settings');
+    window.scrollTo(0, 0);
+  };
+
+  const handleUpdateImage = (id: string, newUrl: string) => {
+    setGeneratedImages(prev => prev.map(img =>
+      img.id === id ? { ...img, imageUrl: newUrl } : img
+    ));
+  };
+
+  const handleSpendCredit = (amount: number) => {
+    setCredits(prev => Math.max(0, prev - amount));
+  };
+
+  const handleAddCredits = () => {
+    setCurrentStep('payment');
+  };
+
+  const handleGenerateMore = () => {
+    setCurrentStep('settings');
+    window.scrollTo(0, 0);
+  };
+
+  const pendingImageCount = pendingGeneration
+    ? pendingGeneration.styles.reduce((sum, s) => sum + (s.imageCount || 1), 0)
+    : 0;
+
+  const stepNavIndex = isGenerating ? 2
+    : currentStep === 'upload'   ? 0
+    : currentStep === 'settings' ? 1
+    : currentStep === 'results'  ? 3
+    : 1;
 
   return (
-    <div className="w-full max-w-6xl mx-auto animate-fade-in px-4 pb-12 relative">
+    <div className="min-h-screen text-white font-sans flex flex-col" style={{ background: '#080A0F' }}>
 
-      {/* Email capture modal — centered vertically */}
-      {!isEmailSaved && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full shadow-2xl">
-            <div className="flex justify-center mb-6">
-              <div className="h-16 w-16 bg-indigo-500/10 rounded-full flex items-center justify-center ring-1 ring-indigo-500/30">
-                <Sparkles className="h-8 w-8 text-indigo-400" />
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold text-white text-center mb-2">Almost There</h3>
-            <p className="text-slate-400 text-center mb-6">Enter your email to save your brand configuration and view pricing.</p>
-            <form onSubmit={handleSaveEmail} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={handleInputFocus}
-                    placeholder="name@company.com"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                    required
-                    autoFocus
-                  />
-                </div>
-              </div>
-              <Button className="w-full py-3">View Pricing</Button>
-            </form>
-          </div>
+      {/* AUTH GATE */}
+      {isLoading && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
         </div>
       )}
 
-      <div className={`${!isEmailSaved ? 'blur-sm opacity-50 pointer-events-none' : ''} transition-all duration-500`}>
+      {!isLoading && !user && (
+        <AuthScreen onLogin={login} />
+      )}
 
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h2 className="text-4xl font-bold text-white mb-4">Build Your Personal Brand</h2>
-          <div className="flex flex-col items-center gap-2">
-            <div className="inline-flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/30 rounded-full px-6 py-2">
-              <Zap className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <p className="text-indigo-200 text-xl font-bold">1 Credit = 1 AI-Generated Image</p>
-            </div>
-            <p className="text-slate-400 text-sm font-medium tracking-wide">Your very own Personal Brand Image System</p>
-          </div>
-        </div>
+      {!isLoading && user && (
+        <div className="min-h-screen flex flex-col">
 
-        {/* Pricing tiers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-          {TIERS.map((tier) => (
-            <div
-              key={tier.id}
-              onClick={() => setSelectedTierId(tier.id)}
-              className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
-                selectedTierId === tier.id
-                  ? 'bg-indigo-900/20 border-indigo-500 shadow-2xl transform scale-105 z-10'
-                  : 'bg-slate-900/40 border-slate-800 hover:border-slate-600'
-              }`}
-            >
-              {tier.isPopular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                  MOST POPULAR
-                </div>
-              )}
-              <div className="mb-4">
-                <h3 className="text-xl font-bold text-white">{tier.name}</h3>
-                <p className="text-slate-400 text-sm mt-1">{tier.description}</p>
-              </div>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">${tier.price}</span>
-                <div className="mt-2 inline-block bg-slate-800 text-indigo-300 text-xs font-bold px-2 py-1 rounded ml-2">
-                  {tier.credits} Credits
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {tier.features.map((feat, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
-                    <Check className="h-4 w-4 shrink-0 text-indigo-400 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className={`w-full py-2 rounded-lg text-center text-sm font-bold transition-colors ${
-                selectedTierId === tier.id ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
-              }`}>
-                {selectedTierId === tier.id ? '✓ Selected' : 'Select Plan'}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Checkout box — centered vertically on screen */}
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-20"
-             style={{ display: isEmailSaved ? 'flex' : 'none' }}>
-          <div className="pointer-events-auto max-w-lg w-full mx-4 bg-white text-slate-900 rounded-3xl p-8 shadow-2xl relative">
-            {/* Close / collapse hint */}
-            <h3 className="text-2xl font-bold text-slate-900 mb-1">Continue</h3>
-            <p className="text-slate-500 text-sm mb-6">
-              You'll be securely redirected to Stripe. Promo codes can be entered there. You'll return here automatically after payment.
-            </p>
-
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-slate-700">{selectedTier.name}</span>
-                <span className="font-bold text-slate-900">${selectedTier.price}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-500">
-                <span>Credits included</span>
-                <span>{selectedTier.credits}</span>
-              </div>
-              {insufficientCredits && (
-                <div className="mt-4 flex gap-2 bg-amber-50 text-amber-700 p-3 rounded-lg text-xs border border-amber-200">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <p>Your selected image count exceeds this plan's credits. Consider upgrading to Professional or Brand Kit.</p>
-                </div>
-              )}
-            </div>
-
-            <form onSubmit={handlePay} className="space-y-4">
-              <div className="opacity-60 pointer-events-none">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  readOnly
-                  className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-3 text-slate-600"
-                />
-              </div>
+          {/* HEADER */}
+          <header
+            className="border-b sticky top-0 z-40 shrink-0 backdrop-blur-xl"
+            style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(8,10,15,0.92)' }}
+          >
+            <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
 
               <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70"
+                onClick={handleGoHome}
+                className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
+                aria-label="VeraLooks Home"
               >
-                {isProcessing ? 'Redirecting to Stripe...' : `Continue to Secure Checkout — $${selectedTier.price}`}
+                <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
               </button>
 
-              <div className="flex items-center justify-center gap-3 text-slate-400 text-xs">
-                <div className="flex items-center gap-1">
-                  <Shield className="w-3 h-3 text-green-600" />
-                  <span>Secured by Stripe</span>
-                </div>
-                <span>·</span>
-                <span>Promo codes accepted at checkout</span>
+              <div className="hidden md:flex items-center gap-1.5">
+                {STEP_LABELS.map((label, i) => {
+                  const isActive   = i === stepNavIndex;
+                  const isComplete = i < stepNavIndex;
+                  return (
+                    <React.Fragment key={label}>
+                      <div className="flex flex-col items-center gap-1">
+                        <div
+                          className="w-[26px] h-[26px] rounded-full flex items-center justify-center text-[11px] font-semibold transition-all"
+                          style={{
+                            background: isActive   ? 'linear-gradient(135deg, #2E1065, #4C1D95)'
+                                      : isComplete ? 'rgba(13,148,136,0.2)'
+                                      :              'rgba(255,255,255,0.05)',
+                            color:     isActive   ? '#fff'
+                                      : isComplete ? '#0D9488'
+                                      :              'rgba(255,255,255,0.25)',
+                            border:    isComplete ? '1px solid rgba(13,148,136,0.35)'
+                                      : isActive  ? 'none'
+                                      :             '1px solid rgba(255,255,255,0.08)',
+                          }}
+                        >
+                          {isComplete ? '✓' : i + 1}
+                        </div>
+                        <span
+                          className="text-[9px] uppercase tracking-wider"
+                          style={{
+                            fontWeight: isActive ? 600 : 400,
+                            color: isActive   ? 'rgba(159,103,255,0.9)'
+                                 : isComplete ? 'rgba(13,148,136,0.65)'
+                                 :              'rgba(255,255,255,0.2)',
+                          }}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      {i < STEP_LABELS.length - 1 && (
+                        <div
+                          className="w-8 h-px mb-3.5"
+                          style={{ background: isComplete ? 'rgba(13,148,136,0.25)' : 'rgba(255,255,255,0.07)' }}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </div>
-            </form>
-          </div>
-        </div>
 
-        {/* Spacer so page scrolls enough to not hide content behind fixed checkout */}
-        <div className="h-96" />
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
+                  style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.3)' }}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#9F67FF' }} />
+                  <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                    {credits} Credits
+                  </span>
+                </div>
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="flex items-center justify-center w-8 h-8 rounded-full transition-all hover:opacity-80"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <LogOut style={{ width: 14, height: 14, color: 'rgba(255,255,255,0.4)' }} />
+                </button>
+              </div>
+            </div>
+          </header>
 
-        <div className="mt-8 text-center relative z-30">
-          <Button variant="outline" onClick={onBack} disabled={isProcessing}>Back</Button>
+          {/* ERROR MODAL */}
+          {error && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+              <div
+                className="rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                style={{ background: '#0D0F16', border: '1px solid rgba(239,68,68,0.3)' }}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-300 mb-1">Generation Error</p>
+                    <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{error}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setError(null); window.scrollTo(0, 0); }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium transition"
+                    style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}
+                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                    onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    Dismiss
+                  </button>
+                  <button
+                    onClick={() => { setError(null); window.scrollTo(0, 0); }}
+                    className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, #2E1065, #4C1D95)' }}
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MAIN */}
+          <main className="flex-1 flex flex-col relative">
+            {isGenerating ? (
+              <ProcessingStep message={loadingMessage} />
+            ) : (
+              <div className="py-10 w-full">
+                {currentStep === 'upload' && (
+                  <UploadStep
+                    referenceImages={referenceImages}
+                    onUpdate={handleReferenceUpdate}
+                    onNext={handleUploadContinue}
+                  />
+                )}
+                {currentStep === 'settings' && (
+                  <SettingsStep
+                    key={settingsKey}
+                    config={generationConfig}
+                    credits={credits}
+                    onChange={handleConfigChange}
+                    onNext={handleGenerateRequest}
+                    onBack={handleBackToUpload}
+                  />
+                )}
+                {currentStep === 'payment' && (
+                  <PaymentStep
+                    imageCount={pendingImageCount || 20}
+                    onPaymentComplete={handlePaymentComplete}
+                    onBack={handlePaymentBack}
+                  />
+                )}
+                {currentStep === 'results' && (
+                  <ResultsStep
+                    images={generatedImages}
+                    onRestart={handleReset}
+                    onGenerateMore={handleGenerateMore}
+                    refs={referenceImages}
+                    baseConfig={generationConfig}
+                  />
+                )}
+              </div>
+            )}
+          </main>
         </div>
-      </div>
+      )}
     </div>
   );
-};
+}
+
+export default App;
