@@ -502,10 +502,10 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         iconType: 'sparkles',
       },
       {
-        id: 'boutique-shop',
-        name: 'Boutique / Shop Front',
+        id: 'retail-showroom',
+        name: 'Retail Showroom',
         prompt:
-          'standing in a beautiful upscale independent clothing boutique — think a high-end fashion shop carrying men\'s, women\'s, and children\'s clothing; the space has warm honey-colored wood shelving displaying neatly folded garments, clothing racks with curated fashion pieces, a chandelier or decorative pendant lighting, a tufted velvet chair or small sofa as a fitting area accent, a marble or herringbone tile floor, and a large glass storefront window letting in soft natural light; the overall mood is elegant, intimate, and aspirational retail — this is unmistakably a chic independent clothing boutique interior, not a warehouse, storage facility, department store, or industrial space',
+          'standing in a bright, elegant fashion showroom with polished floors, clothing displayed on sleek racks and mannequins, soft track lighting highlighting merchandise, a large mirror, and floor-to-ceiling windows; the atmosphere is sophisticated and inviting like a high-end department store or designer fashion floor; this is a premium retail fashion environment with beautifully merchandised clothing on display',
         iconType: 'building',
       },
       {
