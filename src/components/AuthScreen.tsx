@@ -57,27 +57,17 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     setIsLoading(true);
     setError(null);
     try {
-      // Base44 SDK methods — try object form first (most common), then string form
-      if (typeof (auth as any).requestPasswordReset === 'function') {
-        await (auth as any).requestPasswordReset({ email: forgotEmail });
-      } else if (typeof (auth as any).sendPasswordResetEmail === 'function') {
-        await (auth as any).sendPasswordResetEmail({ email: forgotEmail });
-      } else if (typeof (auth as any).forgotPassword === 'function') {
-        await (auth as any).forgotPassword({ email: forgotEmail });
-      } else if (typeof (auth as any).resetPassword === 'function') {
-        await (auth as any).resetPassword({ email: forgotEmail });
-      } else {
-        // Direct Base44 API fallback
-        const res = await fetch(`https://api.base44.com/api/apps/69a8dfde570848365d594a26/auth/forgot-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: forgotEmail }),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.message || body.detail || `Request failed (${res.status})`);
-        }
+      // Skip the SDK entirely — go direct to Base44 REST API which we fully control
+      const res = await fetch(`https://api.base44.com/api/apps/69a8dfde570848365d594a26/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || body.detail || body.error || `Request failed (${res.status})`);
       }
+      // Success — Base44 returns 200 even if email doesn't exist (security best practice)
       setMode('forgot-sent');
     } catch (err: any) {
       setError(extractErrorMessage(err));

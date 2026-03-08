@@ -240,6 +240,7 @@ function App() {
 
   const handleGenerateRequest = async (styles: StyleOption[], config: GenerationConfig) => {
     const totalImagesRequested = styles.reduce((sum, style) => sum + (style.imageCount || 1), 0);
+    console.log('[VeraLooks] Generate request — credits:', credits, '| loaded:', creditsLoaded, '| requested:', totalImagesRequested);
     if (creditsLoaded && credits < totalImagesRequested) {
       const pending = { styles, config };
       setPendingGeneration(pending);
