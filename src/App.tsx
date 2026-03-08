@@ -118,6 +118,7 @@ function App() {
 
   const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
   const [credits, setCredits] = useState(0);
+  const [creditsLoaded, setCreditsLoaded] = useState(false);
   const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
   const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({ ...DEFAULT_CONFIG, ...loadAboutYou() });
@@ -129,7 +130,11 @@ function App() {
 
   // Sync credits when user loads — check Base44 user object AND localStorage fallback
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Not logged in — credits=0 is correct, mark as loaded
+      setCreditsLoaded(true);
+      return;
+    }
 
     // Log user object so we can see what fields Base44 provides
     console.log('[VeraLooks] Base44 user object:', JSON.stringify(user));
@@ -155,6 +160,7 @@ function App() {
         }
       }
     }
+    setCreditsLoaded(true);
   }, [user]);
 
   // Handle Stripe payment return
@@ -231,7 +237,7 @@ function App() {
 
   const handleGenerateRequest = async (styles: StyleOption[], config: GenerationConfig) => {
     const totalImagesRequested = styles.reduce((sum, style) => sum + (style.imageCount || 1), 0);
-    if (credits < totalImagesRequested) {
+    if (creditsLoaded && credits < totalImagesRequested) {
       const pending = { styles, config };
       setPendingGeneration(pending);
       // Save pending generation AND reference images before Stripe redirect
@@ -239,6 +245,11 @@ function App() {
       await saveRefImagesToStorage(referenceImages);
       setCurrentStep('payment');
       window.scrollTo(0, 0);
+      return;
+    }
+    // If credits haven't loaded yet, wait briefly and retry
+    if (!creditsLoaded) {
+      console.warn('[VeraLooks] Credits not yet loaded — waiting before routing');
       return;
     }
     await executeGeneration(styles, config, credits, referenceImages);
