@@ -554,6 +554,7 @@ function App() {
                     imageCount={pendingImageCount || 20}
                     onPaymentComplete={handlePaymentComplete}
                     onBack={handlePaymentBack}
+                    userEmail={user?.email}
                   />
                 )}
                 {currentStep === 'results' && (

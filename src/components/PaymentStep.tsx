@@ -6,6 +6,7 @@ interface PaymentStepProps {
   imageCount: number;
   onPaymentComplete: (purchasedCredits: number) => void;
   onBack: () => void;
+  userEmail?: string; // pre-filled from logged-in account — skips email modal
 }
 
 interface PricingTier {
@@ -50,10 +51,10 @@ const TIERS: PricingTier[] = [
   },
 ];
 
-export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentComplete, onBack }) => {
+export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentComplete, onBack, userEmail }) => {
   const [selectedTierId, setSelectedTierId] = useState<string>('professional');
-  const [email, setEmail] = useState('');
-  const [isEmailSaved, setIsEmailSaved] = useState(false);
+  const [email, setEmail] = useState(userEmail || '');
+  const [isEmailSaved, setIsEmailSaved] = useState(!!userEmail); // skip modal if logged in
   const [isProcessing, setIsProcessing] = useState(false);
 
   const selectedTier = TIERS.find(t => t.id === selectedTierId) || TIERS[1];
@@ -86,11 +87,11 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                 <Sparkles className="h-8 w-8 text-indigo-400" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-white text-center mb-2">Almost There</h3>
-            <p className="text-slate-400 text-center mb-6 text-sm">Enter your email to save your brand configuration and view pricing.</p>
+            <h3 className="text-2xl font-bold text-white text-center mb-2">Save Your Brand Kit</h3>
+            <p className="text-slate-400 text-center mb-6">Enter your email to save your configuration and view pricing.</p>
             <form onSubmit={handleSaveEmail} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Work Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                   <input
@@ -104,7 +105,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                   />
                 </div>
               </div>
-              <Button className="w-full py-3">View Pricing</Button>
+              <Button className="w-full py-3">Save & Continue</Button>
             </form>
           </div>
         </div>
