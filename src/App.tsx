@@ -130,8 +130,11 @@ function App() {
 
   // Sync credits when user loads — check Base44 user object AND localStorage fallback
   useEffect(() => {
+    // Wait until auth has finished resolving before touching credits
+    if (isLoading) return;
+
     if (!user) {
-      // Not logged in — credits=0 is correct, mark as loaded
+      // Auth finished, no user — credits=0 is correct, mark as loaded
       setCreditsLoaded(true);
       return;
     }
@@ -161,7 +164,7 @@ function App() {
       }
     }
     setCreditsLoaded(true);
-  }, [user]);
+  }, [user, isLoading]);
 
   // Handle Stripe payment return
   useEffect(() => {
@@ -555,6 +558,7 @@ function App() {
                   <SettingsStep
                     config={generationConfig}
                     credits={credits}
+                    creditsLoaded={creditsLoaded}
                     onChange={handleConfigChange}
                     onNext={handleGenerateRequest}
                     onBack={handleBackToUpload}
