@@ -117,7 +117,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [settingsKey, setSettingsKey] = useState(0);
+  // settingsKey removed — SettingsStep preserves About You fields via generationConfig prop
 
   // Sync credits from Base44 user object when user loads
   useEffect(() => {
@@ -315,7 +315,6 @@ function App() {
       hairColor: prev.hairColor,
       includeRing: prev.includeRing,
     }));
-    setSettingsKey(k => k + 1);
     setCurrentStep('settings');
     window.scrollTo(0, 0);
   };
@@ -500,7 +499,6 @@ function App() {
                 )}
                 {currentStep === 'settings' && (
                   <SettingsStep
-                    key={settingsKey}
                     config={generationConfig}
                     credits={credits}
                     onChange={handleConfigChange}
