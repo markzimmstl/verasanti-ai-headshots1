@@ -57,41 +57,14 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     setIsLoading(true);
     setError(null);
 
-    // Log all available auth methods so we can identify the correct one
-    const authMethodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(auth));
-    console.log('[VeraLooks] auth methods:', authMethodNames);
-
-    // Find the FIRST method that actually exists on the auth object and call it once
-    const methodsToTry = [
-      'sendPasswordResetEmail',
-      'requestPasswordReset',
-      'forgotPassword',
-      'resetPassword',
-      'sendResetPasswordEmail',
-      'initiatePasswordReset',
-    ];
-
-    const availableMethod = methodsToTry.find(name => typeof (auth as any)[name] === 'function');
-    console.log('[VeraLooks] Password reset — available method:', availableMethod, '| all methods:', authMethodNames);
-
-    if (availableMethod) {
-      try {
-        // Try with email string first (most common), then object form
-        try {
-          await (auth as any)[availableMethod](forgotEmail);
-        } catch {
-          await (auth as any)[availableMethod]({ email: forgotEmail });
-        }
-        setMode('forgot-sent');
-      } catch (err: any) {
-        console.error('[VeraLooks] Password reset failed:', err);
-        setError(extractErrorMessage(err));
-      }
-    } else {
-      // No SDK method found — log for diagnosis and show success anyway
-      // (User can reset via Base44's own portal)
-      console.warn('[VeraLooks] No password reset method found on auth object. Methods:', authMethodNames);
+    // Base44 SDK method confirmed: resetPasswordRequest(email: string)
+    console.log('[VeraLooks] Calling resetPasswordRequest for:', forgotEmail);
+    try {
+      await (auth as any).resetPasswordRequest(forgotEmail);
       setMode('forgot-sent');
+    } catch (err: any) {
+      console.error('[VeraLooks] resetPasswordRequest failed:', err);
+      setError(extractErrorMessage(err));
     }
   };
 
