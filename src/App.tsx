@@ -38,6 +38,14 @@ export const DEFAULT_CONFIG: GenerationConfig = {
 const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
 
 const PENDING_GEN_KEY   = 'veralooks_pending_generation';
+const ABOUT_YOU_KEY     = 'vl_about_you';
+
+const loadAboutYou = (): Partial<GenerationConfig> => {
+  try {
+    const saved = localStorage.getItem(ABOUT_YOU_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch { return {}; }
+};
 const REF_IMAGES_KEY    = 'veralooks_ref_images';
 
 // Compress a base64 image to target size in MB
@@ -112,7 +120,7 @@ function App() {
   const [credits, setCredits] = useState(0);
   const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
   const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
-  const [generationConfig, setGenerationConfig] = useState<GenerationConfig>(DEFAULT_CONFIG);
+  const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({ ...DEFAULT_CONFIG, ...loadAboutYou() });
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -181,6 +189,17 @@ function App() {
 
   const handleConfigChange = (newConfig: GenerationConfig) => {
     setGenerationConfig(newConfig);
+    // Persist About You fields so they survive any navigation
+    if (newConfig.genderPresentation || newConfig.ageRange || newConfig.hairColor) {
+      try {
+        localStorage.setItem('vl_about_you', JSON.stringify({
+          genderPresentation: newConfig.genderPresentation,
+          ageRange: newConfig.ageRange,
+          hairColor: newConfig.hairColor,
+          includeRing: newConfig.includeRing,
+        }));
+      } catch {}
+    }
   };
 
   const handleBackToUpload = () => {
@@ -308,12 +327,13 @@ function App() {
   };
 
   const handleReset = () => {
+    const savedAboutYou = loadAboutYou();
     setGenerationConfig(prev => ({
       ...DEFAULT_CONFIG,
-      genderPresentation: prev.genderPresentation,
-      ageRange: prev.ageRange,
-      hairColor: prev.hairColor,
-      includeRing: prev.includeRing,
+      genderPresentation: prev.genderPresentation || savedAboutYou.genderPresentation,
+      ageRange: prev.ageRange || savedAboutYou.ageRange,
+      hairColor: prev.hairColor || savedAboutYou.hairColor,
+      includeRing: prev.includeRing ?? savedAboutYou.includeRing,
     }));
     setCurrentStep('settings');
     window.scrollTo(0, 0);

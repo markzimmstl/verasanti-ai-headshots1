@@ -39,21 +39,33 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     }
   };
 
+  // Robustly extract a readable message from any error shape
+  const extractErrorMessage = (err: any): string => {
+    if (!err) return 'Something went wrong. Please try again.';
+    if (typeof err === 'string') return err;
+    if (typeof err.message === 'string' && err.message) return err.message;
+    if (Array.isArray(err)) return err.map((e: any) => extractErrorMessage(e)).join(' ');
+    if (err.detail) return String(err.detail);
+    if (err.error) return String(err.error);
+    if (err.errors) return Array.isArray(err.errors) ? err.errors.map((e: any) => e.message || String(e)).join(' ') : String(err.errors);
+    try { return JSON.stringify(err); } catch { return 'Something went wrong. Please try again.'; }
+  };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;
     setIsLoading(true);
     setError(null);
     try {
-      // Try known Base44 SDK method names in order
+      // Base44 SDK methods — try object form first (most common), then string form
       if (typeof (auth as any).requestPasswordReset === 'function') {
-        await (auth as any).requestPasswordReset(forgotEmail);
+        await (auth as any).requestPasswordReset({ email: forgotEmail });
       } else if (typeof (auth as any).sendPasswordResetEmail === 'function') {
-        await (auth as any).sendPasswordResetEmail(forgotEmail);
+        await (auth as any).sendPasswordResetEmail({ email: forgotEmail });
       } else if (typeof (auth as any).forgotPassword === 'function') {
-        await (auth as any).forgotPassword(forgotEmail);
+        await (auth as any).forgotPassword({ email: forgotEmail });
       } else if (typeof (auth as any).resetPassword === 'function') {
-        await (auth as any).resetPassword(forgotEmail);
+        await (auth as any).resetPassword({ email: forgotEmail });
       } else {
         // Direct Base44 API fallback
         const res = await fetch(`https://api.base44.com/api/apps/69a8dfde570848365d594a26/auth/forgot-password`, {
@@ -61,11 +73,14 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: forgotEmail }),
         });
-        if (!res.ok) throw new Error('Reset request failed');
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.message || body.detail || `Request failed (${res.status})`);
+        }
       }
       setMode('forgot-sent');
     } catch (err: any) {
-      setError(err.message || 'Could not send reset email. Please try again.');
+      setError(extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -259,12 +274,25 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             )}
 
             {(mode === 'login' || mode === 'signup') && (
-              <div className="fade-up-3" style={{ textAlign: 'center', marginTop: '6px' }}>
-                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.35)' }}>
-                  {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-                </span>
-                <button className="mode-toggle" onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); }}>
-                  {mode === 'signup' ? 'Sign in' : 'Sign up'}
+              <div className="fade-up-3" style={{ marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); }}
+                  style={{
+                    width: '100%', padding: '12px 20px',
+                    background: 'rgba(159,103,255,0.08)',
+                    border: '1px solid rgba(159,103,255,0.25)',
+                    borderRadius: '10px',
+                    color: '#B98FFF',
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: '14px', fontWeight: '500', cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    letterSpacing: '-0.01em',
+                  }}
+                  onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.14)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.45)'; }}
+                  onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.25)'; }}
+                >
+                  {mode === 'signup' ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
                 </button>
               </div>
             )}
