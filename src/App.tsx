@@ -139,30 +139,41 @@ function App() {
       return;
     }
 
-    // Log user object so we can see what fields Base44 provides
-    console.log('[VeraLooks] Base44 user object:', JSON.stringify(user));
+    // STEP 1: Immediately restore from localStorage so user can generate right away.
+    // This is the most reliable source — it's written after every Stripe purchase.
+    const stored = localStorage.getItem('veralooks_credits');
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        console.log('[VeraLooks] Credits from localStorage:', parsed);
+        setCredits(parsed);
+        setCreditsLoaded(true);
+      }
+    }
 
-    // Base44 may use different field names for credits
+    // STEP 2: Check Base44 user object for credits (may override localStorage if higher)
+    // Log ALL user fields so we can see exactly what Base44 provides
+    console.log('[VeraLooks] Base44 user object (all fields):', JSON.stringify(user, null, 2));
+    console.log('[VeraLooks] Base44 user keys:', Object.keys(user as any));
+
     const b44Credits =
       (user as any).creditsBalance ??
       (user as any).credits ??
       (user as any).credit_balance ??
       (user as any).balance ??
+      (user as any).Credits ??
+      (user as any).credit ??
       undefined;
 
+    console.log('[VeraLooks] b44Credits resolved to:', b44Credits);
+
     if (b44Credits !== undefined && b44Credits > 0) {
+      console.log('[VeraLooks] Using Base44 credits:', b44Credits);
       setCredits(b44Credits);
       localStorage.setItem('veralooks_credits', b44Credits.toString());
-    } else {
-      // Fallback: restore from localStorage (set after Stripe purchase)
-      const stored = localStorage.getItem('veralooks_credits');
-      if (stored) {
-        const parsed = parseInt(stored, 10);
-        if (!isNaN(parsed) && parsed > 0) {
-          setCredits(parsed);
-        }
-      }
     }
+
+    // Always mark loaded — localStorage fallback above handles the case where b44Credits=0
     setCreditsLoaded(true);
   }, [user, isLoading]);
 
@@ -172,9 +183,12 @@ function App() {
     const payment = urlParams.get('payment');
     const creditsParam = urlParams.get('credits');
 
-    if (payment === 'success' && creditsParam && user) {
+    if (payment === 'success' && creditsParam) {
       const purchasedCredits = parseInt(creditsParam, 10);
-      const newCredits = credits + purchasedCredits;
+      // Read current credits directly from localStorage to avoid stale state race condition
+      const currentStored = parseInt(localStorage.getItem('veralooks_credits') || '0', 10);
+      const newCredits = currentStored + purchasedCredits;
+      console.log('[VeraLooks] Stripe return — adding', purchasedCredits, 'credits to', currentStored, '=', newCredits);
       setCredits(newCredits);
       localStorage.setItem('veralooks_credits', newCredits.toString());
       window.history.replaceState({}, '', window.location.pathname);
