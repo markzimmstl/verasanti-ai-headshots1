@@ -6,6 +6,7 @@ import { ProcessingStep } from './components/ProcessingStep';
 import ResultsStep from './components/ResultsStep';
 import { AuthScreen } from './components/AuthScreen';
 import { useAuth } from './api/useAuth';
+import { loadCreditsForUser, saveCreditsForUser } from './api/userCreditsService';
 import { 
   GenerationConfig, 
   GeneratedImage, 
@@ -128,53 +129,40 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   // settingsKey removed — SettingsStep preserves About You fields via generationConfig prop
 
-  // Sync credits when user loads — check Base44 user object AND localStorage fallback
+  // Sync credits when user loads — Base44 entity first, localStorage fallback
   useEffect(() => {
-    // Wait until auth has finished resolving before touching credits
     if (isLoading) return;
 
     if (!user) {
-      // Auth finished, no user — credits=0 is correct, mark as loaded
       setCreditsLoaded(true);
       return;
     }
 
-    // STEP 1: Immediately restore from localStorage so user can generate right away.
-    // This is the most reliable source — it's written after every Stripe purchase.
+    // STEP 1: Show localStorage credits immediately so UI is responsive
     const stored = localStorage.getItem('veralooks_credits');
     if (stored) {
       const parsed = parseInt(stored, 10);
       if (!isNaN(parsed) && parsed > 0) {
-        console.log('[VeraLooks] Credits from localStorage:', parsed);
         setCredits(parsed);
         setCreditsLoaded(true);
       }
     }
 
-    // STEP 2: Check Base44 user object for credits (may override localStorage if higher)
-    // Log ALL user fields so we can see exactly what Base44 provides
-    console.log('[VeraLooks] Base44 user object (all fields):', JSON.stringify(user, null, 2));
-    console.log('[VeraLooks] Base44 user keys:', Object.keys(user as any));
-
-    const b44Credits =
-      (user as any).creditsBalance ??
-      (user as any).credits ??
-      (user as any).credit_balance ??
-      (user as any).balance ??
-      (user as any).Credits ??
-      (user as any).credit ??
-      undefined;
-
-    console.log('[VeraLooks] b44Credits resolved to:', b44Credits);
-
-    if (b44Credits !== undefined && b44Credits > 0) {
-      console.log('[VeraLooks] Using Base44 credits:', b44Credits);
-      setCredits(b44Credits);
-      localStorage.setItem('veralooks_credits', b44Credits.toString());
-    }
-
-    // Always mark loaded — localStorage fallback above handles the case where b44Credits=0
-    setCreditsLoaded(true);
+    // STEP 2: Load from Base44 entity (authoritative source, works across devices)
+    loadCreditsForUser(user.id).then(b44Credits => {
+      if (b44Credits !== null) {
+        // Use whichever is higher — protects against stale Base44 data
+        const storedNow = parseInt(localStorage.getItem('veralooks_credits') || '0', 10);
+        const best = Math.max(b44Credits, storedNow);
+        setCredits(best);
+        localStorage.setItem('veralooks_credits', best.toString());
+        console.log('[Credits] Loaded from Base44:', b44Credits, '| local:', storedNow, '| using:', best);
+      } else if (!stored) {
+        // Neither Base44 nor localStorage has credits — stay at 0
+        console.log('[Credits] No credits found for user');
+      }
+      setCreditsLoaded(true);
+    });
   }, [user, isLoading]);
 
   // Handle Stripe payment return
@@ -188,9 +176,11 @@ function App() {
       // Read current credits directly from localStorage to avoid stale state race condition
       const currentStored = parseInt(localStorage.getItem('veralooks_credits') || '0', 10);
       const newCredits = currentStored + purchasedCredits;
-      console.log('[VeraLooks] Stripe return — adding', purchasedCredits, 'credits to', currentStored, '=', newCredits);
+      console.log('[Credits] Stripe return — adding', purchasedCredits, 'credits to', currentStored, '=', newCredits);
       setCredits(newCredits);
       localStorage.setItem('veralooks_credits', newCredits.toString());
+      // Persist to Base44 so credits survive browser clears and work cross-device
+      if (user) saveCreditsForUser(user.id, user.email, newCredits);
       window.history.replaceState({}, '', window.location.pathname);
 
       // Restore reference images saved before redirect
@@ -326,6 +316,8 @@ function App() {
           // Only deduct credit when image actually succeeds
           currentCredits = Math.max(0, currentCredits - 1);
           setCredits(currentCredits);
+          localStorage.setItem('veralooks_credits', currentCredits.toString());
+          if (user) saveCreditsForUser(user.id, user.email, currentCredits);
 
           newImages.push({
             id: Date.now().toString() + Math.random().toString(),
@@ -366,6 +358,7 @@ function App() {
     const newCredits = credits + purchasedCredits;
     setCredits(newCredits);
     localStorage.setItem('veralooks_credits', newCredits.toString());
+    if (user) saveCreditsForUser(user.id, user.email, newCredits);
     if (pendingGeneration) {
       executeGeneration(pendingGeneration.styles, pendingGeneration.config, newCredits, referenceImages);
     } else {
