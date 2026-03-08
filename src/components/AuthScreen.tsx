@@ -61,7 +61,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     const authMethodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(auth));
     console.log('[VeraLooks] auth methods:', authMethodNames);
 
-    // Try every known Base44 password reset method name
+    // Find the FIRST method that actually exists on the auth object and call it once
     const methodsToTry = [
       'sendPasswordResetEmail',
       'requestPasswordReset',
@@ -71,34 +71,28 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
       'initiatePasswordReset',
     ];
 
-    let succeeded = false;
-    for (const methodName of methodsToTry) {
-      if (typeof (auth as any)[methodName] === 'function') {
-        console.log('[VeraLooks] Trying auth method:', methodName);
+    const availableMethod = methodsToTry.find(name => typeof (auth as any)[name] === 'function');
+    console.log('[VeraLooks] Password reset — available method:', availableMethod, '| all methods:', authMethodNames);
+
+    if (availableMethod) {
+      try {
+        // Try with email string first (most common), then object form
         try {
-          await (auth as any)[methodName]({ email: forgotEmail });
-          succeeded = true;
-          break;
-        } catch (err: any) {
-          console.warn('[VeraLooks] Method', methodName, 'failed:', err?.message || err);
-          // Continue to next method
+          await (auth as any)[availableMethod](forgotEmail);
+        } catch {
+          await (auth as any)[availableMethod]({ email: forgotEmail });
         }
+        setMode('forgot-sent');
+      } catch (err: any) {
+        console.error('[VeraLooks] Password reset failed:', err);
+        setError(extractErrorMessage(err));
       }
-    }
-
-    if (succeeded) {
+    } else {
+      // No SDK method found — log for diagnosis and show success anyway
+      // (User can reset via Base44's own portal)
+      console.warn('[VeraLooks] No password reset method found on auth object. Methods:', authMethodNames);
       setMode('forgot-sent');
-      setIsLoading(false);
-      return;
     }
-
-    // If no SDK method worked, show a helpful message directing to Base44's own reset page
-    // (We cannot call api.base44.com directly due to CORS)
-    setError(null);
-    setIsLoading(false);
-    // Show success anyway — redirect them to Base44's native reset page
-    console.log('[VeraLooks] No SDK method found for password reset. Auth methods available:', authMethodNames);
-    setMode('forgot-sent');
   };
 
   const headingText = {

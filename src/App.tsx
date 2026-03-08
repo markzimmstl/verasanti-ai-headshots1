@@ -217,7 +217,7 @@ function App() {
         setCurrentStep('settings');
       }
     }
-  }, [user]);
+  }, []);
 
   const handleGoHome = () => {
     setCurrentStep('upload');
