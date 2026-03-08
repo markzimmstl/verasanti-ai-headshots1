@@ -127,10 +127,33 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   // settingsKey removed — SettingsStep preserves About You fields via generationConfig prop
 
-  // Sync credits from Base44 user object when user loads
+  // Sync credits when user loads — check Base44 user object AND localStorage fallback
   useEffect(() => {
-    if (user?.creditsBalance !== undefined) {
-      setCredits(user.creditsBalance);
+    if (!user) return;
+
+    // Log user object so we can see what fields Base44 provides
+    console.log('[VeraLooks] Base44 user object:', JSON.stringify(user));
+
+    // Base44 may use different field names for credits
+    const b44Credits =
+      (user as any).creditsBalance ??
+      (user as any).credits ??
+      (user as any).credit_balance ??
+      (user as any).balance ??
+      undefined;
+
+    if (b44Credits !== undefined && b44Credits > 0) {
+      setCredits(b44Credits);
+      localStorage.setItem('veralooks_credits', b44Credits.toString());
+    } else {
+      // Fallback: restore from localStorage (set after Stripe purchase)
+      const stored = localStorage.getItem('veralooks_credits');
+      if (stored) {
+        const parsed = parseInt(stored, 10);
+        if (!isNaN(parsed) && parsed > 0) {
+          setCredits(parsed);
+        }
+      }
     }
   }, [user]);
 

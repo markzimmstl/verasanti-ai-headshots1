@@ -51,7 +51,6 @@ const TIERS: PricingTier[] = [
 ];
 
 export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentComplete, onBack }) => {
-  // Default to Professional — no useEffect override
   const [selectedTierId, setSelectedTierId] = useState<string>('professional');
   const [email, setEmail] = useState('');
   const [isEmailSaved, setIsEmailSaved] = useState(false);
@@ -60,30 +59,27 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
   const selectedTier = TIERS.find(t => t.id === selectedTierId) || TIERS[1];
   const insufficientCredits = selectedTier.credits < imageCount;
 
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
   const handleSaveEmail = (e: React.FormEvent) => {
     e.preventDefault();
     if (email && email.includes('@')) setIsEmailSaved(true);
   };
 
-  const handlePay = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
+  const handlePay = () => {
+    if (!email || isProcessing) return;
     setIsProcessing(true);
     const stripeUrl = `${selectedTier.stripeLink}?prefilled_email=${encodeURIComponent(email)}`;
     window.location.href = stripeUrl;
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto animate-fade-in px-4 pb-12 relative">
+    <div className="w-full max-w-5xl mx-auto animate-fade-in px-4 pb-32">
 
-      {/* Email capture modal — positioned in upper third of viewport */}
+      {/* Email capture modal */}
       {!isEmailSaved && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in"
-             style={{ paddingTop: '12vh' }}>
+        <div
+          className="fixed inset-0 z-50 flex justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in"
+          style={{ alignItems: 'flex-start', paddingTop: '12vh' }}
+        >
           <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full shadow-2xl">
             <div className="flex justify-center mb-6">
               <div className="h-16 w-16 bg-indigo-500/10 rounded-full flex items-center justify-center ring-1 ring-indigo-500/30">
@@ -91,7 +87,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
               </div>
             </div>
             <h3 className="text-2xl font-bold text-white text-center mb-2">Almost There</h3>
-            <p className="text-slate-400 text-center mb-6">Enter your email to save your brand configuration and view pricing.</p>
+            <p className="text-slate-400 text-center mb-6 text-sm">Enter your email to save your brand configuration and view pricing.</p>
             <form onSubmit={handleSaveEmail} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email Address</label>
@@ -101,7 +97,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onFocus={handleInputFocus}
                     placeholder="name@company.com"
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                     required
@@ -115,10 +110,11 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
         </div>
       )}
 
-      <div className={`${!isEmailSaved ? 'blur-sm opacity-50 pointer-events-none' : ''} transition-all duration-500`}>
+      {/* Main content */}
+      <div className={`${!isEmailSaved ? 'blur-sm opacity-40 pointer-events-none select-none' : ''} transition-all duration-500`}>
 
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-10 pt-2">
           <h2 className="text-4xl font-bold text-white mb-4">Build Your Personal Brand</h2>
           <div className="flex flex-col items-center gap-2">
             <div className="inline-flex items-center gap-3 bg-indigo-900/30 border border-indigo-500/30 rounded-full px-6 py-2">
@@ -130,19 +126,19 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
         </div>
 
         {/* Pricing tiers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {TIERS.map((tier) => (
             <div
               key={tier.id}
               onClick={() => setSelectedTierId(tier.id)}
               className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
                 selectedTierId === tier.id
-                  ? 'bg-indigo-900/20 border-indigo-500 shadow-2xl transform scale-105 z-10'
+                  ? 'bg-indigo-900/20 border-indigo-500 shadow-2xl scale-105 z-10'
                   : 'bg-slate-900/40 border-slate-800 hover:border-slate-600'
               }`}
             >
               {tier.isPopular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg whitespace-nowrap">
                   MOST POPULAR
                 </div>
               )}
@@ -152,9 +148,9 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
               </div>
               <div className="mb-6">
                 <span className="text-4xl font-bold text-white">${tier.price}</span>
-                <div className="mt-2 inline-block bg-slate-800 text-indigo-300 text-xs font-bold px-2 py-1 rounded ml-2">
+                <span className="ml-2 inline-block bg-slate-800 text-indigo-300 text-xs font-bold px-2 py-1 rounded">
                   {tier.credits} Credits
-                </div>
+                </span>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {tier.features.map((feat, idx) => (
@@ -173,67 +169,48 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
           ))}
         </div>
 
-        {/* Checkout box — vertically centered on screen */}
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-20"
-             style={{ display: isEmailSaved ? 'flex' : 'none' }}>
-          <div className="pointer-events-auto max-w-lg w-full mx-4 bg-white text-slate-900 rounded-3xl p-8 shadow-2xl">
-            <h3 className="text-2xl font-bold text-slate-900 mb-1">Continue</h3>
-            <p className="text-slate-500 text-sm mb-6">
-              You'll be securely redirected to Stripe. Promo codes can be entered there. You'll return here automatically after payment.
-            </p>
+        {/* Insufficient credits warning */}
+        {insufficientCredits && (
+          <div className="flex gap-2 items-start bg-amber-950/40 border border-amber-500/30 text-amber-300 p-4 rounded-xl text-sm mb-6">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <p>Your selected image count exceeds this plan's credits. Consider upgrading to Professional or Brand Kit.</p>
+          </div>
+        )}
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-slate-700">{selectedTier.name}</span>
-                <span className="font-bold text-slate-900">${selectedTier.price}</span>
+        {/* ── CHECKOUT BAR ── */}
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Summary */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-white font-bold text-lg">{selectedTier.name}</span>
+                <span className="text-slate-400 text-sm">·</span>
+                <span className="text-indigo-300 text-sm font-medium">{selectedTier.credits} credits</span>
+                <span className="text-slate-400 text-sm">·</span>
+                <span className="text-white font-bold text-xl">${selectedTier.price}</span>
               </div>
-              <div className="flex justify-between items-center text-sm text-slate-500">
-                <span>Credits included</span>
-                <span>{selectedTier.credits}</span>
-              </div>
-              {insufficientCredits && (
-                <div className="mt-4 flex gap-2 bg-amber-50 text-amber-700 p-3 rounded-lg text-xs border border-amber-200">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <p>Your selected image count exceeds this plan's credits. Consider upgrading to Professional or Brand Kit.</p>
-                </div>
-              )}
+              <p className="text-slate-500 text-xs mt-1">
+                Promo code? Enter it at Stripe checkout.&nbsp;&nbsp;
+                <span className="inline-flex items-center gap-1">
+                  <Shield className="w-3 h-3 text-green-500" />
+                  Secured by Stripe
+                </span>
+              </p>
             </div>
 
-            <form onSubmit={handlePay} className="space-y-4">
-              <div className="opacity-60 pointer-events-none">
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  readOnly
-                  className="w-full bg-slate-100 border border-slate-200 rounded-lg px-3 py-3 text-slate-600"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] disabled:opacity-70"
-              >
-                {isProcessing ? 'Redirecting to Stripe...' : `Continue to Secure Checkout — $${selectedTier.price}`}
-              </button>
-
-              <div className="flex items-center justify-center gap-3 text-slate-400 text-xs">
-                <div className="flex items-center gap-1">
-                  <Shield className="w-3 h-3 text-green-600" />
-                  <span>Secured by Stripe</span>
-                </div>
-                <span>·</span>
-                <span>Promo codes accepted at checkout</span>
-              </div>
-            </form>
+            {/* CTA */}
+            <button
+              onClick={handlePay}
+              disabled={isProcessing || !email}
+              className="shrink-0 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition-all active:scale-[0.98] whitespace-nowrap"
+            >
+              {isProcessing ? 'Redirecting...' : `Continue to Secure Checkout — $${selectedTier.price}`}
+            </button>
           </div>
         </div>
 
-        {/* Spacer */}
-        <div className="h-96" />
-
-        <div className="mt-8 text-center relative z-30">
+        {/* Back */}
+        <div className="mt-6 text-center">
           <Button variant="outline" onClick={onBack} disabled={isProcessing}>Back</Button>
         </div>
       </div>
