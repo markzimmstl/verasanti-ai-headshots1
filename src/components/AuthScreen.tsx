@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth } from '../api/base44Client';
 
 type LoginFn = (provider: 'google' | 'email' | 'verify', credentials?: { email: string; password: string; otpCode?: string }, isSignup?: boolean) => Promise<void>;
 
 export { AuthScreen };
 export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
-  const [mode, setMode] = useState<'login' | 'signup' | 'verify' | 'forgot' | 'forgot-sent'>('signup');
+  const [mode, setMode] = useState<'login' | 'signup' | 'verify' | 'forgot' | 'forgot-sent' | 'reset-password'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -14,6 +14,24 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
   const [pendingEmail, setPendingEmail] = useState('');
   const [pendingPassword, setPendingPassword] = useState('');
   const [forgotEmail, setForgotEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
+
+  // Check URL for Base44 password-reset token on mount.
+  // Base44 redirects back to your app after the user sets a new password.
+  // We catch it here so they land inside VeraLooks, not "Backend-Only" page.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('access_token') || params.get('reset_token') || params.get('token');
+    const resetParam = params.get('reset');
+    if (token && (resetParam === 'true' || resetParam === '1')) {
+      setResetToken(token);
+      setMode('reset-password');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +57,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     }
   };
 
-  // Robustly extract a readable message from any error shape
   const extractErrorMessage = (err: any): string => {
     if (!err) return 'Something went wrong. Please try again.';
     if (typeof err === 'string') return err;
@@ -56,24 +73,36 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     if (!forgotEmail) return;
     setIsLoading(true);
     setError(null);
-
-    // Base44 SDK method confirmed: resetPasswordRequest(email: string)
-    console.log('[VeraLooks] Calling resetPasswordRequest for:', forgotEmail);
     try {
       await (auth as any).resetPasswordRequest(forgotEmail);
       setMode('forgot-sent');
     } catch (err: any) {
-      console.error('[VeraLooks] resetPasswordRequest failed:', err);
       setError(extractErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || !confirmPassword) return;
+    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    setIsLoading(true);
+    setError(null);
+    try {
+      await (auth as any).resetPassword({ token: resetToken, new_password: newPassword });
+      setResetSuccess(true);
+    } catch (err: any) {
+      setError(extractErrorMessage(err) || 'Could not reset password. The link may have expired.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const headingText = {
-    login: 'Welcome back',
-    signup: 'Create your account',
-    verify: 'Check your email',
-    forgot: 'Reset your password',
-    'forgot-sent': 'Check your inbox',
+    login: 'Welcome back', signup: 'Create your account', verify: 'Check your email',
+    forgot: 'Reset your password', 'forgot-sent': 'Check your inbox', 'reset-password': 'Set a new password',
   }[mode];
 
   const subText = {
@@ -82,14 +111,11 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     verify: 'Enter the verification code we sent you.',
     forgot: "Enter your email and we'll send a reset link.",
     'forgot-sent': `A password reset link has been sent to ${forgotEmail}.`,
+    'reset-password': 'Choose a strong new password for your account.',
   }[mode];
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#080A0F', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', fontFamily: "'DM Sans', sans-serif",
-      overflow: 'hidden', position: 'relative', padding: '40px 24px',
-    }}>
+    <div style={{ minHeight: '100vh', background: '#080A0F', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif", overflow: 'hidden', position: 'relative', padding: '40px 24px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -124,7 +150,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             <div style={{ width: 34, height: 34, background: 'linear-gradient(135deg, #7C3AED, #9F67FF)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '700', color: '#fff', fontFamily: "'Cormorant Garamond', serif" }}>V</div>
             <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: '500', color: '#fff', letterSpacing: '0.02em' }}>VeraLooks</span>
           </div>
-
           <div style={{ maxWidth: '340px' }}>
             <div className="fade-up-1" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9F67FF' }} />
@@ -137,7 +162,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
               Your very own Personal Brand Image System.<br />Built by a professional photographer,<br />not a software company.
             </p>
           </div>
-
           <div className="fade-up-4">
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px' }}>
               <div style={{ display: 'flex' }}>
@@ -158,17 +182,46 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         {/* Right panel */}
         <div style={{ width: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 44px', background: '#0D0F17' }}>
           <div className="fade-up-1" style={{ marginBottom: '32px' }}>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '28px', fontWeight: '500', color: '#fff', letterSpacing: '-0.02em', marginBottom: '8px' }}>
-              {headingText}
-            </h2>
+            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '28px', fontWeight: '500', color: '#fff', letterSpacing: '-0.02em', marginBottom: '8px' }}>{headingText}</h2>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>{subText}</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
             {error && (
-              <div style={{ fontSize: 13, color: '#F87171', padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                {error}
+              <div style={{ fontSize: 13, color: '#F87171', padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>{error}</div>
+            )}
+
+            {/* RESET PASSWORD FORM */}
+            {mode === 'reset-password' && (
+              <div className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {resetSuccess ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ padding: '16px', background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10 }}>
+                      <p style={{ fontSize: 13, color: 'rgba(13,148,136,0.9)', lineHeight: 1.6 }}>✓ Your password has been updated successfully.</p>
+                    </div>
+                    <button type="button" className="submit-btn"
+                      onClick={() => { setMode('login'); setResetSuccess(false); setNewPassword(''); setConfirmPassword(''); }}>
+                      Sign In with New Password
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>New Password</label>
+                      <input type="password" className="auth-input" placeholder="At least 8 characters" value={newPassword} onChange={e => setNewPassword(e.target.value)} required autoFocus />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Confirm New Password</label>
+                      <input type="password" className="auth-input" placeholder="Re-enter your new password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                    </div>
+                    <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
+                      {isLoading ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><span className="spinner" />Updating password...</span> : 'Set New Password'}
+                    </button>
+                    <div style={{ textAlign: 'center', marginTop: '6px' }}>
+                      <button type="button" className="mode-toggle" onClick={() => { setMode('login'); setError(null); }}>← Back to Sign In</button>
+                    </div>
+                  </form>
+                )}
               </div>
             )}
 
@@ -176,14 +229,12 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             {mode === 'forgot-sent' && (
               <div className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ padding: '16px', background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10 }}>
-                  <p style={{ fontSize: 13, color: 'rgba(13,148,136,0.9)', lineHeight: 1.6 }}>
-                    ✓ Reset link sent to <strong>{forgotEmail}</strong>. Check your inbox and spam folder.
-                  </p>
+                  <p style={{ fontSize: 13, color: 'rgba(13,148,136,0.9)', lineHeight: 1.6 }}>✓ Reset link sent to <strong>{forgotEmail}</strong>. Check your inbox and spam folder.</p>
                 </div>
-                <button type="button" className="mode-toggle" style={{ fontSize: '14px', textAlign: 'left' as const }}
-                  onClick={() => { setMode('login'); setError(null); }}>
-                  ← Back to Sign In
-                </button>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>
+                  After resetting, the link will return you to VeraLooks automatically. If it takes you elsewhere, return to <strong style={{ color: 'rgba(255,255,255,0.4)' }}>app.veralooks.com</strong> and sign in normally.
+                </p>
+                <button type="button" className="mode-toggle" style={{ fontSize: '14px', textAlign: 'left' as const }} onClick={() => { setMode('login'); setError(null); }}>← Back to Sign In</button>
               </div>
             )}
 
@@ -191,23 +242,14 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             {mode === 'forgot' && (
               <form onSubmit={handleForgotPassword} className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
-                    Email Address
-                  </label>
-                  <input
-                    type="email" className="auth-input" placeholder="name@company.com"
-                    value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required autoFocus
-                  />
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Email Address</label>
+                  <input type="email" className="auth-input" placeholder="name@company.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required autoFocus />
                 </div>
                 <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
-                  {isLoading
-                    ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><span className="spinner" />Sending reset link...</span>
-                    : 'Send Reset Link'}
+                  {isLoading ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><span className="spinner" />Sending reset link...</span> : 'Send Reset Link'}
                 </button>
                 <div style={{ textAlign: 'center', marginTop: '6px' }}>
-                  <button type="button" className="mode-toggle" onClick={() => { setMode('login'); setError(null); }}>
-                    ← Back to Sign In
-                  </button>
+                  <button type="button" className="mode-toggle" onClick={() => { setMode('login'); setError(null); }}>← Back to Sign In</button>
                 </div>
               </form>
             )}
@@ -225,11 +267,8 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <label style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Password</label>
                         {mode === 'login' && (
-                          <button
-                            type="button" className="mode-toggle"
-                            style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.35)' }}
-                            onClick={() => { setForgotEmail(email); setMode('forgot'); setError(null); }}
-                          >
+                          <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.35)' }}
+                            onClick={() => { setForgotEmail(email); setMode('forgot'); setError(null); }}>
                             Forgot password?
                           </button>
                         )}
@@ -238,7 +277,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                     </div>
                   </>
                 )}
-
                 {mode === 'verify' && (
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Verification Code</label>
@@ -246,7 +284,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>Check your email for the verification code.</p>
                   </div>
                 )}
-
                 <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
                   {isLoading
                     ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><span className="spinner" />{mode === 'signup' ? 'Creating account...' : 'Signing in...'}</span>
@@ -257,20 +294,9 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
 
             {(mode === 'login' || mode === 'signup') && (
               <div className="fade-up-3" style={{ marginTop: '10px' }}>
-                <button
-                  type="button"
+                <button type="button"
                   onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); }}
-                  style={{
-                    width: '100%', padding: '12px 20px',
-                    background: 'rgba(159,103,255,0.08)',
-                    border: '1px solid rgba(159,103,255,0.25)',
-                    borderRadius: '10px',
-                    color: '#B98FFF',
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: '14px', fontWeight: '500', cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    letterSpacing: '-0.01em',
-                  }}
+                  style={{ width: '100%', padding: '12px 20px', background: 'rgba(159,103,255,0.08)', border: '1px solid rgba(159,103,255,0.25)', borderRadius: '10px', color: '#B98FFF', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s ease', letterSpacing: '-0.01em' }}
                   onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.14)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.45)'; }}
                   onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.25)'; }}
                 >
@@ -278,7 +304,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                 </button>
               </div>
             )}
-
             {(mode === 'login' || mode === 'signup') && (
               <div className="fade-up-4" style={{ textAlign: 'center', marginTop: '4px' }}>
                 <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', lineHeight: '1.5' }}>
@@ -289,7 +314,6 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                 </p>
               </div>
             )}
-
           </div>
         </div>
       </div>

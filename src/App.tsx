@@ -15,7 +15,7 @@ import {
   ReferenceImage,
 } from './types';
 import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
-import { AlertCircle, LogOut } from 'lucide-react';
+import { AlertCircle, LogOut, Zap, X } from 'lucide-react';
 
 // @ts-ignore
 import { BRAND_DEFINITIONS } from './data/brandDefinitions';
@@ -40,6 +40,7 @@ const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
 
 const PENDING_GEN_KEY   = 'veralooks_pending_generation';
 const ABOUT_YOU_KEY     = 'vl_about_you';
+const LOW_CREDITS_THRESHOLD = 10;
 
 const loadAboutYou = (): Partial<GenerationConfig> => {
   try {
@@ -48,6 +49,43 @@ const loadAboutYou = (): Partial<GenerationConfig> => {
   } catch { return {}; }
 };
 const REF_IMAGES_KEY    = 'veralooks_ref_images';
+
+// Top-up pack definitions — ~10-12% discount vs original per-credit prices
+const TOPUP_PACKS = [
+  {
+    id: 'topup_starter',
+    name: 'Starter Pack',
+    credits: 40,
+    price: 44,
+    originalPrice: 49,
+    saving: 5,
+    stripeUrl: 'https://buy.stripe.com/eVq28sc6b0Ft2hn17pdUY02',
+    highlight: false,
+    badge: null,
+  },
+  {
+    id: 'topup_pro',
+    name: 'Professional Pack',
+    credits: 120,
+    price: 69,
+    originalPrice: 79,
+    saving: 10,
+    stripeUrl: 'https://buy.stripe.com/7sY3cwb27ewjcW16rJdUY01',
+    highlight: true,
+    badge: 'Best Value',
+  },
+  {
+    id: 'topup_brand',
+    name: 'Brand Kit Pack',
+    credits: 300,
+    price: 105,
+    originalPrice: 119,
+    saving: 14,
+    stripeUrl: 'https://buy.stripe.com/4gM5kEb27ag3e053fxdUY00',
+    highlight: false,
+    badge: null,
+  },
+];
 
 // Compress a base64 image to target size in MB
 const compressBase64 = (base64: string, targetMB = 0.4): Promise<string> => {
@@ -68,7 +106,7 @@ const compressBase64 = (base64: string, targetMB = 0.4): Promise<string> => {
       let quality = 0.7;
       const tryCompress = () => {
         canvas.toBlob(blob => {
-          if (!blob) { resolve(base64); return; } // fallback to original
+          if (!blob) { resolve(base64); return; }
           if (blob.size <= targetMB * 1024 * 1024 || quality < 0.2) {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
@@ -82,12 +120,11 @@ const compressBase64 = (base64: string, targetMB = 0.4): Promise<string> => {
       };
       tryCompress();
     };
-    img.onerror = () => resolve(base64); // fallback to original
+    img.onerror = () => resolve(base64);
     img.src = base64;
   });
 };
 
-// Save reference images to localStorage, compressing each to ~400KB
 const saveRefImagesToStorage = async (images: MultiReferenceSet): Promise<void> => {
   try {
     const compressed: Record<string, any> = {};
@@ -103,7 +140,6 @@ const saveRefImagesToStorage = async (images: MultiReferenceSet): Promise<void> 
   }
 };
 
-// Restore reference images from localStorage
 const loadRefImagesFromStorage = (): MultiReferenceSet | null => {
   try {
     const saved = localStorage.getItem(REF_IMAGES_KEY);
@@ -114,12 +150,158 @@ const loadRefImagesFromStorage = (): MultiReferenceSet | null => {
   }
 };
 
+// ─── Top-Up Modal ────────────────────────────────────────────────────────────
+function TopUpModal({ onClose, userEmail, isLowCredits }: {
+  onClose: () => void;
+  userEmail?: string;
+  isLowCredits: boolean;
+}) {
+  const handleSelectPack = (pack: typeof TOPUP_PACKS[0]) => {
+    const url = `${pack.stripeUrl}?prefilled_email=${encodeURIComponent(userEmail || '')}&payment=success&credits=${pack.credits}&tier=${pack.id}`;
+    window.location.href = url;
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden"
+        style={{ background: '#0D0F17', border: '1px solid rgba(255,255,255,0.08)' }}
+      >
+        {/* Header */}
+        <div className="px-8 pt-8 pb-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="flex items-start justify-between">
+            <div>
+              {isLowCredits && (
+                <div
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 mb-3 text-xs font-medium"
+                  style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#F59E0B' }}
+                >
+                  <span>⚠</span> Running low on credits
+                </div>
+              )}
+              <h2
+                className="text-2xl font-medium mb-2"
+                style={{ fontFamily: "'Cormorant Garamond', serif", color: '#fff' }}
+              >
+                Top up your credits
+              </h2>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Save 10–12% when you top up — a thank-you for coming back.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg transition-all hover:opacity-70"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}
+            >
+              <X style={{ width: 16, height: 16 }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Packs */}
+        <div className="p-8 grid grid-cols-3 gap-4">
+          {TOPUP_PACKS.map(pack => (
+            <button
+              key={pack.id}
+              onClick={() => handleSelectPack(pack)}
+              className="relative flex flex-col rounded-xl p-5 text-left transition-all hover:scale-[1.02]"
+              style={{
+                background: pack.highlight ? 'linear-gradient(135deg, rgba(76,29,149,0.3), rgba(124,58,237,0.15))' : 'rgba(255,255,255,0.03)',
+                border: pack.highlight ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              {pack.badge && (
+                <div
+                  className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-0.5 rounded-full"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED, #9F67FF)', color: '#fff', whiteSpace: 'nowrap' }}
+                >
+                  {pack.badge}
+                </div>
+              )}
+              <div className="mb-4">
+                <p className="text-xs uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  {pack.name}
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-light" style={{ color: '#fff' }}>{pack.credits}</span>
+                  <span className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>credits</span>
+                </div>
+              </div>
+              <div className="mt-auto">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-xl font-semibold" style={{ color: pack.highlight ? '#B98FFF' : '#fff' }}>
+                    ${pack.price}
+                  </span>
+                  <span className="text-xs line-through" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    ${pack.originalPrice}
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: 'rgba(13,148,136,0.9)' }}>
+                  Save ${pack.saving}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div className="px-8 pb-6 text-center">
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
+            Credits never expire · Secure checkout via Stripe
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Low-Credits Banner ───────────────────────────────────────────────────────
+function LowCreditsBanner({ credits, onTopUp }: { credits: number; onTopUp: () => void }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed || credits > LOW_CREDITS_THRESHOLD || credits <= 0) return null;
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 px-6 py-3 text-sm"
+      style={{ background: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.2)' }}
+    >
+      <div className="flex items-center gap-2">
+        <span style={{ color: '#F59E0B' }}>⚠</span>
+        <span style={{ color: 'rgba(255,255,255,0.65)' }}>
+          You have <strong style={{ color: '#F59E0B' }}>{credits} credits</strong> remaining. Top up to keep creating.
+        </span>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={onTopUp}
+          className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all hover:opacity-90"
+          style={{ background: 'linear-gradient(135deg, #7C3AED, #9F67FF)', color: '#fff' }}
+        >
+          <Zap style={{ width: 11, height: 11 }} />
+          Top Up
+        </button>
+        <button
+          onClick={() => setDismissed(true)}
+          className="p-1 rounded hover:opacity-60 transition-opacity"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
+        >
+          <X style={{ width: 14, height: 14 }} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const { user, isLoading, login, logout } = useAuth();
 
   const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
   const [credits, setCredits] = useState(0);
   const [creditsLoaded, setCreditsLoaded] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
   const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({ ...DEFAULT_CONFIG, ...loadAboutYou() });
@@ -127,7 +309,6 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // settingsKey removed — SettingsStep preserves About You fields via generationConfig prop
 
   // Sync credits when user loads — Base44 entity first, localStorage fallback
   useEffect(() => {
@@ -151,14 +332,12 @@ function App() {
     // STEP 2: Load from Base44 entity (authoritative source, works across devices)
     loadCreditsForUser(user.id).then(b44Credits => {
       if (b44Credits !== null) {
-        // Use whichever is higher — protects against stale Base44 data
         const storedNow = parseInt(localStorage.getItem('veralooks_credits') || '0', 10);
         const best = Math.max(b44Credits, storedNow);
         setCredits(best);
         localStorage.setItem('veralooks_credits', best.toString());
         console.log('[Credits] Loaded from Base44:', b44Credits, '| local:', storedNow, '| using:', best);
       } else if (!stored) {
-        // Neither Base44 nor localStorage has credits — stay at 0
         console.log('[Credits] No credits found for user');
       }
       setCreditsLoaded(true);
@@ -173,31 +352,26 @@ function App() {
 
     if (payment === 'success' && creditsParam) {
       const purchasedCredits = parseInt(creditsParam, 10);
-      // Read current credits directly from localStorage to avoid stale state race condition
       const currentStored = parseInt(localStorage.getItem('veralooks_credits') || '0', 10);
       const newCredits = currentStored + purchasedCredits;
       console.log('[Credits] Stripe return — adding', purchasedCredits, 'credits to', currentStored, '=', newCredits);
       setCredits(newCredits);
       localStorage.setItem('veralooks_credits', newCredits.toString());
-      // Persist to Base44 so credits survive browser clears and work cross-device
       if (user) saveCreditsForUser(user.id, user.email, newCredits);
       window.history.replaceState({}, '', window.location.pathname);
 
-      // Restore reference images saved before redirect
       const restoredImages = loadRefImagesFromStorage();
       if (restoredImages && Object.keys(restoredImages).length > 0) {
         setReferenceImages(restoredImages);
         localStorage.removeItem(REF_IMAGES_KEY);
       }
 
-      // Restore pending generation and execute
       const savedPending = localStorage.getItem(PENDING_GEN_KEY);
       if (savedPending) {
         try {
           const restored = JSON.parse(savedPending);
           localStorage.removeItem(PENDING_GEN_KEY);
           setPendingGeneration(restored);
-          // Pass restored images directly since state hasn't updated yet
           executeGeneration(restored.styles, restored.config, newCredits, restoredImages || {});
         } catch {
           localStorage.removeItem(PENDING_GEN_KEY);
@@ -225,7 +399,6 @@ function App() {
 
   const handleConfigChange = (newConfig: GenerationConfig) => {
     setGenerationConfig(newConfig);
-    // Persist About You fields so they survive any navigation
     if (newConfig.genderPresentation || newConfig.ageRange || newConfig.hairColor) {
       try {
         localStorage.setItem('vl_about_you', JSON.stringify({
@@ -248,14 +421,12 @@ function App() {
     if (creditsLoaded && credits < totalImagesRequested) {
       const pending = { styles, config };
       setPendingGeneration(pending);
-      // Save pending generation AND reference images before Stripe redirect
       localStorage.setItem(PENDING_GEN_KEY, JSON.stringify(pending));
       await saveRefImagesToStorage(referenceImages);
       setCurrentStep('payment');
       window.scrollTo(0, 0);
       return;
     }
-    // If credits haven't loaded yet, wait briefly and retry
     if (!creditsLoaded) {
       console.warn('[VeraLooks] Credits not yet loaded — waiting before routing');
       return;
@@ -263,7 +434,6 @@ function App() {
     await executeGeneration(styles, config, credits, referenceImages);
   };
 
-  // refOverride lets us pass freshly-restored images before state updates
   const executeGeneration = async (
     styles: StyleOption[],
     config: GenerationConfig,
@@ -313,7 +483,6 @@ function App() {
             continue;
           }
 
-          // Only deduct credit when image actually succeeds
           currentCredits = Math.max(0, currentCredits - 1);
           setCredits(currentCredits);
           localStorage.setItem('veralooks_credits', currentCredits.toString());
@@ -395,7 +564,7 @@ function App() {
   };
 
   const handleAddCredits = () => {
-    setCurrentStep('payment');
+    setShowTopUpModal(true);
   };
 
   const handleGenerateMore = () => {
@@ -492,15 +661,30 @@ function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div
-                  className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5"
-                  style={{ background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.3)' }}
+                {/* Credits button — clickable to open top-up modal */}
+                <button
+                  onClick={handleAddCredits}
+                  className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
+                  style={{
+                    background: credits <= LOW_CREDITS_THRESHOLD && credits > 0
+                      ? 'rgba(245,158,11,0.12)'
+                      : 'rgba(76,29,149,0.15)',
+                    border: credits <= LOW_CREDITS_THRESHOLD && credits > 0
+                      ? '1px solid rgba(245,158,11,0.35)'
+                      : '1px solid rgba(76,29,149,0.3)',
+                  }}
                 >
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#9F67FF' }} />
-                  <span className="text-[13px] font-medium" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                  <div
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: credits <= LOW_CREDITS_THRESHOLD && credits > 0 ? '#F59E0B' : '#9F67FF' }}
+                  />
+                  <span
+                    className="text-[13px] font-medium"
+                    style={{ color: credits <= LOW_CREDITS_THRESHOLD && credits > 0 ? '#F59E0B' : 'rgba(255,255,255,0.75)' }}
+                  >
                     {credits} Credits
                   </span>
-                </div>
+                </button>
                 <button
                   onClick={logout}
                   title="Sign out"
@@ -511,6 +695,9 @@ function App() {
                 </button>
               </div>
             </div>
+
+            {/* Low-credits warning banner — shown below header */}
+            <LowCreditsBanner credits={credits} onTopUp={handleAddCredits} />
           </header>
 
           {/* ERROR MODAL */}
@@ -549,6 +736,48 @@ function App() {
             </div>
           )}
 
+          {/* TOP-UP MODAL */}
+          {showTopUpModal && (
+            <TopUpModal
+              onClose={() => setShowTopUpModal(false)}
+              userEmail={user?.email}
+              isLowCredits={credits <= LOW_CREDITS_THRESHOLD && credits > 0}
+            />
+          )}
+
+          {/* ZERO CREDITS MODAL — shown when credits hit 0 */}
+          {creditsLoaded && credits <= 0 && !isGenerating && currentStep === 'settings' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+              <div
+                className="rounded-2xl p-8 max-w-md w-full shadow-2xl text-center"
+                style={{ background: '#0D0F17', border: '1px solid rgba(124,58,237,0.3)' }}
+              >
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+                  style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)' }}
+                >
+                  <Zap style={{ width: 28, height: 28, color: '#9F67FF' }} />
+                </div>
+                <h2
+                  className="text-2xl font-medium mb-3"
+                  style={{ fontFamily: "'Cormorant Garamond', serif", color: '#fff' }}
+                >
+                  You're out of credits
+                </h2>
+                <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.4)', lineHeight: 1.7 }}>
+                  Top up to continue creating beautiful brand photos. Save 10–12% when you reload.
+                </p>
+                <button
+                  onClick={() => setShowTopUpModal(true)}
+                  className="w-full py-3.5 rounded-xl text-white font-semibold text-sm transition hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #7C3AED, #9F67FF)' }}
+                >
+                  Top Up Credits
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* MAIN */}
           <main className="flex-1 flex flex-col relative">
             {isGenerating ? (
@@ -570,6 +799,7 @@ function App() {
                     onChange={handleConfigChange}
                     onNext={handleGenerateRequest}
                     onBack={handleBackToUpload}
+                    onAddCredits={handleAddCredits}
                   />
                 )}
                 {currentStep === 'payment' && (
