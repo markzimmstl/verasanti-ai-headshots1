@@ -799,7 +799,6 @@ function App() {
                     onChange={handleConfigChange}
                     onNext={handleGenerateRequest}
                     onBack={handleBackToUpload}
-                    onAddCredits={handleAddCredits}
                   />
                 )}
                 {currentStep === 'payment' && (
