@@ -50,7 +50,7 @@ export async function loadImagesForUser(userId: string): Promise<GeneratedImage[
       createdAt: Number(r.created_at),
       aspectRatio: r.aspect_ratio || '1:1',
       stylePrompt: r.style_prompt || undefined,
-    })).sort((a, b) => b.createdAt - a.createdAt); // newest first
+    })).sort((a: GeneratedImage, b: GeneratedImage) => b.createdAt - a.createdAt); // newest first
 
   } catch (err) {
     console.warn('[Images] Load failed:', err);
