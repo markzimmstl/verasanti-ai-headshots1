@@ -5,8 +5,10 @@ import { SettingsStep } from './components/SettingsStep';
 import { ProcessingStep } from './components/ProcessingStep';
 import ResultsStep from './components/ResultsStep';
 import { AuthScreen } from './components/AuthScreen';
+import ShotListGenerator from './components/ShotListGenerator';
 import { useAuth } from './api/useAuth';
 import { loadCreditsForUser, saveCreditsForUser } from './api/userCreditsService';
+import { loadImagesForUser, saveImagesForUser } from './api/generatedImagesService';
 import { 
   GenerationConfig, 
   GeneratedImage, 
@@ -298,7 +300,7 @@ function LowCreditsBanner({ credits, onTopUp }: { credits: number; onTopUp: () =
 function App() {
   const { user, isLoading, login, logout } = useAuth();
 
-  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results'>('upload');
+  const [currentStep, setCurrentStep] = useState<'upload' | 'settings' | 'payment' | 'results' | 'shotlist'>('upload');
   const [credits, setCredits] = useState(0);
   const [creditsLoaded, setCreditsLoaded] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
@@ -341,6 +343,14 @@ function App() {
         console.log('[Credits] No credits found for user');
       }
       setCreditsLoaded(true);
+    });
+
+    // STEP 3: Load persisted generated images (90-day gallery)
+    loadImagesForUser(user.id).then(saved => {
+      if (saved.length > 0) {
+        setGeneratedImages(saved);
+        console.log('[Images] Restored', saved.length, 'saved images for user');
+      }
     });
   }, [user, isLoading]);
 
@@ -511,6 +521,12 @@ function App() {
         localStorage.removeItem(PENDING_GEN_KEY);
         setCurrentStep('results');
         window.scrollTo(0, 0);
+        // Persist new images to Base44 (90-day gallery)
+        if (user) {
+          saveImagesForUser(user.id, newImages).catch(err =>
+            console.warn('[Images] Background save failed:', err)
+          );
+        }
       } else {
         setError("No images were generated successfully. Please check your reference photo and try again.");
       }
@@ -661,6 +677,20 @@ function App() {
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Shot List Generator nav button */}
+                <button
+                  onClick={() => { setCurrentStep('shotlist'); window.scrollTo(0, 0); }}
+                  className="hidden md:flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
+                  style={{
+                    background: currentStep === 'shotlist' ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
+                    border: currentStep === 'shotlist' ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: currentStep === 'shotlist' ? '#a5b4fc' : 'rgba(255,255,255,0.4)' }}>
+                    ✦ Shot List
+                  </span>
+                </button>
+
                 {/* Credits button — clickable to open top-up modal */}
                 <button
                   onClick={handleAddCredits}
@@ -817,6 +847,9 @@ function App() {
                     refs={referenceImages}
                     baseConfig={generationConfig}
                   />
+                )}
+                {currentStep === 'shotlist' && (
+                  <ShotListGenerator />
                 )}
               </div>
             )}
