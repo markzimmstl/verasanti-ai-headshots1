@@ -454,8 +454,8 @@ function App() {
       setPendingGeneration(pending);
       localStorage.setItem(PENDING_GEN_KEY, JSON.stringify(pending));
       await saveRefImagesToStorage(referenceImages);
-      setCurrentStep('payment');
-      window.scrollTo(0, 0);
+      setShowTopUpModal(true); // Show discounted top-up modal, stay on current step
+
       return;
     }
     if (!creditsLoaded) {
@@ -477,6 +477,15 @@ function App() {
     let globalImageIndex = 0;
     let currentCredits = creditOverride ?? credits;
     const refsToUse = refOverride ?? referenceImages;
+
+    // Guard: if no reference photo, send back to upload with a friendly message
+    if (!refsToUse?.main?.base64) {
+      setIsGenerating(false);
+      setCurrentStep("upload");
+      window.scrollTo(0, 0);
+      setTimeout(() => setError("We could not find your reference photo — please re-upload it to continue."), 300);
+      return;
+    }
 
     try {
       for (const style of styles) {
@@ -769,7 +778,7 @@ function App() {
                 <div className="flex items-start gap-3 mb-4">
                   <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-300 mb-1">Generation Error</p>
+                    <p className="text-sm font-semibold text-red-300 mb-1">{error.includes('reference photo') ? 'Photo Required' : 'Generation Error'}</p>
                     <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>{error}</p>
                   </div>
                 </div>
