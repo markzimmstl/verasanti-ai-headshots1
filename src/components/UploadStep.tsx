@@ -279,34 +279,36 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             </div>
 
             <UploadSlot role="fullBody"  label="Full-Body Photo"  subLabel="Optional — head to toe, camera at chest height." />
-            <div /> {/* spacer */}
+
+            {/* AI Preview status — inline next to fullBody */}
+            {referenceImages.main ? (
+              <button
+                onClick={scrollToConfirmation}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '12px 8px', borderRadius: 12, background: 'rgba(76,29,149,0.08)', border: '1px solid rgba(76,29,149,0.25)', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'center' }}
+              >
+                {isGeneratingConfirmation
+                  ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#9F67FF', flexShrink: 0 }} />
+                  : confirmationPhoto
+                  ? <Sparkles className="w-5 h-5" style={{ color: '#9F67FF', flexShrink: 0 }} />
+                  : <AlertCircle className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                }
+                <span style={{ fontSize: 11, lineHeight: 1.4, color: 'rgba(159,103,255,0.85)' }}>
+                  {isGeneratingConfirmation ? 'Generating AI preview…'
+                    : confirmationPhoto ? 'AI preview ready ↓'
+                    : confirmationError ? 'Preview failed ↓'
+                    : 'Preparing preview…'}
+                </span>
+                {(confirmationPhoto || confirmationError) && (
+                  <ChevronDown className="w-3.5 h-3.5" style={{ color: '#9F67FF' }} />
+                )}
+              </button>
+            ) : (
+              <div /> /* spacer when no main photo yet */
+            )}
             <UploadSlot role="sideLeft"  label="Your Left Side"   subLabel="Optional — turn so your left faces the camera." />
             <UploadSlot role="sideRight" label="Your Right Side"  subLabel="Optional — turn so your right faces the camera." />
           </div>
 
-          {/* AI preview notification */}
-          {referenceImages.main && (
-            <button
-              onClick={scrollToConfirmation}
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', borderRadius: 12, marginTop: 32, background: 'rgba(76,29,149,0.08)', border: '1px solid rgba(76,29,149,0.25)', cursor: 'pointer', transition: 'all 0.15s' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {isGeneratingConfirmation
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: '#9F67FF', flexShrink: 0 }} />
-                  : confirmationPhoto
-                  ? <Sparkles className="w-3.5 h-3.5" style={{ color: '#9F67FF', flexShrink: 0 }} />
-                  : <AlertCircle className="w-3.5 h-3.5" style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-                }
-                <span style={{ fontSize: 13, color: 'rgba(159,103,255,0.85)' }}>
-                  {isGeneratingConfirmation ? 'Generating your AI preview below…'
-                    : confirmationPhoto ? 'AI preview ready — scroll down to see it.'
-                    : confirmationError ? 'Preview failed — scroll down to retry.'
-                    : 'Preparing your AI preview…'}
-                </span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5" style={{ color: '#9F67FF', flexShrink: 0 }} />
-            </button>
-          )}
         </div>
 
         {/* RIGHT — tips + continue */}

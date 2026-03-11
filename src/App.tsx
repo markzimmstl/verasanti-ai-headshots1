@@ -403,6 +403,26 @@ function App() {
     setReferenceImages(newImages);
   };
 
+  // Auto-save reference images whenever they change — so navigating away never loses them
+  useEffect(() => {
+    if (Object.keys(referenceImages).length > 0) {
+      saveRefImagesToStorage(referenceImages);
+    }
+  }, [referenceImages]);
+
+  // Restore reference images on app load (if no Stripe return already handled it)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isStripeReturn = urlParams.get('payment') === 'success';
+    if (!isStripeReturn) {
+      const saved = loadRefImagesFromStorage();
+      if (saved && Object.keys(saved).length > 0) {
+        setReferenceImages(saved);
+        console.log('[RefImages] Restored from storage on load');
+      }
+    }
+  }, []);
+
   const handleUploadContinue = () => {
     setCurrentStep('settings');
     window.scrollTo(0, 0);
