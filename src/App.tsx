@@ -611,6 +611,7 @@ function App() {
 
   const handleAddCredits = () => {
     setShowZeroCreditsModal(false);
+    setZeroCreditsDismissed(true);
     setShowTopUpModal(true);
   };
 
@@ -619,10 +620,17 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  // Show zero credits modal when credits hit 0
+  const [zeroCreditsDismissed, setZeroCreditsDismissed] = useState(false);
+
+  // Show zero credits modal when credits hit 0 — but not if already dismissed this session
   useEffect(() => {
-    if (creditsLoaded && credits <= 0 && !isGenerating) {
+    if (creditsLoaded && credits <= 0 && !isGenerating && !zeroCreditsDismissed) {
       setShowZeroCreditsModal(true);
+    }
+    // If credits are restored (after top-up), hide the modal and reset dismissed flag
+    if (creditsLoaded && credits > 0) {
+      setShowZeroCreditsModal(false);
+      setZeroCreditsDismissed(false);
     }
   }, [credits, creditsLoaded, isGenerating]);
 
@@ -817,9 +825,16 @@ function App() {
           {showZeroCreditsModal && !showTopUpModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
               <div
-                className="rounded-2xl p-8 max-w-md w-full shadow-2xl text-center"
+                className="rounded-2xl p-8 max-w-md w-full shadow-2xl text-center relative"
                 style={{ background: '#0D0F17', border: '1px solid rgba(124,58,237,0.3)' }}
               >
+                <button
+                  onClick={() => { setShowZeroCreditsModal(false); setZeroCreditsDismissed(true); }}
+                  className="absolute top-4 right-4 text-white/30 hover:text-white/60 transition"
+                  style={{ fontSize: 20, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  ✕
+                </button>
                 <div
                   className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
                   style={{ background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)' }}

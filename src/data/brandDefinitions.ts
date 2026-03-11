@@ -154,7 +154,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'outdoor-wellness',
         name: 'Outdoor Park / Trail',
         prompt:
-          'outdoors on a scenic tree-lined park path or nature trail with lush green foliage, soft dappled natural light filtering through trees, and a clearly recreational outdoor environment; this is a peaceful park or nature setting — NOT an urban sidewalk, city street, industrial yard, or generic outdoor plaza',
+          'outdoors on a wide, well-maintained park trail or nature path with tall mature trees lining both sides, lush green foliage overhead creating a natural canopy, soft dappled sunlight filtering through leaves onto a dirt or paved path; the environment is unmistakably a public park or nature preserve — visible trail stretching into distance, green grass, and natural woodland; NOT an urban sidewalk, city street, parking lot, industrial yard, rooftop, or generic open plaza',
         iconType: 'leaf',
       },
       {
@@ -168,7 +168,7 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         id: 'rooftop-fitness',
         name: 'Rooftop / Outdoor Gym',
         prompt:
-          'on a rooftop or open-air fitness space with city or nature views in the background; an energetic outdoor fitness setting, not a studio backdrop',
+          'on a rooftop open-air fitness space with a dramatic city skyline or panoramic view behind them; the rooftop gym has visible fitness equipment in the background — kettlebells, a cable machine, barbell racks, battle ropes, and rubber flooring — giving the space a fully equipped, premium athletic feel; golden hour or sunset sky adds warmth; an energetic, aspirational outdoor fitness setting',
         iconType: 'building',
       },
     ],
@@ -502,10 +502,10 @@ export const BRAND_DEFINITIONS: Record<string, BrandData> = {
         iconType: 'sparkles',
       },
       {
-        id: 'retail-showroom',
-        name: 'Retail Showroom',
+        id: 'boutique-shop',
+        name: 'Boutique / Shop Front',
         prompt:
-          'standing in a bright, elegant fashion showroom with polished floors, clothing displayed on sleek racks and mannequins, soft track lighting highlighting merchandise, a large mirror, and floor-to-ceiling windows; the atmosphere is sophisticated and inviting like a high-end department store or designer fashion floor; this is a premium retail fashion environment with beautifully merchandised clothing on display',
+          'standing inside or just outside a charming upscale boutique retail shop — polished wood shelving with neatly folded clothing or curated products, decorative window displays with mannequins or merchandise, warm accent lighting, and tasteful branded signage; the space feels intimate, stylish, and inviting like a high-end clothing or gift boutique on a pedestrian shopping street; absolutely NOT a warehouse, storage facility, industrial space, loading dock, or big-box retail store',
         iconType: 'building',
       },
       {

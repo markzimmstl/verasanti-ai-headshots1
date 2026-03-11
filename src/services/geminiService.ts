@@ -145,7 +145,7 @@ const buildPrompt = (
    - The background must be the ENVIRONMENT ONLY. 
    - CLOTHING TEXT: No text, no logos, no lettering, no graphics on any garment.
    - (Exception: If the scene description specifically asks for a "photo studio set" with visible gear, ignore the lighting equipment constraint).
-   - POSE: Subject must stand PERFECTLY UPRIGHT with confident posture. *** ABSOLUTE RULE: NEVER bent forward at the waist. NEVER hunched over. NEVER leaning dramatically downward. NEVER a bowing posture. NEVER a cowering posture. *** No awkward or contorted body positions. Natural, confident, professional stance ONLY. Gravity pulls the subject straight DOWN, not forward.
+   - POSE: Subject must stand PERFECTLY UPRIGHT with confident posture. *** ABSOLUTE RULE — NO EXCEPTIONS: The subject's spine is VERTICAL. NEVER bent forward at the waist. NEVER hunched over. NEVER leaning dramatically downward. NEVER a bowing posture. NEVER a cowering posture. NEVER a crouching posture. NEVER bent at the hips. The torso does NOT tilt forward. The back is STRAIGHT. *** If the reference photo shows the subject bending, crouching, or hunching — IGNORE THAT POSE COMPLETELY and generate them standing upright instead. Natural, confident, professional stance ONLY. Gravity pulls the subject straight DOWN, not forward.
    - CAMERA ANGLE: NEVER a worm's-eye view. NEVER shoot upward from below the subject's waist. If Eye Level is selected, the lens is at the subject's eye height — not low, not looking up.
  `;
   // Glasses — default is to preserve whatever is in the reference photo
