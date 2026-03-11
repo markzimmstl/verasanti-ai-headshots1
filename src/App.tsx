@@ -304,6 +304,7 @@ function App() {
   const [credits, setCredits] = useState(0);
   const [creditsLoaded, setCreditsLoaded] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showZeroCreditsModal, setShowZeroCreditsModal] = useState(false);
   const [pendingGeneration, setPendingGeneration] = useState<{ styles: StyleOption[], config: GenerationConfig } | null>(null);
   const [referenceImages, setReferenceImages] = useState<MultiReferenceSet>({});
   const [generationConfig, setGenerationConfig] = useState<GenerationConfig>({ ...DEFAULT_CONFIG, ...loadAboutYou() });
@@ -580,6 +581,7 @@ function App() {
   };
 
   const handleAddCredits = () => {
+    setShowZeroCreditsModal(false);
     setShowTopUpModal(true);
   };
 
@@ -587,6 +589,13 @@ function App() {
     setCurrentStep('settings');
     window.scrollTo(0, 0);
   };
+
+  // Show zero credits modal when credits hit 0
+  useEffect(() => {
+    if (creditsLoaded && credits <= 0 && !isGenerating) {
+      setShowZeroCreditsModal(true);
+    }
+  }, [credits, creditsLoaded, isGenerating]);
 
   const pendingImageCount = pendingGeneration
     ? pendingGeneration.styles.reduce((sum, s) => sum + (s.imageCount || 1), 0)
@@ -766,7 +775,7 @@ function App() {
             </div>
           )}
 
-          {/* TOP-UP MODAL */}
+          {/* TOP-UP MODAL — renders last so it's always on top */}
           {showTopUpModal && (
             <TopUpModal
               onClose={() => setShowTopUpModal(false)}
@@ -775,8 +784,8 @@ function App() {
             />
           )}
 
-          {/* ZERO CREDITS MODAL — shown when credits hit 0 */}
-          {creditsLoaded && credits <= 0 && !isGenerating && currentStep === 'settings' && (
+          {/* ZERO CREDITS MODAL */}
+          {showZeroCreditsModal && !showTopUpModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
               <div
                 className="rounded-2xl p-8 max-w-md w-full shadow-2xl text-center"
@@ -798,7 +807,7 @@ function App() {
                   Top up to continue creating beautiful brand photos. Save 10–12% when you reload.
                 </p>
                 <button
-                  onClick={() => setShowTopUpModal(true)}
+                  onClick={handleAddCredits}
                   className="w-full py-3.5 rounded-xl text-white font-semibold text-sm transition hover:opacity-90"
                   style={{ background: 'linear-gradient(135deg, #7C3AED, #9F67FF)' }}
                 >
