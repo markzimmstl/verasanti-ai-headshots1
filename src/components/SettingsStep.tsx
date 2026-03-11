@@ -230,8 +230,19 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const [showAboutYouWarning, setShowAboutYouWarning] = useState(false);
   const [shotListExpanded, setShotListExpanded] = useState(false);
-  const [shotListDescription, setShotListDescription] = useState('');
+  const [shotListDescription, setShotListDescriptionRaw] = useState(() => {
+    try { return localStorage.getItem('vl_shotlist_description') || ''; } catch { return ''; }
+  });
+  const setShotListDescription = (val: string) => {
+    setShotListDescriptionRaw(val);
+    try { localStorage.setItem('vl_shotlist_description', val); } catch {}
+  };
   const [shotListCount, setShotListCount] = useState<3|5|10>(5);
+  const [showShotListTemplate, setShowShotListTemplate] = useState(false);
+  const [shotListTemplateFields, setShotListTemplateFields] = useState({
+    industry: '', clients: '', outcome: '', style: '', unique: '',
+  });
+  const shotListTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [shotListLoading, setShotListLoading] = useState(false);
   const [shotList, setShotList] = useState<any[]>([]);
   const [shotListError, setShotListError] = useState<string|null>(null);
@@ -513,6 +524,20 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     }));
     const baseConfig: GenerationConfig = { ...config, retouchLevel: config.retouchLevel || 'None', variationsCount: 1 };
     onNext(stylesToUse, baseConfig);
+  };
+
+  const buildShotListFromTemplate = () => {
+    const { industry, clients, outcome, style, unique } = shotListTemplateFields;
+    const parts: string[] = [];
+    if (industry) parts.push(`I work in ${industry}`);
+    if (clients) parts.push(`and work with ${clients}`);
+    if (outcome) parts.push(`to help them ${outcome}`);
+    if (style) parts.push(`My personal style is ${style}`);
+    if (unique) parts.push(`What makes my brand unique: ${unique}`);
+    const built = parts.join('. ').replace(/\.\s*\./g, '.') + (parts.length ? '.' : '');
+    setShotListDescription(built);
+    setShowShotListTemplate(false);
+    setTimeout(() => shotListTextareaRef.current?.focus(), 100);
   };
 
   const generateShotList = async () => {
@@ -1179,11 +1204,62 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   isOpen={sec5Open} onToggle={() => aboutYouComplete && setSec5Open(p => !p)} hint="Complete About You first">
 
                   <div style={{ marginBottom: 14 }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 8 }}>Describe your work</p>
-                    <textarea value={shotListDescription} onChange={e => setShotListDescription(e.target.value)}
-                      placeholder="e.g. I'm a real estate agent in St. Louis specializing in luxury homes..."
+                    <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 6 }}>Describe your work</p>
+                    <p style={{ fontSize: 12, color: T.white40, lineHeight: 1.6, margin: '0 0 10px 0' }}>
+                      The more specific you are, the better your shot list. Include your industry, who you serve, your style, and what makes your brand unique.
+                    </p>
+
+                    {/* Fill-in-the-blank template */}
+                    {!showShotListTemplate ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowShotListTemplate(true)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.purple, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', marginBottom: 10, transition: 'all 0.15s' }}
+                      >
+                        ✦ Use guided template
+                      </button>
+                    ) : (
+                      <div style={{ marginBottom: 12, padding: '14px 16px', background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, borderRadius: 12 }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: T.purple, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Fill in what applies — skip anything that doesn't fit</p>
+                        {[
+                          { key: 'industry', label: 'I work in…', placeholder: 'e.g. health coaching, real estate, executive consulting' },
+                          { key: 'clients',  label: 'and work with…', placeholder: 'e.g. busy moms, small business owners, C-suite leaders' },
+                          { key: 'outcome',  label: 'to help them…', placeholder: 'e.g. lose weight sustainably, sell their home faster, lead with confidence' },
+                          { key: 'style',    label: 'My personal style is…', placeholder: 'e.g. polished but approachable, bold and colorful, minimal and modern' },
+                          { key: 'unique',   label: 'What makes my brand unique…', placeholder: 'e.g. I\'m a former chef turned nutritionist, I work exclusively with women over 50' },
+                        ].map(({ key, label, placeholder }) => (
+                          <div key={key} style={{ marginBottom: 9 }}>
+                            <label style={{ display: 'block', fontSize: 11, color: T.purple, fontWeight: 600, marginBottom: 3 }}>{label}</label>
+                            <input
+                              type="text"
+                              value={shotListTemplateFields[key as keyof typeof shotListTemplateFields]}
+                              onChange={e => setShotListTemplateFields(prev => ({ ...prev, [key]: e.target.value }))}
+                              placeholder={placeholder}
+                              style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 8, padding: '8px 11px', fontSize: 12, color: T.white, outline: 'none', boxSizing: 'border-box' as const }}
+                            />
+                          </div>
+                        ))}
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                          <button type="button" onClick={buildShotListFromTemplate}
+                            disabled={!Object.values(shotListTemplateFields).some(v => v.trim())}
+                            style={{ flex: 1, padding: '9px 14px', background: T.purpleGrad, border: 'none', borderRadius: 8, color: T.white, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                            Build my description →
+                          </button>
+                          <button type="button" onClick={() => setShowShotListTemplate(false)}
+                            style={{ padding: '9px 12px', background: 'transparent', border: `1px solid ${T.panelBorder}`, borderRadius: 8, color: T.white40, fontSize: 12, cursor: 'pointer' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <textarea
+                      ref={shotListTextareaRef}
+                      value={shotListDescription}
+                      onChange={e => setShotListDescription(e.target.value)}
+                      placeholder="e.g. I'm a business coach in Atlanta who helps first-generation entrepreneurs scale past six figures..."
                       rows={3}
-                      style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: T.white, resize: 'vertical', outline: 'none', boxSizing: 'border-box', lineHeight: 1.5 }} />
+                      style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 10, padding: '10px 12px', fontSize: 12, color: T.white, resize: 'vertical', outline: 'none', boxSizing: 'border-box' as const, lineHeight: 1.5 }} />
                   </div>
 
                   <div style={{ marginBottom: 14 }}>
