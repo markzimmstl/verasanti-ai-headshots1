@@ -196,11 +196,11 @@ export default function ShotListGenerator({ initialDescription = '', onDescripti
     const { industry, clients, outcome, style, unique } = templateFields;
     const parts: string[] = [];
     if (industry) parts.push(`I work in ${industry}`);
-    if (clients) parts.push(`and work with ${clients}`);
-    if (outcome) parts.push(`to help them ${outcome}`);
-    if (style) parts.push(`My personal style is ${style}`);
-    if (unique) parts.push(`What makes my brand unique: ${unique}`);
-    const built = parts.join(". ").replace(/\.\s*\./g, ".") + (parts.length ? "." : "");
+    if (clients) parts.push(`working with ${clients}`);
+    if (outcome) parts.push(`helping them ${outcome}`);
+    if (style) parts.push(`my personal style is ${style}`);
+    if (unique) parts.push(`what makes my brand unique is ${unique}`);
+    const built = parts.length ? parts.join(', ') + '.' : '';
     setDescription(built);
     try { localStorage.setItem(DESCRIPTION_KEY, built); } catch {}
     onDescriptionChange?.(built);
