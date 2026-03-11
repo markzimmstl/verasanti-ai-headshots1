@@ -454,8 +454,14 @@ function App() {
       setPendingGeneration(pending);
       localStorage.setItem(PENDING_GEN_KEY, JSON.stringify(pending));
       await saveRefImagesToStorage(referenceImages);
-      setShowTopUpModal(true); // Show discounted top-up modal, stay on current step
 
+      // New users (never generated before) go to the Payment step for full-price purchase.
+      // Existing users who've run out of credits see the discounted top-up modal.
+      if (generatedImages.length === 0) {
+        setCurrentStep('payment');
+      } else {
+        setShowTopUpModal(true);
+      }
       return;
     }
     if (!creditsLoaded) {
