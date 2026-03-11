@@ -622,7 +622,10 @@ function App() {
 
   const [zeroCreditsDismissed, setZeroCreditsDismissed] = useState(false);
 
-  // Show zero credits modal when credits hit 0 — but not if already dismissed this session
+  // Persisted Shot List description — survives component unmounting
+  const [shotListDescription, setShotListDescription] = useState<string>(() => {
+    try { return localStorage.getItem('vl_shotlist_description') || ''; } catch { return ''; }
+  });
   useEffect(() => {
     if (creditsLoaded && credits <= 0 && !isGenerating && !zeroCreditsDismissed) {
       setShowZeroCreditsModal(true);
@@ -902,7 +905,10 @@ function App() {
                   />
                 )}
                 {currentStep === 'shotlist' && (
-                  <ShotListGenerator />
+                  <ShotListGenerator
+                    initialDescription={shotListDescription}
+                    onDescriptionChange={setShotListDescription}
+                  />
                 )}
               </div>
             )}

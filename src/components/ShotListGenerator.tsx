@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Shot {
@@ -166,9 +166,15 @@ const ShotCard = ({ shot, index, onUsePrompt }: ShotCardProps) => {
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function ShotListGenerator() {
+interface ShotListGeneratorProps {
+  initialDescription?: string;
+  onDescriptionChange?: (val: string) => void;
+}
+
+export default function ShotListGenerator({ initialDescription = '', onDescriptionChange }: ShotListGeneratorProps) {
   const DESCRIPTION_KEY = "vl_shotlist_description";
   const [description, setDescription] = useState<string>(() => {
+    if (initialDescription) return initialDescription;
     try { return localStorage.getItem(DESCRIPTION_KEY) || ""; } catch { return ""; }
   });
   const [shots, setShots] = useState<Shot[]>([]);
@@ -176,12 +182,37 @@ export default function ShotListGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [generatedFor, setGeneratedFor] = useState<string>("");
   const [copiedPrompt, setCopiedPrompt] = useState<number | null>(null);
+  const [showTemplate, setShowTemplate] = useState<boolean>(false);
+  const [templateFields, setTemplateFields] = useState({
+    industry: "",
+    clients: "",
+    outcome: "",
+    style: "",
+    unique: "",
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const buildFromTemplate = useCallback(() => {
+    const { industry, clients, outcome, style, unique } = templateFields;
+    const parts: string[] = [];
+    if (industry) parts.push(`I work in ${industry}`);
+    if (clients) parts.push(`and work with ${clients}`);
+    if (outcome) parts.push(`to help them ${outcome}`);
+    if (style) parts.push(`My personal style is ${style}`);
+    if (unique) parts.push(`What makes my brand unique: ${unique}`);
+    const built = parts.join(". ").replace(/\.\s*\./g, ".") + (parts.length ? "." : "");
+    setDescription(built);
+    try { localStorage.setItem(DESCRIPTION_KEY, built); } catch {}
+    onDescriptionChange?.(built);
+    setShowTemplate(false);
+    setTimeout(() => textareaRef.current?.focus(), 100);
+  }, [templateFields]);
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setDescription(val);
     try { localStorage.setItem(DESCRIPTION_KEY, val); } catch {}
+    onDescriptionChange?.(val);
   };
 
   const generate = async () => {
@@ -263,10 +294,53 @@ export default function ShotListGenerator() {
             <p style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6, margin: "0 0 10px 0" }}>
               The more specific you are, the better your shot list. Include your industry, who you serve, your personal style, and anything that makes your brand unique.
             </p>
-            <div style={{ fontSize: 12, color: "#475569", lineHeight: 1.6, marginBottom: 12, padding: "10px 14px", background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: 10 }}>
-              <span style={{ color: "#6366f1", fontWeight: 700 }}>Example: </span>
-              "I'm a copywriter who works with small to medium-sized businesses that cater to the female African-American community. I dress casually, work from home and coffee shops, and my brand is warm, bold, and modern."
-            </div>
+
+            {/* Fill-in-the-blank template */}
+            {!showTemplate ? (
+              <button
+                onClick={() => setShowTemplate(true)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6366f1", background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 8, padding: "6px 12px", cursor: "pointer", marginBottom: 12, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}
+              >
+                ✦ Use guided template
+              </button>
+            ) : (
+              <div style={{ marginBottom: 14, padding: "16px 18px", background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 12 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14 }}>Fill in what applies — skip anything that doesn't fit</p>
+                {[
+                  { key: "industry", label: "I work in…", placeholder: "e.g. health coaching, real estate, executive consulting" },
+                  { key: "clients", label: "and work with…", placeholder: "e.g. busy moms, small business owners, C-suite leaders" },
+                  { key: "outcome", label: "to help them…", placeholder: "e.g. lose weight sustainably, sell their home faster, lead with confidence" },
+                  { key: "style", label: "My personal style is…", placeholder: "e.g. polished but approachable, bold and colorful, minimal and modern" },
+                  { key: "unique", label: "What makes my brand unique…", placeholder: "e.g. I'm a former chef turned nutritionist, I work exclusively with women over 50" },
+                ].map(({ key, label, placeholder }) => (
+                  <div key={key} style={{ marginBottom: 10 }}>
+                    <label style={{ display: "block", fontSize: 11, color: "#6366f1", fontWeight: 600, marginBottom: 4 }}>{label}</label>
+                    <input
+                      type="text"
+                      value={templateFields[key as keyof typeof templateFields]}
+                      onChange={e => setTemplateFields(prev => ({ ...prev, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#e2e8f0", fontFamily: "'DM Sans', sans-serif", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                ))}
+                <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                  <button
+                    onClick={buildFromTemplate}
+                    disabled={!Object.values(templateFields).some(v => v.trim())}
+                    style={{ flex: 1, padding: "10px 16px", background: "linear-gradient(135deg, #4f46e5, #7c3aed)", border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    Build my description →
+                  </button>
+                  <button
+                    onClick={() => setShowTemplate(false)}
+                    style={{ padding: "10px 14px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#64748b", fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             <textarea
               ref={textareaRef}
               value={description}
