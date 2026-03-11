@@ -627,7 +627,10 @@ function App() {
     try { return localStorage.getItem('vl_shotlist_description') || ''; } catch { return ''; }
   });
   useEffect(() => {
-    if (creditsLoaded && credits <= 0 && !isGenerating && !zeroCreditsDismissed) {
+    // Only show zero-credits modal if the user has previously generated images
+    // (i.e. they actually used up credits, not a fresh account with no record yet)
+    const hasGeneratedBefore = generatedImages.length > 0;
+    if (creditsLoaded && credits <= 0 && !isGenerating && !zeroCreditsDismissed && hasGeneratedBefore) {
       setShowZeroCreditsModal(true);
     }
     // If credits are restored (after top-up), hide the modal and reset dismissed flag
@@ -635,7 +638,7 @@ function App() {
       setShowZeroCreditsModal(false);
       setZeroCreditsDismissed(false);
     }
-  }, [credits, creditsLoaded, isGenerating]);
+  }, [credits, creditsLoaded, isGenerating, generatedImages]);
 
   const pendingImageCount = pendingGeneration
     ? pendingGeneration.styles.reduce((sum, s) => sum + (s.imageCount || 1), 0)
