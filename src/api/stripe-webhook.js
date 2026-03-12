@@ -1,5 +1,5 @@
-// api/stripe-webhook.js
-// Vercel serverless function — place this file at /src/api/stripe-webhook.js in your project
+// src/api/stripe-webhook.js
+// Vercel serverless function
 
 // Valid tier values — must match exactly what's in your Stripe success URLs
 const VALID_TIERS = [
@@ -12,19 +12,32 @@ const VALID_TIERS = [
 ];
 
 export default async function handler(req, res) {
+  // Handle Vercel pre-flight / health checks
+  if (req.method === 'GET') {
+    return res.status(200).json({ status: 'ok' });
+  }
+
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const event = req.body;
+    // Vercel may parse body automatically or leave it as a string
+    let event = req.body;
+    if (typeof event === 'string') {
+      event = JSON.parse(event);
+    }
 
     // Only handle checkout completions
     if (event.type !== 'checkout.session.completed') {
       return res.status(200).json({ received: true });
     }
 
-    const session = event.data.object;
+    const session = event.data?.object;
+    if (!session) {
+      return res.status(400).json({ error: 'Invalid event structure' });
+    }
 
     // Extract tier from success_url
     // e.g. https://app.veralooks.com?payment=success&credits=40&tier=starter
@@ -42,14 +55,14 @@ export default async function handler(req, res) {
     const email = customerDetails.email || '';
     const name  = customerDetails.name  || '';
     const phone = customerDetails.phone || '';
-    const amountTotal = (session.amount_total || 0) / 100; // convert cents to dollars
+    const amountTotal = (session.amount_total || 0) / 100;
 
     // Build the payload for CC Machine inbound webhook
     const ccMachinePayload = {
       email,
       name,
       phone,
-      tier,             // "starter" | "professional" | "brand_kit" | "topup_*"
+      tier,
       amount: amountTotal,
       payment_status: session.payment_status,
       stripe_session_id: session.id,
