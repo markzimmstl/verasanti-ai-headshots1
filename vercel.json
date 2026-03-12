@@ -2,7 +2,16 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "functions": {
+    "src/api/stripe-webhook.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api/stripe-webhook",
+      "destination": "/src/api/stripe-webhook"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
