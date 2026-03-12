@@ -1,5 +1,15 @@
 // api/stripe-webhook.js
-// Vercel serverless function — place this file at /api/stripe-webhook.js in your project
+// Vercel serverless function — place this file at /src/api/stripe-webhook.js in your project
+
+// Valid tier values — must match exactly what's in your Stripe success URLs
+const VALID_TIERS = [
+  'starter',
+  'professional',
+  'brand_kit',
+  'topup_starter',
+  'topup_professional',
+  'topup_brand_kit',
+];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -22,30 +32,26 @@ export default async function handler(req, res) {
     const tierMatch = successUrl.match(/[?&]tier=([^&]+)/);
     const tier = tierMatch ? tierMatch[1] : null;
 
-    if (!tier) {
-      console.error('No tier found in success_url:', successUrl);
-      return res.status(200).json({ received: true, warning: 'No tier found' });
+    if (!tier || !VALID_TIERS.includes(tier)) {
+      console.error(`Invalid or missing tier "${tier}" in success_url: ${successUrl}`);
+      return res.status(200).json({ received: true, warning: `Invalid tier: ${tier}` });
     }
 
     // Extract customer details from Stripe payload
     const customerDetails = session.customer_details || {};
     const email = customerDetails.email || '';
-    const name = customerDetails.name || '';
+    const name  = customerDetails.name  || '';
     const phone = customerDetails.phone || '';
     const amountTotal = (session.amount_total || 0) / 100; // convert cents to dollars
 
-    // Determine if this is a top-up purchase
-    const isTopUp = successUrl.includes('topup=true') || tier.includes('topup');
-
-    // Build the payload for CC Machine (GoHighLevel) inbound webhook
+    // Build the payload for CC Machine inbound webhook
     const ccMachinePayload = {
       email,
       name,
       phone,
-      tier,                        // e.g. "starter", "brand_kit", "professional"
+      tier,             // "starter" | "professional" | "brand_kit" | "topup_*"
       amount: amountTotal,
       payment_status: session.payment_status,
-      is_top_up: isTopUp,
       stripe_session_id: session.id,
       payment_link: session.payment_link || '',
     };
