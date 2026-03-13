@@ -4,10 +4,6 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/stripe-webhook",
-      "destination": "/src/api/stripe-webhook"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
