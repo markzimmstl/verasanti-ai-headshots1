@@ -28,7 +28,7 @@ const TIERS: PricingTier[] = [
     credits: 40,
     description: 'Perfect for a LinkedIn profile or headshot refresh.',
     features: ['40 AI Credits', '20+ Brand Photos', 'Commercial License'],
-    stripeLink: 'https://buy.stripe.com/eVq28sc6b0Ft2hn17pdUY02',
+    stripeLink: 'https://link.contentcreatormachine.com/payment-link/69a6409be005be6a1182f70e',
   },
   {
     id: 'professional',
