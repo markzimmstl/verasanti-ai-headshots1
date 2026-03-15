@@ -38,7 +38,7 @@ const TIERS: PricingTier[] = [
     description: 'Variety across scenes for your website and social media.',
     isPopular: true,
     features: ['120 AI Credits', '60–100 Brand Photos', 'Multiple Scenes & Styles', 'Priority Processing'],
-    stripeLink: 'https://buy.stripe.com/7sY3cwb27ewjcW16rJdUY01',
+    stripeLink: 'https://link.contentcreatormachine.com/payment-link/69a640743413b5667afe7fa6',
   },
   {
     id: 'brandkit',
@@ -47,7 +47,7 @@ const TIERS: PricingTier[] = [
     credits: 300,
     description: 'Maximum variety for a full brand launch or team.',
     features: ['300 AI Credits', '150+ Brand Photos', 'Highest Priority', 'Team License'],
-    stripeLink: 'https://buy.stripe.com/4gM5kEb27ag3e053fxdUY00',
+    stripeLink: 'https://link.contentcreatormachine.com/payment-link/69a640003413b532c8fe7f1f',
   },
 ];
 
