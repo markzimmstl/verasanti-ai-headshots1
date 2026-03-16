@@ -9,6 +9,10 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
@@ -101,6 +105,64 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const EyeIcon = ({ visible }: { visible: boolean }) => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {visible ? (
+        <>
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+          <line x1="1" y1="1" x2="23" y2="23" />
+        </>
+      ) : (
+        <>
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+        </>
+      )}
+    </svg>
+  );
+
+  const PasswordInput = ({
+    label, value, onChange, placeholder, show, onToggle, required, autoFocus,
+    showMatchFeedback, matchValue,
+  }: {
+    label: string; value: string; onChange: (v: string) => void; placeholder: string;
+    show: boolean; onToggle: () => void; required?: boolean; autoFocus?: boolean;
+    showMatchFeedback?: boolean; matchValue?: string;
+  }) => {
+    const hasTyped = value.length > 0;
+    const matches = value === matchValue;
+    return (
+      <div>
+        <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{label}</label>
+        <div style={{ position: 'relative' }}>
+          <input
+            type={show ? 'text' : 'password'}
+            className="auth-input"
+            placeholder={placeholder}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            required={required}
+            autoFocus={autoFocus}
+            style={{ paddingRight: '44px' }}
+          />
+          <button
+            type="button"
+            onClick={onToggle}
+            style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', padding: '4px' }}
+          >
+            <EyeIcon visible={show} />
+          </button>
+        </div>
+        {showMatchFeedback && hasTyped && (
+          <p style={{ fontSize: '12px', marginTop: '6px', color: matches ? 'rgba(13,148,136,0.9)' : 'rgba(248,113,113,0.9)' }}>
+            {matches ? '✓ Passwords match' : '✗ Passwords do not match'}
+          </p>
+        )}
+      </div>
+    );
   };
 
   const headingText = {
@@ -209,14 +271,8 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                   </div>
                 ) : (
                   <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>New Password</label>
-                      <input type="password" className="auth-input" placeholder="At least 8 characters" value={newPassword} onChange={e => setNewPassword(e.target.value)} required autoFocus />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Confirm New Password</label>
-                      <input type="password" className="auth-input" placeholder="Re-enter your new password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} required />
-                    </div>
+                    <PasswordInput label="New Password" value={newPassword} onChange={setNewPassword} placeholder="At least 8 characters" show={showNewPassword} onToggle={() => setShowNewPassword(p => !p)} required autoFocus />
+                    <PasswordInput label="Confirm New Password" value={confirmNewPassword} onChange={setConfirmNewPassword} placeholder="Re-enter your new password" show={showConfirmNewPassword} onToggle={() => setShowConfirmNewPassword(p => !p)} required showMatchFeedback matchValue={newPassword} />
                     <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
                       {isLoading ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><span className="spinner" />Updating password...</span> : 'Set New Password'}
                     </button>
@@ -266,23 +322,18 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                       <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Email</label>
                       <input type="email" className="auth-input" placeholder="name@company.com" value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
                     </div>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Password</label>
-                        {mode === 'login' && (
-                          <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.35)' }}
-                            onClick={() => { setForgotEmail(email); setMode('forgot'); setError(null); }}>
-                            Forgot password?
-                          </button>
-                        )}
-                      </div>
-                      <input type="password" className="auth-input" placeholder={mode === 'signup' ? 'Create a password' : 'Your password'} value={password} onChange={e => setPassword(e.target.value)} required />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Password</label>
+                      {mode === 'login' && (
+                        <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.35)' }}
+                          onClick={() => { setForgotEmail(email); setMode('forgot'); setError(null); }}>
+                          Forgot password?
+                        </button>
+                      )}
                     </div>
+                    <PasswordInput label="" value={password} onChange={setPassword} placeholder={mode === 'signup' ? 'Create a password' : 'Your password'} show={showPassword} onToggle={() => setShowPassword(p => !p)} required />
                     {mode === 'signup' && (
-                      <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Confirm Password</label>
-                        <input type="password" className="auth-input" placeholder="Re-enter your password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
-                      </div>
+                      <PasswordInput label="Confirm Password" value={confirmPassword} onChange={setConfirmPassword} placeholder="Re-enter your password" show={showConfirmPassword} onToggle={() => setShowConfirmPassword(p => !p)} required showMatchFeedback matchValue={password} />
                     )}
                   </>
                 )}
@@ -313,7 +364,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             {(mode === 'login' || mode === 'signup') && (
               <div className="fade-up-3" style={{ marginTop: '10px' }}>
                 <button type="button"
-                  onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); setConfirmPassword(''); }}
+                  onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); setConfirmPassword(''); setShowPassword(false); setShowConfirmPassword(false); }}
                   style={{ width: '100%', padding: '12px 20px', background: 'rgba(159,103,255,0.08)', border: '1px solid rgba(159,103,255,0.25)', borderRadius: '10px', color: '#B98FFF', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s ease', letterSpacing: '-0.01em' }}
                   onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.14)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.45)'; }}
                   onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.25)'; }}
