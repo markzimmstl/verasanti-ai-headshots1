@@ -8,6 +8,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
   const [mode, setMode] = useState<'login' | 'signup' | 'verify' | 'forgot' | 'forgot-sent' | 'reset-password'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState('');
@@ -16,12 +17,9 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
 
-  // Check URL for Base44 password-reset token on mount.
-  // Base44 redirects back to your app after the user sets a new password.
-  // We catch it here so they land inside VeraLooks, not "Backend-Only" page.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('access_token') || params.get('reset_token') || params.get('token');
@@ -41,6 +39,11 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
       if (mode === 'verify') {
         await onLogin?.('verify' as any, { email: pendingEmail, password: pendingPassword, otpCode } as any);
       } else {
+        if (mode === 'signup' && password !== confirmPassword) {
+          setError('Passwords do not match.');
+          setIsLoading(false);
+          return;
+        }
         await onLogin?.('email', { email, password }, mode === 'signup');
       }
     } catch (err: any) {
@@ -85,8 +88,8 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || !confirmPassword) return;
-    if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return; }
+    if (!newPassword || !confirmNewPassword) return;
+    if (newPassword !== confirmNewPassword) { setError('Passwords do not match.'); return; }
     if (newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setIsLoading(true);
     setError(null);
@@ -200,7 +203,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                       <p style={{ fontSize: 13, color: 'rgba(13,148,136,0.9)', lineHeight: 1.6 }}>✓ Your password has been updated successfully.</p>
                     </div>
                     <button type="button" className="submit-btn"
-                      onClick={() => { setMode('login'); setResetSuccess(false); setNewPassword(''); setConfirmPassword(''); }}>
+                      onClick={() => { setMode('login'); setResetSuccess(false); setNewPassword(''); setConfirmNewPassword(''); }}>
                       Sign In with New Password
                     </button>
                   </div>
@@ -212,7 +215,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Confirm New Password</label>
-                      <input type="password" className="auth-input" placeholder="Re-enter your new password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                      <input type="password" className="auth-input" placeholder="Re-enter your new password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} required />
                     </div>
                     <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
                       {isLoading ? <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}><span className="spinner" />Updating password...</span> : 'Set New Password'}
@@ -275,6 +278,12 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                       </div>
                       <input type="password" className="auth-input" placeholder={mode === 'signup' ? 'Create a password' : 'Your password'} value={password} onChange={e => setPassword(e.target.value)} required />
                     </div>
+                    {mode === 'signup' && (
+                      <div>
+                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Confirm Password</label>
+                        <input type="password" className="auth-input" placeholder="Re-enter your password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
+                      </div>
+                    )}
                   </>
                 )}
                 {mode === 'verify' && (
@@ -282,6 +291,15 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Verification Code</label>
                     <input type="text" className="auth-input" placeholder="Enter code from your email" value={otpCode} onChange={e => setOtpCode(e.target.value)} autoFocus />
                     <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>Check your email for the verification code.</p>
+                    <button type="button" className="mode-toggle" style={{ fontSize: '13px', marginTop: '10px' }}
+                      onClick={async () => {
+                        setError(null);
+                        try {
+                          await onLogin?.('email', { email: pendingEmail, password: pendingPassword }, true);
+                        } catch {}
+                      }}>
+                      Resend verification email
+                    </button>
                   </div>
                 )}
                 <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
@@ -295,7 +313,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             {(mode === 'login' || mode === 'signup') && (
               <div className="fade-up-3" style={{ marginTop: '10px' }}>
                 <button type="button"
-                  onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); }}
+                  onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(null); setConfirmPassword(''); }}
                   style={{ width: '100%', padding: '12px 20px', background: 'rgba(159,103,255,0.08)', border: '1px solid rgba(159,103,255,0.25)', borderRadius: '10px', color: '#B98FFF', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s ease', letterSpacing: '-0.01em' }}
                   onMouseOver={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.14)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.45)'; }}
                   onMouseOut={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(159,103,255,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(159,103,255,0.25)'; }}
