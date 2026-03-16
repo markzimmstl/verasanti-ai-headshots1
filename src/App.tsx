@@ -612,8 +612,13 @@ function App() {
   };
 
   const handleSpendCredit = (amount: number) => {
-    setCredits(prev => Math.max(0, prev - amount));
-  };
+  setCredits(prev => {
+    const newCredits = Math.max(0, prev - amount);
+    localStorage.setItem('veralooks_credits', newCredits.toString());
+    if (user) saveCreditsForUser(user.id, user.email, newCredits);
+    return newCredits;
+  });
+};
 
   const handleAddCredits = () => {
     setShowZeroCreditsModal(false);
