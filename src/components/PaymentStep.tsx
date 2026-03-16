@@ -6,7 +6,7 @@ interface PaymentStepProps {
   imageCount: number;
   onPaymentComplete: (purchasedCredits: number) => void;
   onBack: () => void;
-  userEmail?: string; // pre-filled from logged-in account — skips email modal
+  userEmail?: string;
 }
 
 interface PricingTier {
@@ -16,7 +16,6 @@ interface PricingTier {
   credits: number;
   description: string;
   isPopular?: boolean;
-  features: string[];
   stripeLink: string;
 }
 
@@ -26,8 +25,7 @@ const TIERS: PricingTier[] = [
     name: 'Starter',
     price: 49,
     credits: 40,
-    description: 'Perfect for a LinkedIn profile or headshot refresh.',
-    features: ['40 AI Credits', '20+ Brand Photos', 'Commercial License'],
+    description: '40 AI Credits — create ~20+ images to build your online brand.',
     stripeLink: 'https://link.contentcreatormachine.com/payment-link/69a6409be005be6a1182f70e',
   },
   {
@@ -35,9 +33,8 @@ const TIERS: PricingTier[] = [
     name: 'Professional',
     price: 79,
     credits: 120,
-    description: 'Variety across scenes for your website and social media.',
+    description: '120 AI Credits — create ~60–100+ images to build your online brand.',
     isPopular: true,
-    features: ['120 AI Credits', '60–100 Brand Photos', 'Multiple Scenes & Styles', 'Priority Processing'],
     stripeLink: 'https://link.contentcreatormachine.com/payment-link/69a640743413b5667afe7fa6',
   },
   {
@@ -45,16 +42,23 @@ const TIERS: PricingTier[] = [
     name: 'Brand Kit',
     price: 119,
     credits: 300,
-    description: 'Maximum variety for a full brand launch or team.',
-    features: ['300 AI Credits', '150+ Brand Photos', 'Highest Priority', 'Team License'],
+    description: '300 AI Credits — create ~150+ images to build your online brand.',
     stripeLink: 'https://link.contentcreatormachine.com/payment-link/69a640003413b532c8fe7f1f',
   },
+];
+
+const INCLUDED_FEATURES = [
+  { title: 'Full Commercial License', detail: 'Your images, your way, forever.' },
+  { title: 'Multiple Scenes & Styles', detail: 'Build a look that\'s uniquely yours.' },
+  { title: 'Instant Processing', detail: 'No waiting. Generate and go.' },
+  { title: 'Shot List Generator', detail: 'Discover the perfect image concepts for your brand.' },
+  { title: 'Presets & Custom Prompts', detail: 'Design your way, every time.' },
 ];
 
 export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentComplete, onBack, userEmail }) => {
   const [selectedTierId, setSelectedTierId] = useState<string>('professional');
   const [email, setEmail] = useState(userEmail || '');
-  const [isEmailSaved, setIsEmailSaved] = useState(!!userEmail); // skip modal if logged in
+  const [isEmailSaved, setIsEmailSaved] = useState(!!userEmail);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const selectedTier = TIERS.find(t => t.id === selectedTierId) || TIERS[1];
@@ -145,22 +149,14 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
               )}
               <div className="mb-4">
                 <h3 className="text-xl font-bold text-white">{tier.name}</h3>
-                <p className="text-slate-400 text-sm mt-1">{tier.description}</p>
               </div>
-              <div className="mb-6">
+              <div className="mb-4">
                 <span className="text-4xl font-bold text-white">${tier.price}</span>
                 <span className="ml-2 inline-block bg-slate-800 text-indigo-300 text-xs font-bold px-2 py-1 rounded">
                   {tier.credits} Credits
                 </span>
               </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {tier.features.map((feat, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-slate-300">
-                    <Check className="h-4 w-4 shrink-0 text-indigo-400 mt-0.5" />
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-slate-400 text-sm mb-6 flex-1">{tier.description}</p>
               <div className={`w-full py-2 rounded-lg text-center text-sm font-bold transition-colors ${
                 selectedTierId === tier.id ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
               }`}>
@@ -168,6 +164,22 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Included with Every Package */}
+        <div className="bg-slate-900/60 border border-slate-700/60 rounded-2xl p-6 mb-6">
+          <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">Included with Every Package</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {INCLUDED_FEATURES.map((feature) => (
+              <div key={feature.title} className="flex items-start gap-3">
+                <Check className="h-4 w-4 shrink-0 text-indigo-400 mt-0.5" />
+                <div>
+                  <span className="text-sm font-semibold text-white">{feature.title}</span>
+                  <span className="text-slate-400 text-sm"> — {feature.detail}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Insufficient credits warning */}
@@ -181,7 +193,6 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
         {/* ── CHECKOUT BAR ── */}
         <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            {/* Summary */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="text-white font-bold text-lg">{selectedTier.name}</span>
@@ -191,15 +202,13 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ imageCount, onPaymentC
                 <span className="text-white font-bold text-xl">${selectedTier.price}</span>
               </div>
               <p className="text-slate-500 text-xs mt-1">
-                Promo code? Enter it at Stripe checkout.&nbsp;&nbsp;
+                Promo code? Enter it at checkout.&nbsp;&nbsp;
                 <span className="inline-flex items-center gap-1">
                   <Shield className="w-3 h-3 text-green-500" />
                   Secured by Stripe
                 </span>
               </p>
             </div>
-
-            {/* CTA */}
             <button
               onClick={handlePay}
               disabled={isProcessing || !email}

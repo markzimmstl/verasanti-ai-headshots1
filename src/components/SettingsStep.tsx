@@ -1354,6 +1354,12 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         {/* ── RIGHT COLUMN ── */}
         <div style={{ position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
+          {/* AI Callout */}
+          <div style={{ background: T.panel, border: `1px solid ${T.purpleBorder}`, borderRadius: 16, padding: 18, fontSize: 12, color: T.white60, lineHeight: 1.7 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.purple, marginBottom: 8 }}>✦ Before you design</p>
+            <p style={{ margin: 0 }}>Create with precision. Every credit generates one image — new or edit. Remember, AI is not perfect, but you're always in control. Use VeraLooks' built-in tools to refine and edit your images until they're just right for you and your brand.</p>
+          </div>
+
           {/* Saved Looks */}
           <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 18 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
