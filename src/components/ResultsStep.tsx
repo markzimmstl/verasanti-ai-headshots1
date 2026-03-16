@@ -45,6 +45,9 @@ interface ResultsStepProps {
   onRestart: () => void;
   refs: MultiReferenceSet;
   baseConfig: GenerationConfig;
+  credits: number;
+  onSpendCredit: (amount: number) => void;
+  onRequestTopUp: () => void;
 }
 
 interface EditPreset {
@@ -164,7 +167,7 @@ const PresetPill: React.FC<{ active: boolean; onClick: () => void; isRegen?: boo
 );
 
 // ── Main component ────────────────────────────────────────────────────────────
-const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig }) => {
+const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp }) => {
   const [displayImages, setDisplayImages] = useState<GeneratedImage[]>(images);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(images[0] ?? null);
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
@@ -243,8 +246,18 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     ctx.clearRect(0, 0, canvas.width, canvas.height); setHasMask(false);
   };
 
+  const checkAndSpendCredit = (amount: number): boolean => {
+    if (credits < amount) {
+      onRequestTopUp();
+      return false;
+    }
+    onSpendCredit(amount);
+    return true;
+  };
+
   const handleApplyErase = async () => {
     if (!selectedImage || !canvasRef.current || !hasMask) return;
+    if (!checkAndSpendCredit(1)) return;
     setIsRefining(true); setEditError(null);
     try {
       const maskBase64 = canvasRef.current.toDataURL('image/png');
@@ -260,6 +273,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
 
   const handleApplyEdit = async () => {
     if (!selectedImage || !editPrompt.trim()) return;
+    if (!checkAndSpendCredit(1)) return;
     setIsRefining(true); setEditError(null);
     try {
       const refinedUrl = await refineGeneratedImage(selectedImage.imageUrl, editPrompt, (selectedImage.aspectRatio || '1:1') as any);
@@ -270,6 +284,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
 
   const handleRegenerate = async () => {
     if (!selectedImage || !editPrompt.trim()) return;
+    if (!checkAndSpendCredit(1)) return;
     setIsRefining(true); setEditError(null);
     try {
       const imageConfig: GenerationConfig = (selectedImage as any).originalConfig || baseConfig;
@@ -286,6 +301,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     if (!prompt) return;
     const originals = displayImages.filter(img => !img.styleName.includes('(Edited)') && !img.styleName.includes('(Regenerated)') && !img.styleName.includes('(Erased)'));
     if (!originals.length) return;
+    if (!checkAndSpendCredit(originals.length)) return;
     setIsRegenAll(true); setRegenAllError(null); regenAllCancelRef.current = false;
     setRegenAllProgress({ current: 0, total: originals.length });
     const insertions: { sourceId: string; newImage: GeneratedImage }[] = [];
@@ -467,7 +483,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                     {editMode === 'presets' && (
                       <>
                         <div style={{ fontSize: 12, color: T.white40, padding: '10px 14px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}`, marginBottom: 16, lineHeight: 1.7 }}>
-                          <span style={{ color: T.white60, fontWeight: 600 }}>Tip:</span> Use <strong style={{ color: T.white60 }}>Apply Edit</strong> for lighting, background & color. Use <strong style={{ color: T.white60 }}>Regenerate</strong> for body shape — re-runs from your original photos.
+                          <span style={{ color: T.white60, fontWeight: 600 }}>Tip:</span> Use <strong style={{ color: T.white60 }}>Apply Edit</strong> for lighting, background & color. Use <strong style={{ color: T.white60 }}>Regenerate</strong> for body shape — re-runs from your original photos. <span style={{ color: T.amber, fontWeight: 600 }}>Each edit uses 1 credit.</span>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -512,18 +528,17 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
 
                         {editError && <div style={{ fontSize: 12, padding: '10px 14px', borderRadius: 10, marginBottom: 14, background: T.amberDim, border: `1px solid ${T.amberBorder}`, color: T.amber }}>{editError}</div>}
 
-                        {/* Tip */}
                         <div style={{ fontSize: 12, color: T.white40, padding: '9px 13px', borderRadius: 9, background: T.panel, border: `1px solid ${T.panelBorder}`, marginBottom: 10, lineHeight: 1.6 }}>
-                          <span style={{ color: T.amber, fontWeight: 600 }}>Tip:</span> Use <strong style={{ color: T.white60 }}>Apply Edit</strong> for lighting, background & color. Use <strong style={{ color: T.white60 }}>Regenerate</strong> for body shape — re-runs from your original photos.
+                          <span style={{ color: T.amber, fontWeight: 600 }}>Credits remaining: {credits}</span>
                         </div>
 
                         <div style={{ display: 'flex', gap: 10 }}>
-                          <button type="button" onClick={handleApplyEdit} disabled={!editPrompt.trim() || isRefining}
-                            style={{ ...btnBase(T.panel, T.panelBorder, T.white60, !editPrompt.trim() || isRefining), flex: 1 }}>
+                          <button type="button" onClick={handleApplyEdit} disabled={!editPrompt.trim() || isRefining || credits < 1}
+                            style={{ ...btnBase(T.panel, T.panelBorder, T.white60, !editPrompt.trim() || isRefining || credits < 1), flex: 1 }}>
                             {isRefining ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Working…</> : <><Wand2 style={{ width: 14, height: 14 }} />Apply Edit</>}
                           </button>
-                          <button type="button" onClick={handleRegenerate} disabled={!editPrompt.trim() || isRefining}
-                            style={{ ...btnBase(T.panel, T.panelBorder, T.white60, !editPrompt.trim() || isRefining), flex: 1 }}>
+                          <button type="button" onClick={handleRegenerate} disabled={!editPrompt.trim() || isRefining || credits < 1}
+                            style={{ ...btnBase(T.panel, T.panelBorder, T.white60, !editPrompt.trim() || isRefining || credits < 1), flex: 1 }}>
                             {isRefining ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Working…</> : <><RefreshCw style={{ width: 14, height: 14 }} />Regenerate</>}
                           </button>
                         </div>
@@ -537,7 +552,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                     {editMode === 'regenAll' && (
                       <>
                         <div style={{ fontSize: 12, padding: '10px 14px', borderRadius: 10, marginBottom: 16, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple, lineHeight: 1.6 }}>
-                          <span style={{ fontWeight: 600 }}>Applies one instruction to all {originalCount} original image{originalCount !== 1 ? 's' : ''}.</span> Regenerated copies appear after each original. Uses <span style={{ fontWeight: 600 }}>{originalCount} credit{originalCount !== 1 ? 's' : ''}</span>.
+                          <span style={{ fontWeight: 600 }}>Applies one instruction to all {originalCount} original image{originalCount !== 1 ? 's' : ''}.</span> Regenerated copies appear after each original. Uses <span style={{ fontWeight: 600 }}>{originalCount} credit{originalCount !== 1 ? 's' : ''}</span>. You have <span style={{ fontWeight: 600 }}>{credits} credit{credits !== 1 ? 's' : ''}</span> remaining.
                         </div>
                         <div style={{ marginBottom: 14 }}>
                           <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 8px' }}>Quick presets</p>
@@ -566,7 +581,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                         <div style={{ display: 'flex', gap: 10 }}>
                           {isRegenAll
                             ? <button type="button" onClick={() => { regenAllCancelRef.current = true; }} style={{ flex: 1, ...btnBase(T.redDim, T.redBorder, T.red) }}><X style={{ width: 14, height: 14 }} />Cancel</button>
-                            : <button type="button" onClick={handleRegenAll} disabled={!regenAllPrompt.trim() || !originalCount} style={{ flex: 1, ...btnBase(T.purpleGrad, 'rgba(76,29,149,0.6)', T.white, !regenAllPrompt.trim() || !originalCount), boxShadow: '0 4px 16px rgba(46,16,101,0.3)' }}><Zap style={{ width: 14, height: 14 }} />Regenerate All {originalCount} Image{originalCount !== 1 ? 's' : ''}</button>}
+                            : <button type="button" onClick={handleRegenAll} disabled={!regenAllPrompt.trim() || !originalCount || credits < originalCount} style={{ flex: 1, ...btnBase(T.purpleGrad, 'rgba(76,29,149,0.6)', T.white, !regenAllPrompt.trim() || !originalCount || credits < originalCount), boxShadow: '0 4px 16px rgba(46,16,101,0.3)' }}><Zap style={{ width: 14, height: 14 }} />Regenerate All {originalCount} Image{originalCount !== 1 ? 's' : ''}</button>}
                         </div>
                         <p style={{ fontSize: 11, color: T.white20, textAlign: 'center', marginTop: 10 }}>Results appear one by one. You can cancel at any time.</p>
                       </>
@@ -576,7 +591,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                     {editMode === 'eraser' && (
                       <>
                         <div style={{ fontSize: 12, padding: '10px 14px', borderRadius: 10, marginBottom: 16, background: T.amberDim, border: `1px solid ${T.amberBorder}`, color: T.amber, lineHeight: 1.6 }}>
-                          <span style={{ fontWeight: 600 }}>Paint over anything you want removed.</span> Works best on discrete objects like signs, poles, or people in the background.
+                          <span style={{ fontWeight: 600 }}>Paint over anything you want removed.</span> Works best on discrete objects like signs, poles, or people in the background. <span style={{ fontWeight: 600 }}>Uses 1 credit.</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                           <span style={{ fontSize: 12, fontWeight: 600, color: T.white40, whiteSpace: 'nowrap' }}>Brush size</span>
@@ -593,8 +608,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                         <div style={{ display: 'flex', gap: 10 }}>
                           <button type="button" onClick={clearMask} disabled={!hasMask || isRefining}
                             style={btnBase(T.panel, T.panelBorder, T.white40, !hasMask || isRefining)}>Clear</button>
-                          <button type="button" onClick={handleApplyErase} disabled={!hasMask || isRefining}
-                            style={{ flex: 1, ...btnBase(T.tealDim, T.tealBorder, T.teal, !hasMask || isRefining) }}>
+                          <button type="button" onClick={handleApplyErase} disabled={!hasMask || isRefining || credits < 1}
+                            style={{ flex: 1, ...btnBase(T.tealDim, T.tealBorder, T.teal, !hasMask || isRefining || credits < 1) }}>
                             {isRefining ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Erasing…</> : <><Eraser style={{ width: 14, height: 14 }} />Erase & Fill</>}
                           </button>
                         </div>
@@ -645,7 +660,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
               <button type="button" onClick={handleDownloadAll} disabled={!displayImages.length || isDownloadingAll}
                 style={btnBase(T.tealDim, T.tealBorder, T.teal, !displayImages.length || isDownloadingAll)}>
                 {isDownloadingAll ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} />Zipping…</> : <><Archive style={{ width: 16, height: 16 }} />Download All ({displayImages.length})</>}
-              </button>            </div>
+              </button>
+            </div>
 
             {showDownloadTip && (
               <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}`, fontSize: 12, color: T.white40, lineHeight: 1.7 }}>

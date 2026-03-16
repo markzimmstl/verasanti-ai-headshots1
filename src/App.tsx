@@ -904,13 +904,16 @@ function App() {
                     userEmail={user?.email}
                   />
                 )}
-                {currentStep === 'results' && (
+                 {currentStep === 'results' && (
                   <ResultsStep
                     images={generatedImages}
                     onRestart={handleReset}
                     onGenerateMore={handleGenerateMore}
                     refs={referenceImages}
                     baseConfig={generationConfig}
+                    credits={credits}
+                    onSpendCredit={handleSpendCredit}
+                    onRequestTopUp={handleAddCredits}
                   />
                 )}
                 {currentStep === 'shotlist' && (
