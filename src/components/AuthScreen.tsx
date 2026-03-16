@@ -171,7 +171,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
   }[mode];
 
   const subText = {
-    login: 'Sign in to access your credits and brand photos.',
+    login: 'Sign in to access your credits and brand images.',
     signup: 'Sign up to start building your brand.',
     verify: 'Enter the verification code we sent you.',
     forgot: "Enter your email and we'll send a reset link.",
@@ -187,7 +187,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         .auth-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 16px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: all 0.2s ease; }
         .auth-input::placeholder { color: rgba(255,255,255,0.25); }
         .auth-input:focus { border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.06); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
-        .submit-btn { width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #7C3AED, #9F67FF); border: none; border-radius: 10px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.25s ease; letter-spacing: -0.01em; position: relative; overflow: hidden; }
+        .submit-btn { width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #7C3AED, #9F67FF); border: none; border-radius: 10px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.25s ease; letter-spacing: -0.01em; position: relative; overflow: hidden; white-space: nowrap; }
         .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4); }
         .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
         .mode-toggle { background: none; border: none; color: #9F67FF; font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; padding: 0; }
@@ -201,33 +201,42 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         .fade-up-4 { animation: fadeUp 0.6s 0.4s ease both; }
         .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
         .sample-photo { width: 48px; height: 48px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+        .auth-container { display: flex; flex-direction: row; }
+        .auth-left-panel { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 44px; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.06); }
+        .auth-right-panel { width: 400px; display: flex; flex-direction: column; justify-content: center; padding: 48px 44px; background: #0D0F17; }
+        @media (max-width: 640px) {
+          .auth-container { flex-direction: column !important; }
+          .auth-left-panel { display: none !important; }
+          .auth-right-panel { width: 100% !important; padding: 40px 24px !important; }
+          .submit-btn { font-size: 14px !important; }
+        }
       `}</style>
 
       <div className="noise-overlay" />
       <div style={{ position: 'fixed', top: '-20%', left: '-10%', width: '60%', height: '60%', background: 'radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', bottom: '-20%', right: '-10%', width: '50%', height: '50%', background: 'radial-gradient(ellipse, rgba(79,70,229,0.08) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
 
-      <div style={{ display: 'flex', width: '100%', maxWidth: '900px', minHeight: '580px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
+      <div className="auth-container" style={{ width: '100%', maxWidth: '900px', minHeight: '580px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
 
         {/* Left panel */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 44px', background: 'rgba(255,255,255,0.02)', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="fade-up-1" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="auth-left-panel fade-up-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: 34, height: 34, background: 'linear-gradient(135deg, #7C3AED, #9F67FF)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '700', color: '#fff', fontFamily: "'Cormorant Garamond', serif" }}>V</div>
             <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: '500', color: '#fff', letterSpacing: '0.02em' }}>VeraLooks</span>
           </div>
           <div style={{ maxWidth: '340px' }}>
-            <div className="fade-up-1" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9F67FF' }} />
               <span style={{ fontSize: '11px', color: '#B98FFF', fontWeight: '500', letterSpacing: '0.06em', textTransform: 'uppercase' }}>AI Brand Photography</span>
             </div>
-            <h1 className="fade-up-2" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '44px', lineHeight: '1.1', fontWeight: '400', color: '#fff', letterSpacing: '-0.02em', marginBottom: '16px' }}>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '44px', lineHeight: '1.1', fontWeight: '400', color: '#fff', letterSpacing: '-0.02em', marginBottom: '16px' }}>
               Your brand,<br /><em style={{ color: 'rgba(159,103,255,0.9)' }}>beautifully</em><br />created.
             </h1>
-            <p className="fade-up-3" style={{ fontSize: '15px', lineHeight: '1.7', color: 'rgba(255,255,255,0.45)', fontWeight: '300' }}>
+            <p style={{ fontSize: '15px', lineHeight: '1.7', color: 'rgba(255,255,255,0.45)', fontWeight: '300' }}>
               Your very own Personal Brand Image System.<br />Built by a professional photographer,<br />not a software company.
             </p>
           </div>
-          <div className="fade-up-4">
+          <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px' }}>
               <div style={{ display: 'flex' }}>
                 {['👩‍💼', '👨‍💻', '👩‍🎨', '👨‍⚕️'].map((emoji, i) => (
@@ -245,7 +254,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         </div>
 
         {/* Right panel */}
-        <div style={{ width: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 44px', background: '#0D0F17' }}>
+        <div className="auth-right-panel">
           <div className="fade-up-1" style={{ marginBottom: '32px' }}>
             <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '28px', fontWeight: '500', color: '#fff', letterSpacing: '-0.02em', marginBottom: '8px' }}>{headingText}</h2>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>{subText}</p>
