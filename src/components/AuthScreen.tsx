@@ -377,9 +377,9 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
               <div className="fade-up-4" style={{ textAlign: 'center', marginTop: '4px' }}>
                 <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', lineHeight: '1.5' }}>
                   By continuing, you agree to our{' '}
-                  <a href="#" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Terms</a>
+                  <a href="https://www.veralooks.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Terms</a>
                   {' '}and{' '}
-                  <a href="#" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacy Policy</a>
+                  <a href="https://www.veralooks.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacy Policy</a>
                 </p>
               </div>
             )}
