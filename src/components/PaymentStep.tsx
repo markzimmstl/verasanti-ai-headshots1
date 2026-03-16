@@ -50,7 +50,7 @@ const TIERS: PricingTier[] = [
 const INCLUDED_FEATURES = [
   { title: 'Full Commercial License', detail: 'Your images, your way, forever.' },
   { title: 'Multiple Scenes & Styles', detail: 'Build a look that\'s uniquely yours.' },
-  { title: 'Instant Processing', detail: 'No waiting. Generate and go.' },
+  { title: 'Fast Processing', detail: 'Your images are ready in minutes, not hours.' },
   { title: 'Shot List Generator', detail: 'Discover the perfect image concepts for your brand.' },
   { title: 'Presets & Custom Prompts', detail: 'Design your way, every time.' },
 ];
