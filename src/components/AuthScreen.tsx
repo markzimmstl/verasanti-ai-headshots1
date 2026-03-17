@@ -32,7 +32,7 @@ const PasswordInput = ({
   const matches = value === matchValue;
   return (
     <div>
-      {label && <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{label}</label>}
+      {label && <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.6)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{label}</label>}
       <div style={{ position: 'relative' }}>
         <input
           type={show ? 'text' : 'password'}
@@ -47,7 +47,7 @@ const PasswordInput = ({
         <button
           type="button"
           onClick={onToggle}
-          style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', padding: '4px' }}
+          style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', padding: '4px' }}
         >
           <EyeIcon visible={show} />
         </button>
@@ -184,8 +184,8 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        .auth-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 16px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: all 0.2s ease; }
-        .auth-input::placeholder { color: rgba(255,255,255,0.25); }
+        .auth-input { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 14px 16px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none; transition: all 0.2s ease; }
+        .auth-input::placeholder { color: rgba(255,255,255,0.4); }
         .auth-input:focus { border-color: rgba(139, 92, 246, 0.6); background: rgba(139, 92, 246, 0.06); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1); }
         .submit-btn { width: 100%; padding: 14px 20px; background: linear-gradient(135deg, #7C3AED, #9F67FF); border: none; border-radius: 10px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.25s ease; letter-spacing: -0.01em; position: relative; overflow: hidden; white-space: nowrap; }
         .submit-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124, 58, 237, 0.4); }
@@ -204,11 +204,13 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         .auth-container { display: flex; flex-direction: row; }
         .auth-left-panel { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 48px 44px; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.06); }
         .auth-right-panel { width: 400px; display: flex; flex-direction: column; justify-content: center; padding: 48px 44px; background: #0D0F17; }
+        .auth-mobile-title { display: none; }
         @media (max-width: 640px) {
           .auth-container { flex-direction: column !important; }
           .auth-left-panel { display: none !important; }
           .auth-right-panel { width: 100% !important; padding: 40px 24px !important; }
           .submit-btn { font-size: 14px !important; }
+          .auth-mobile-title { display: block !important; }
         }
       `}</style>
 
@@ -232,7 +234,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '44px', lineHeight: '1.1', fontWeight: '400', color: '#fff', letterSpacing: '-0.02em', marginBottom: '16px' }}>
               Your brand,<br /><em style={{ color: 'rgba(159,103,255,0.9)' }}>beautifully</em><br />created.
             </h1>
-            <p style={{ fontSize: '15px', lineHeight: '1.7', color: 'rgba(255,255,255,0.45)', fontWeight: '300' }}>
+            <p style={{ fontSize: '15px', lineHeight: '1.7', color: 'rgba(255,255,255,0.7)', fontWeight: '300' }}>
               Your very own Personal Brand Image System.<br />Built by a professional photographer,<br />not a software company.
             </p>
           </div>
@@ -247,7 +249,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                 <div style={{ display: 'flex', gap: '2px', marginBottom: '4px' }}>
                   {[1,2,3,4,5].map(i => <span key={i} style={{ color: '#F59E0B', fontSize: '12px' }}>★</span>)}
                 </div>
-                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.4' }}>Trusted by professionals across<br />industries and brands</p>
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.4' }}>Trusted by professionals across<br />industries and brands</p>
               </div>
             </div>
           </div>
@@ -255,9 +257,17 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
 
         {/* Right panel */}
         <div className="auth-right-panel">
+
+          {/* Mobile-only title */}
+          <div className="auth-mobile-title" style={{ marginBottom: '28px', textAlign: 'center' }}>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '32px', fontWeight: '400', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+              Your brand,<br /><em style={{ color: 'rgba(159,103,255,0.9)' }}>beautifully</em><br />created.
+            </h1>
+          </div>
+
           <div className="fade-up-1" style={{ marginBottom: '32px' }}>
             <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '28px', fontWeight: '500', color: '#fff', letterSpacing: '-0.02em', marginBottom: '8px' }}>{headingText}</h2>
-            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>{subText}</p>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>{subText}</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -299,8 +309,8 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                 <div style={{ padding: '16px', background: 'rgba(13,148,136,0.1)', border: '1px solid rgba(13,148,136,0.3)', borderRadius: 10 }}>
                   <p style={{ fontSize: 13, color: 'rgba(13,148,136,0.9)', lineHeight: 1.6 }}>✓ Reset link sent to <strong>{forgotEmail}</strong>. Check your inbox and spam folder.</p>
                 </div>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>
-                  After resetting, the link will return you to VeraLooks automatically. If it takes you elsewhere, return to <strong style={{ color: 'rgba(255,255,255,0.4)' }}>app.veralooks.com</strong> and sign in normally.
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+                  After resetting, the link will return you to VeraLooks automatically. If it takes you elsewhere, return to <strong style={{ color: 'rgba(255,255,255,0.7)' }}>app.veralooks.com</strong> and sign in normally.
                 </p>
                 <button type="button" className="mode-toggle" style={{ fontSize: '14px', textAlign: 'left' as const }} onClick={() => { setMode('login'); setError(null); }}>← Back to Sign In</button>
               </div>
@@ -310,7 +320,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             {mode === 'forgot' && (
               <form onSubmit={handleForgotPassword} className="fade-up-2" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Email Address</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.6)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Email Address</label>
                   <input type="email" className="auth-input" placeholder="name@company.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required autoFocus />
                 </div>
                 <button type="submit" className="submit-btn" disabled={isLoading} style={{ marginTop: '6px' }}>
@@ -328,13 +338,13 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                 {mode !== 'verify' && (
                   <>
                     <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Email</label>
+                      <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.6)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Email</label>
                       <input type="email" className="auth-input" placeholder="name@company.com" value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                      <label style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Password</label>
+                      <label style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Password</label>
                       {mode === 'login' && (
-                        <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.35)' }}
+                        <button type="button" className="mode-toggle" style={{ fontSize: '12px', textDecoration: 'none', color: 'rgba(255,255,255,0.5)' }}
                           onClick={() => { setForgotEmail(email); setMode('forgot'); setError(null); }}>
                           Forgot password?
                         </button>
@@ -348,9 +358,9 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
                 )}
                 {mode === 'verify' && (
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.4)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Verification Code</label>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.6)', marginBottom: '6px', letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Verification Code</label>
                     <input type="text" className="auth-input" placeholder="Enter code from your email" value={otpCode} onChange={e => setOtpCode(e.target.value)} autoFocus />
-                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', marginTop: '8px' }}>Check your email for the verification code.</p>
+                    <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '8px' }}>Check your email for the verification code.</p>
                     <button type="button" className="mode-toggle" style={{ fontSize: '13px', marginTop: '10px' }}
                       onClick={async () => {
                         setError(null);
@@ -384,11 +394,11 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
             )}
             {(mode === 'login' || mode === 'signup') && (
               <div className="fade-up-4" style={{ textAlign: 'center', marginTop: '4px' }}>
-                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.2)', lineHeight: '1.5' }}>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', lineHeight: '1.5' }}>
                   By continuing, you agree to our{' '}
-                  <a href="https://www.veralooks.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Terms</a>
+                  <a href="https://www.veralooks.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Terms</a>
                   {' '}and{' '}
-                  <a href="https://www.veralooks.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacy Policy</a>
+                  <a href="https://www.veralooks.com/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>Privacy Policy</a>
                 </p>
               </div>
             )}

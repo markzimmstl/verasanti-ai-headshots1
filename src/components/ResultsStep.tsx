@@ -405,7 +405,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
               Your brand images<br />
               <em style={{ color: T.purple }}>are ready.</em>
             </h1>
-            <p style={{ fontSize: 15, fontWeight: 300, color: T.white40, margin: 0 }}>
+            <p style={{ fontSize: 15, fontWeight: 300, color: T.white60, margin: 0 }}>
               {displayImages.length} image{displayImages.length !== 1 ? 's' : ''} generated. Select one to download or refine.
             </p>
           </div>
@@ -447,7 +447,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
           </div>
 
           {selectedImage && (
-            <p style={{ fontSize: 12, color: T.white40, textAlign: 'center', marginBottom: 16, letterSpacing: '0.02em' }}>
+            <p style={{ fontSize: 12, color: T.white60, textAlign: 'center', marginBottom: 16, letterSpacing: '0.02em' }}>
               {selectedImage.styleName}
             </p>
           )}
@@ -482,7 +482,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                     {/* PRESETS MODE */}
                     {editMode === 'presets' && (
                       <>
-                        <div style={{ fontSize: 12, color: T.white40, padding: '10px 14px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}`, marginBottom: 16, lineHeight: 1.7 }}>
+                        <div style={{ fontSize: 12, color: T.white60, padding: '10px 14px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}`, marginBottom: 16, lineHeight: 1.7 }}>
                           <span style={{ color: T.white60, fontWeight: 600 }}>Tip:</span> Use <strong style={{ color: T.white60 }}>Apply Edit</strong> for lighting, background & color. Use <strong style={{ color: T.white60 }}>Regenerate</strong> for body shape — re-runs from your original photos. <span style={{ color: T.amber, fontWeight: 600 }}>Each edit uses 1 credit.</span>
                         </div>
 
@@ -542,8 +542,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                             {isRefining ? <><Loader2 style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />Working…</> : <><RefreshCw style={{ width: 14, height: 14 }} />Regenerate</>}
                           </button>
                         </div>
-                        <p style={{ fontSize: 11, color: T.white20, textAlign: 'center', marginTop: 10 }}>
-                          <strong style={{ color: T.white40 }}>Apply Edit</strong> — fast surface changes. <strong style={{ color: T.white40 }}>Regenerate</strong> — rebuilds from reference photos.
+                        <p style={{ fontSize: 11, color: T.white40, textAlign: 'center', marginTop: 10 }}>
+                          <strong style={{ color: T.white60 }}>Apply Edit</strong> — fast surface changes. <strong style={{ color: T.white60 }}>Regenerate</strong> — rebuilds from reference photos.
                         </p>
                       </>
                     )}
@@ -583,7 +583,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                             ? <button type="button" onClick={() => { regenAllCancelRef.current = true; }} style={{ flex: 1, ...btnBase(T.redDim, T.redBorder, T.red) }}><X style={{ width: 14, height: 14 }} />Cancel</button>
                             : <button type="button" onClick={handleRegenAll} disabled={!regenAllPrompt.trim() || !originalCount || credits < originalCount} style={{ flex: 1, ...btnBase(T.purpleGrad, 'rgba(76,29,149,0.6)', T.white, !regenAllPrompt.trim() || !originalCount || credits < originalCount), boxShadow: '0 4px 16px rgba(46,16,101,0.3)' }}><Zap style={{ width: 14, height: 14 }} />Regenerate All {originalCount} Image{originalCount !== 1 ? 's' : ''}</button>}
                         </div>
-                        <p style={{ fontSize: 11, color: T.white20, textAlign: 'center', marginTop: 10 }}>Results appear one by one. You can cancel at any time.</p>
+                        <p style={{ fontSize: 11, color: T.white40, textAlign: 'center', marginTop: 10 }}>Results appear one by one. You can cancel at any time.</p>
                       </>
                     )}
 
@@ -675,7 +675,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                 <button type="button" onClick={() => setShowDownloadTip(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.teal, fontSize: 12, padding: 0 }}>Got it</button>
               </div>
             )}
-            <p style={{ fontSize: 11, color: T.white20, textAlign: 'center', marginTop: 12 }}>Standard commercial license included.</p>
+            <p style={{ fontSize: 11, color: T.white40, textAlign: 'center', marginTop: 12 }}>Standard commercial license included.</p>
           </div>
 
           {/* Thumbnail gallery */}

@@ -754,7 +754,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         <h1 style={{ fontFamily: T.serif, fontSize: 40, fontWeight: 400, color: T.white, letterSpacing: '-0.02em', lineHeight: 1.1, margin: '0 0 10px' }}>
           Design your Photoshoot
         </h1>
-        <p style={{ fontSize: 15, fontWeight: 300, color: T.white40, margin: 0, maxWidth: 520, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 15, fontWeight: 300, color: T.white60, margin: 0, maxWidth: 520, lineHeight: 1.6 }}>
           Build your Looks by choosing a clothing style, background scene, and fine-tuning details.
         </p>
       </div>
@@ -766,7 +766,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         </div>
         <div>
           <p style={{ fontSize: 13, fontWeight: 600, color: T.amber, margin: '0 0 2px' }}>Try the Shot List Generator ↓</p>
-          <p style={{ fontSize: 12, color: T.white40, margin: 0 }}>Describe your profession and we'll build a custom shot list tailored to your brand. Scroll to Section 5.</p>
+          <p style={{ fontSize: 12, color: T.white60, margin: 0 }}>Describe your profession and we'll build a custom shot list tailored to your brand. Scroll to Section 5.</p>
         </div>
       </div>
 
@@ -1140,8 +1140,17 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Aspect Ratio</p>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                        {['1:1','16:9','9:16','4:5'].map((ratio) => (
-                          <button key={ratio} type="button" onClick={() => handleAspectRatioChange(ratio as AspectRatio)} style={pill((config.aspectRatio||'1:1')===ratio)}>{ratio}</button>
+                        {[
+                          { value: '1:1',  label: '1:1',  desc: 'Square' },
+                          { value: '16:9', label: '16:9', desc: 'Wide' },
+                          { value: '9:16', label: '9:16', desc: 'Story' },
+                          { value: '4:5',  label: '4:5',  desc: 'Portrait' },
+                        ].map((ratio) => (
+                            <button key={ratio.value} type="button" onClick={() => handleAspectRatioChange(ratio.value as AspectRatio)}
+                              style={{ ...pill((config.aspectRatio||'1:1')===ratio.value), flexDirection: 'column', gap: 2, padding: '8px 6px' }}>
+                              <span style={{ fontSize: 12, fontWeight: 600 }}>{ratio.label}</span>
+                              <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>{ratio.desc}</span>
+                            </button>
                         ))}
                       </div>
                     </div>
@@ -1353,6 +1362,28 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
         {/* ── RIGHT COLUMN ── */}
         <div style={{ position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Process box */}
+          <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 18 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 14 }}>How it works</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { num: '1', label: 'Design Your Images', detail: 'Choose clothing, scene and settings.' },
+                { num: '2', label: 'Save Your Looks', detail: 'Build up to 5 looks per session.' },
+                { num: '3', label: 'Generate', detail: 'Hit Continue and watch the magic.' },
+              ].map((step) => (
+                <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: T.purpleGrad, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 700, color: T.white }}>
+                    {step.num}
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: T.white, margin: '0 0 2px' }}>{step.label}</p>
+                    <p style={{ fontSize: 11, color: T.white60, margin: 0 }}>{step.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* AI Callout */}
           <div style={{ background: T.panel, border: `1px solid ${T.purpleBorder}`, borderRadius: 16, padding: 18, fontSize: 12, color: T.white60, lineHeight: 1.7 }}>

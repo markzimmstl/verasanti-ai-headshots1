@@ -69,7 +69,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let { width, height } = img;
-          // Scale down if very large — max 2400px on longest side
           const MAX_DIM = 2400;
           if (width > MAX_DIM || height > MAX_DIM) {
             const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
@@ -78,7 +77,6 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           }
           canvas.width = width; canvas.height = height;
           canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-          // Try progressively lower quality until under maxSizeMB
           let quality = 0.85;
           const tryCompress = () => {
             canvas.toBlob(blob => {
@@ -106,8 +104,8 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
   const handleFileSelect = async (file: File, role: keyof MultiReferenceSet) => {
     setError(null);
-    const COMPRESS_THRESHOLD = 4 * 1024 * 1024; // compress anything over 4MB
-    const HARD_LIMIT = 30 * 1024 * 1024; // reject anything over 30MB
+    const COMPRESS_THRESHOLD = 4 * 1024 * 1024;
+    const HARD_LIMIT = 30 * 1024 * 1024;
     if (file.size > HARD_LIMIT) { setError('File is too large (over 30MB). Please use a smaller photo.'); return; }
     try {
       let base64: string;
@@ -168,9 +166,9 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <label style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 500, display: 'flex', flexDirection: 'column' }}>
+        <label style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 500, display: 'flex', flexDirection: 'column' }}>
           {label}
-          {subLabel && <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{subLabel}</span>}
+          {subLabel && <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{subLabel}</span>}
         </label>
 
         {image ? (
@@ -196,7 +194,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             style={{
               aspectRatio: '3/4', width: '100%', borderRadius: '16px', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              border: `2px dashed ${isDragOver ? 'rgba(76,29,149,0.7)' : 'rgba(255,255,255,0.1)'}`,
+              border: `2px dashed ${isDragOver ? 'rgba(76,29,149,0.7)' : 'rgba(255,255,255,0.15)'}`,
               background: isDragOver ? 'rgba(76,29,149,0.08)' : 'rgba(255,255,255,0.02)',
               transition: 'all 0.15s',
             }}
@@ -205,7 +203,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             <div style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, background: 'rgba(76,29,149,0.15)', border: '1px solid rgba(76,29,149,0.25)' }}>
               <Upload className="w-4 h-4" style={{ color: '#9F67FF' }} />
             </div>
-            <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.35)', margin: 0 }}>
+            <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.6)', margin: 0 }}>
               {isDragOver ? 'Drop here' : 'Click or drag photo'}
             </p>
           </div>
@@ -215,7 +213,17 @@ export const UploadStep: React.FC<UploadStepProps> = ({
   };
 
   return (
-    <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '0 32px' }} className="animate-fade-in">
+    <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '0 20px' }} className="animate-fade-in">
+      <style>{`
+        .upload-photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+        .upload-layout-grid { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
+        @media (max-width: 900px) {
+          .upload-layout-grid { grid-template-columns: 1fr !important; }
+          .upload-right-sticky { position: static !important; }
+          .upload-photo-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .upload-main-photo { grid-column: span 2 !important; grid-row: span 1 !important; }
+        }
+      `}</style>
 
       {/* Page header */}
       <div style={{ marginBottom: 40 }}>
@@ -225,7 +233,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
         <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 40, fontWeight: 400, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 12, marginTop: 0 }}>
           Upload your reference photos
         </h1>
-        <p style={{ fontSize: 15, fontWeight: 300, lineHeight: 1.6, color: 'rgba(255,255,255,0.45)', maxWidth: 520, margin: 0 }}>
+        <p style={{ fontSize: 15, fontWeight: 300, lineHeight: 1.6, color: 'rgba(255,255,255,0.7)', maxWidth: 520, margin: 0 }}>
           The AI learns what you look like from these photos. One clear face photo is enough — side angles and full body improve results.
         </p>
       </div>
@@ -240,7 +248,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
       {/* Error */}
       {error && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, marginBottom: 24, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.85)', fontSize: 13 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, marginBottom: 24, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: 'rgba(239,68,68,0.9)', fontSize: 13 }}>
           <AlertCircle className="w-4 h-4" style={{ flexShrink: 0 }} />
           {error}
         </div>
@@ -253,25 +261,24 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             <AlertCircle className="w-4 h-4" style={{ color: '#F59E0B', flexShrink: 0 }} />
             <p style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B', margin: 0 }}>Photo Quality Notice</p>
           </div>
-          {qualityWarnings.map((w, i) => <p key={i} style={{ fontSize: 12, color: 'rgba(245,158,11,0.75)', marginLeft: 24, marginBottom: 4 }}>{w}</p>)}
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 24, marginBottom: 0 }}>You can still continue — but better quality photos produce better results.</p>
+          {qualityWarnings.map((w, i) => <p key={i} style={{ fontSize: 12, color: 'rgba(245,158,11,0.85)', marginLeft: 24, marginBottom: 4 }}>{w}</p>)}
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginLeft: 24, marginBottom: 0 }}>You can still continue — but better quality photos produce better results.</p>
         </div>
       )}
 
       {/* ── Two-column layout ── */}
-      <div className="upload-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '32px', alignItems: 'start' }}>
-        <style>{`.upload-grid { grid-template-columns: 1fr 300px; } @media (max-width: 900px) { .upload-grid { grid-template-columns: 1fr !important; } }`}</style>
+      <div className="upload-layout-grid">
 
         {/* LEFT — upload slots */}
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: 24 }}>
+          <div className="upload-photo-grid">
 
-            {/* Main photo — spans 2 cols and 2 rows */}
-            <div style={{ gridColumn: 'span 2', gridRow: 'span 2', position: 'relative' }}>
+            {/* Main photo — spans 2 cols on desktop */}
+            <div className="upload-main-photo" style={{ gridColumn: 'span 2', gridRow: 'span 2', position: 'relative' }}>
               <UploadSlot role="main" label="Main Photo (Required)" subLabel="Face the camera, good lighting, no heavy filters." />
               {!referenceImages.main && (
                 <div style={{ position: 'absolute', bottom: -28, left: 0, right: 0, textAlign: 'center' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 10px', borderRadius: '100px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(239,68,68,0.85)' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '3px 10px', borderRadius: '100px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: 'rgba(239,68,68,0.9)' }}>
                     Required
                   </span>
                 </div>
@@ -280,7 +287,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
 
             <UploadSlot role="fullBody"  label="Full-Body Photo"  subLabel="Optional — head to toe, camera at chest height." />
 
-            {/* AI Preview status — inline next to fullBody */}
+            {/* AI Preview status */}
             {referenceImages.main ? (
               <button
                 onClick={scrollToConfirmation}
@@ -290,9 +297,9 @@ export const UploadStep: React.FC<UploadStepProps> = ({
                   ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#9F67FF', flexShrink: 0 }} />
                   : confirmationPhoto
                   ? <Sparkles className="w-5 h-5" style={{ color: '#9F67FF', flexShrink: 0 }} />
-                  : <AlertCircle className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+                  : <AlertCircle className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} />
                 }
-                <span style={{ fontSize: 11, lineHeight: 1.4, color: 'rgba(159,103,255,0.85)' }}>
+                <span style={{ fontSize: 11, lineHeight: 1.4, color: 'rgba(159,103,255,0.9)' }}>
                   {isGeneratingConfirmation ? 'Generating AI preview…'
                     : confirmationPhoto ? 'AI preview ready ↓'
                     : confirmationError ? 'Preview failed ↓'
@@ -303,16 +310,15 @@ export const UploadStep: React.FC<UploadStepProps> = ({
                 )}
               </button>
             ) : (
-              <div /> /* spacer when no main photo yet */
+              <div />
             )}
             <UploadSlot role="sideLeft"  label="Your Left Side"   subLabel="Optional — turn so your left faces the camera." />
             <UploadSlot role="sideRight" label="Your Right Side"  subLabel="Optional — turn so your right faces the camera." />
           </div>
-
         </div>
 
         {/* RIGHT — tips + continue */}
-        <div style={{ position: 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="upload-right-sticky" style={{ position: 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* Tips panel */}
           <div style={{ borderRadius: 16, padding: 20, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -324,11 +330,11 @@ export const UploadStep: React.FC<UploadStepProps> = ({
               {[
                 { icon: <ArrowUpDown className="w-3 h-3 text-red-400" />, bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', titleColor: 'rgba(239,68,68,0.9)',
                   title: 'CRITICAL: Keep camera straight', body: "A tilted camera causes distortion the AI can't correct.", badge: true },
-                { icon: <Sun className="w-3 h-3" style={{ color: '#F59E0B' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.75)',
+                { icon: <Sun className="w-3 h-3" style={{ color: '#F59E0B' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)',
                   title: 'Light should shine on your face', body: 'Avoid backlighting. Even natural light works best.' },
-                { icon: <Maximize2 className="w-3 h-3" style={{ color: '#9F67FF' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.75)',
+                { icon: <Maximize2 className="w-3 h-3" style={{ color: '#9F67FF' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)',
                   title: 'Fill about half the frame', body: 'Not too distant, not too cropped.' },
-                { icon: <Upload className="w-3 h-3" style={{ color: '#0D9488' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.75)',
+                { icon: <Upload className="w-3 h-3" style={{ color: '#0D9488' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)',
                   title: 'Full-body: lower camera to chest', body: 'Keep it upright so your whole body fits.' },
               ].map((tip, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 10, background: tip.bg, border: `1px solid ${tip.border}` }}>
@@ -338,9 +344,9 @@ export const UploadStep: React.FC<UploadStepProps> = ({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
                       <p style={{ fontSize: 12, fontWeight: 600, color: tip.titleColor, margin: 0 }}>{tip.title}</p>
-                      {tip.badge && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.85)' }}>Critical</span>}
+                      {tip.badge && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.9)' }}>Critical</span>}
                     </div>
-                    <p style={{ fontSize: 11, lineHeight: 1.5, color: 'rgba(255,255,255,0.38)', margin: 0 }}>{tip.body}</p>
+                    <p style={{ fontSize: 11, lineHeight: 1.5, color: 'rgba(255,255,255,0.6)', margin: 0 }}>{tip.body}</p>
                   </div>
                 </div>
               ))}
@@ -350,7 +356,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           {/* Continue button */}
           <div style={{ borderRadius: 16, padding: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
             {!referenceImages.main && (
-              <p style={{ fontSize: 12, textAlign: 'center', marginBottom: 12, color: 'rgba(255,255,255,0.3)' }}>Upload a photo to continue</p>
+              <p style={{ fontSize: 12, textAlign: 'center', marginBottom: 12, color: 'rgba(255,255,255,0.5)' }}>Upload a photo to continue</p>
             )}
             <button
               onClick={onNext}
@@ -358,7 +364,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({
               style={{
                 width: '100%', padding: '14px', borderRadius: 11, fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
                 background: referenceImages.main ? 'linear-gradient(135deg, #2E1065, #4C1D95)' : 'rgba(255,255,255,0.04)',
-                color: referenceImages.main ? '#fff' : 'rgba(255,255,255,0.25)',
+                color: referenceImages.main ? '#fff' : 'rgba(255,255,255,0.3)',
                 border: referenceImages.main ? 'none' : '1px solid rgba(255,255,255,0.06)',
                 cursor: referenceImages.main ? 'pointer' : 'not-allowed',
                 boxShadow: referenceImages.main ? '0 8px 24px rgba(46,16,101,0.4)' : 'none',
@@ -369,8 +375,8 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             </button>
           </div>
 
-        </div>{/* end RIGHT */}
-      </div>{/* end two-column grid */}
+        </div>
+      </div>
 
       {/* AI Confirmation Preview */}
       {referenceImages.main && (
@@ -378,31 +384,31 @@ export const UploadStep: React.FC<UploadStepProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0, marginBottom: 4 }}>AI Confirmation Preview</h3>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0 }}>A quick preview of how the AI reads your photo — before you design your full shoot.</p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: 0 }}>A quick preview of how the AI reads your photo — before you design your full shoot.</p>
             </div>
             {!isGeneratingConfirmation && (
               <button
                 onClick={handleGenerateConfirmation}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', transition: 'all 0.15s' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', transition: 'all 0.15s' }}
               >
                 <RefreshCw className="w-3 h-3" /> Regenerate
               </button>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 24, padding: 20 }} className="flex-col md:flex-row">
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)', margin: 0 }}>Your Photo</p>
+          <div style={{ display: 'flex', gap: 24, padding: 20, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.5)', margin: 0 }}>Your Photo</p>
               <div style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '1/1', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <img src={referenceImages.main.base64} alt="Your uploaded photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)', margin: 0 }}>AI Preview</p>
+            <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.5)', margin: 0 }}>AI Preview</p>
               <div style={{ borderRadius: 12, overflow: 'hidden', aspectRatio: '1/1', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isGeneratingConfirmation && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center', padding: '0 16px' }}>
                     <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#9F67FF' }} />
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0 }}>Generating your preview…</p>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Generating your preview…</p>
                   </div>
                 )}
                 {confirmationPhoto && !isGeneratingConfirmation && (
@@ -410,8 +416,8 @@ export const UploadStep: React.FC<UploadStepProps> = ({
                 )}
                 {confirmationError && !isGeneratingConfirmation && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center', padding: '0 16px' }}>
-                    <AlertCircle className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.2)' }} />
-                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', margin: 0 }}>{confirmationError}</p>
+                    <AlertCircle className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>{confirmationError}</p>
                     <button onClick={handleGenerateConfirmation} style={{ fontSize: 12, color: '#9F67FF', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', marginTop: 4 }}>Try again</button>
                   </div>
                 )}
@@ -419,28 +425,12 @@ export const UploadStep: React.FC<UploadStepProps> = ({
             </div>
           </div>
           <div style={{ padding: '0 20px 16px' }}>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
-              This preview uses a standard VeraLooks studio setup. Your actual generated photos will reflect the style, clothing, and scene you choose on the next screen.
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+              This preview uses a standard VeraLooks studio setup. Your actual generated images will reflect the style, clothing, and scene you choose on the next screen.
             </p>
           </div>
         </div>
       )}
-
-      {/* Mobile continue button */}
-      <div className="md:hidden" style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 24, marginTop: 24, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button
-          onClick={onNext}
-          disabled={!referenceImages.main}
-          style={{
-            padding: '12px 32px', borderRadius: 11, fontSize: 14, fontWeight: 600,
-            background: referenceImages.main ? 'linear-gradient(135deg, #2E1065, #4C1D95)' : 'rgba(255,255,255,0.04)',
-            color: referenceImages.main ? '#fff' : 'rgba(255,255,255,0.25)',
-            border: 'none', cursor: referenceImages.main ? 'pointer' : 'not-allowed',
-          }}
-        >
-          Next: Design Photoshoot
-        </button>
-      </div>
 
     </div>
   );
