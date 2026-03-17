@@ -184,8 +184,8 @@ export const ProcessingStep: React.FC<ProcessingStepProps> = ({ message }) => {
 
         {/* ── Reassurance copy ── */}
         <p
-          className="text-[12px] leading-relaxed mt-9"
-          style={{ color: 'rgba(255,255,255,0.2)', maxWidth: 320 }}
+          className="text-[15px] leading-relaxed mt-9"
+          style={{ color: 'rgba(255,255,255,0.6)', maxWidth: 320 }}
         >
           This takes 30–90 seconds per image.<br />
           Please keep this tab open.
