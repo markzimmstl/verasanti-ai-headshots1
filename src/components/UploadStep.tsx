@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, AlertCircle, Check, Camera, Sun, Maximize2, ArrowUpDown, Loader2, RefreshCw, Sparkles, ChevronDown } from 'lucide-react';
 import { ReferenceImage, MultiReferenceSet } from '../types.ts';
-import { Button } from './Button.tsx';
 import { generateConfirmationPhoto, overlayLogoOnConfirmationPhoto, checkPhotoQuality } from '../services/geminiService.ts';
 
 interface UploadStepProps {
@@ -9,6 +8,36 @@ interface UploadStepProps {
   onUpdate: (images: MultiReferenceSet) => void;
   onNext: () => void;
 }
+
+const TIPS = [
+  { icon: <ArrowUpDown className="w-3 h-3 text-red-400" />, bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', titleColor: 'rgba(239,68,68,0.9)', title: 'CRITICAL: Keep camera straight', body: "A tilted camera causes distortion the AI can't correct.", badge: true },
+  { icon: <Sun className="w-3 h-3" style={{ color: '#F59E0B' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)', title: 'Light should shine on your face', body: 'Avoid backlighting. Even natural light works best.' },
+  { icon: <Maximize2 className="w-3 h-3" style={{ color: '#9F67FF' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)', title: 'Fill about half the frame', body: 'Not too distant, not too cropped.' },
+  { icon: <Upload className="w-3 h-3" style={{ color: '#0D9488' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)', title: 'Full-body: lower camera to chest', body: 'Keep it upright so your whole body fits.' },
+];
+
+const TipsPanel: React.FC = () => (
+  <div style={{ borderRadius: 16, padding: 20, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+      <Camera className="w-4 h-4" style={{ color: '#9F67FF' }} />
+      <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 19, fontWeight: 500, color: '#fff' }}>Tips for best results</span>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {TIPS.map((tip, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 10, background: tip.bg, border: `1px solid ${tip.border}` }}>
+          <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, background: tip.bg, border: `1px solid ${tip.border}` }}>{tip.icon}</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: tip.titleColor, margin: 0 }}>{tip.title}</p>
+              {tip.badge && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.9)' }}>Critical</span>}
+            </div>
+            <p style={{ fontSize: 11, lineHeight: 1.5, color: 'rgba(255,255,255,0.6)', margin: 0 }}>{tip.body}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdate, onNext }) => {
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +71,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
       const rawPhoto = await generateConfirmationPhoto(referenceImages);
       const composited = await overlayLogoOnConfirmationPhoto(rawPhoto, '/VeraLooks_logo_white.png');
       setConfirmationPhoto(composited);
-    } catch (err: any) {
+    } catch {
       setConfirmationError('Preview generation failed. You can still continue.');
     } finally {
       setIsGeneratingConfirmation(false);
@@ -172,9 +201,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
     );
   };
 
-  // Responsive values based on JS detection
   const photoGridCols = isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)';
-  const mainPhotoColSpan = isMobile ? 'span 2' : 'span 2';
   const mainPhotoRowSpan = isMobile ? 'span 1' : 'span 2';
   const layoutCols = isMobile ? '1fr' : '1fr 300px';
 
@@ -182,7 +209,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
     <div style={{ maxWidth: '1060px', margin: '0 auto', padding: '0 20px' }} className="animate-fade-in">
 
       {/* Page header */}
-      <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: '100px', padding: '4px 12px', marginBottom: 16, background: 'rgba(76,29,149,0.12)', border: '1px solid rgba(76,29,149,0.25)', color: '#B98FFF', fontSize: 11, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Step 1 of 4
         </div>
@@ -193,6 +220,13 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
           The AI learns what you look like from these photos. One clear face photo is enough — side angles and full body improve results.
         </p>
       </div>
+
+      {/* Tips — mobile only, shown ABOVE photo slots */}
+      {isMobile && (
+        <div style={{ marginBottom: 24 }}>
+          <TipsPanel />
+        </div>
+      )}
 
       {/* Compression status */}
       {compressingFile && (
@@ -221,7 +255,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
         </div>
       )}
 
-      {/* Two-column layout — JS-driven responsive */}
+      {/* Two-column layout */}
       <div style={{ display: 'grid', gridTemplateColumns: layoutCols, gap: '32px', alignItems: 'start' }}>
 
         {/* LEFT — upload slots */}
@@ -229,7 +263,7 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
           <div style={{ display: 'grid', gridTemplateColumns: photoGridCols, gap: '20px', marginBottom: 24 }}>
 
             {/* Main photo */}
-            <div style={{ gridColumn: mainPhotoColSpan, gridRow: mainPhotoRowSpan, position: 'relative' }}>
+            <div style={{ gridColumn: 'span 2', gridRow: mainPhotoRowSpan, position: 'relative' }}>
               <UploadSlot role="main" label="Main Photo (Required)" subLabel="Face the camera, good lighting, no heavy filters." />
               {!referenceImages.main && (
                 <div style={{ position: 'absolute', bottom: -28, left: 0, right: 0, textAlign: 'center' }}>
@@ -258,35 +292,11 @@ export const UploadStep: React.FC<UploadStepProps> = ({ referenceImages, onUpdat
           </div>
         </div>
 
-        {/* RIGHT — tips + continue */}
+        {/* RIGHT — tips (desktop only) + continue */}
         <div style={{ position: isMobile ? 'static' : 'sticky', top: '80px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Tips panel */}
-          <div style={{ borderRadius: 16, padding: 20, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Camera className="w-4 h-4" style={{ color: '#9F67FF' }} />
-              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 19, fontWeight: 500, color: '#fff' }}>Tips for best results</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { icon: <ArrowUpDown className="w-3 h-3 text-red-400" />, bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)', titleColor: 'rgba(239,68,68,0.9)', title: 'CRITICAL: Keep camera straight', body: "A tilted camera causes distortion the AI can't correct.", badge: true },
-                { icon: <Sun className="w-3 h-3" style={{ color: '#F59E0B' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)', title: 'Light should shine on your face', body: 'Avoid backlighting. Even natural light works best.' },
-                { icon: <Maximize2 className="w-3 h-3" style={{ color: '#9F67FF' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)', title: 'Fill about half the frame', body: 'Not too distant, not too cropped.' },
-                { icon: <Upload className="w-3 h-3" style={{ color: '#0D9488' }} />, bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.07)', titleColor: 'rgba(255,255,255,0.85)', title: 'Full-body: lower camera to chest', body: 'Keep it upright so your whole body fits.' },
-              ].map((tip, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 10, background: tip.bg, border: `1px solid ${tip.border}` }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, background: tip.bg, border: `1px solid ${tip.border}` }}>{tip.icon}</div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: tip.titleColor, margin: 0 }}>{tip.title}</p>
-                      {tip.badge && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '1px 5px', borderRadius: 3, background: 'rgba(239,68,68,0.15)', color: 'rgba(239,68,68,0.9)' }}>Critical</span>}
-                    </div>
-                    <p style={{ fontSize: 11, lineHeight: 1.5, color: 'rgba(255,255,255,0.6)', margin: 0 }}>{tip.body}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Tips — desktop only */}
+          {!isMobile && <TipsPanel />}
 
           {/* Continue button */}
           <div style={{ borderRadius: 16, padding: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
