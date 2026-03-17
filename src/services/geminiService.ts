@@ -241,7 +241,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
         negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements of any kind. ONLY a clean neutral studio backdrop. Face must be STRAIGHT ON to camera — ZERO 3/4 angle, ZERO profile, ZERO body turns beyond very slight. ***`;
       }
 
-  switch (config.framing) {
+  if (!config.signatureStudio) switch (config.framing) {
     case "Headshot": {
       let poseInstruction = "";
       if (globalIndex < 2) {
@@ -328,7 +328,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   else if (config.cameraAngle === "High Angle") angleInstruction = "High Angle. Camera slightly above eye level looking down. Approachable.";
 
   let lightingInstruction = "";
-  switch (config.mood) {
+  if (!config.signatureStudio) switch (config.mood) {
     case "Polished Professional": lightingInstruction = "LIGHTING STYLE: COMMERCIAL & CLEAN (HIGH KEY). SHORT LIGHTING MANDATORY: key light strikes the far (shadow-side) cheek. Near cheek is in relative shadow. Ultra-soft wrapping fill. Medium-low contrast. Magazine-cover brightness. NEVER use broad lighting (key on near cheek)."; break;
     case "Daylight": lightingInstruction = "LIGHTING STYLE: NATURAL WINDOW LIGHT. SHORT LIGHTING MANDATORY: the window or light source is behind-and-to-the-side of the subject so the far cheek is lit and the near cheek is in softer shadow. Airy, organic, directional. Exception: if subject is posed directly beside a window with the window in frame, broad lighting is physically correct — use it only then."; break;
     case "Cinematic": lightingInstruction = "LIGHTING STYLE: DRAMATIC REMBRANDT. SHORT LIGHTING MANDATORY: key light on far cheek, classic Rembrandt triangle on shadow-side cheek. Deep shadow on near side. Rich, high-contrast, textured. NEVER broad lighting."; break;
