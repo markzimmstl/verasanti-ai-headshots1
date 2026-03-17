@@ -228,16 +228,16 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     // ── SIGNATURE STUDIO HEADSHOT — full override before framing/scene runs ──
     if (config.signatureStudio) {
     framingInstruction = `** SIGNATURE STUDIO HEADSHOT — ALL OTHER FRAMING AND POSE RULES ARE OVERRIDDEN **
-        FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot — not a waist-up, not a full body.
-        POSE: The subject faces DIRECTLY and SQUARELY into the camera. Face straight on. No turning. No 3/4 angle. No profile. Shoulders square to camera. Torso may be angled very slightly on variations only. It is acceptable to slightly crop the edges of the shoulders.
-        CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
-        BACKGROUND: Dark gray seamless studio backdrop. Base color #141414 with a very subtle circular gradient brightening to approximately #323232 at the center behind the subject's head and shoulders — like a classic studio vignette falloff. No environmental elements. No props. No location context. Pure studio.
-        LIGHTING: True clamshell setup — two light sources only, placed on the vertical center axis directly in front of the subject:
-          1. KEY LIGHT: 24" Westcott Rapid Box Beauty Dish by Joel Grimes positioned DIRECTLY ABOVE the subject's head on the vertical center axis — not to the left, not to the right, centered. Aimed downward at approximately 45 degrees toward the face. This creates soft, even, flattering illumination with gentle shadow falloff under the chin and nose.
-          2. EYELIGHTER REFLECTOR: Westcott Eyelighter reflector placed directly below the subject's face, centered on the vertical axis. This bounces light upward to fill shadows under the chin and eyes. CRITICAL: This creates a distinctive semi-circular catchlight in the BOTTOM of each iris — centered at the 6 o'clock position, approximately one quarter the diameter of the iris. This catchlight MUST be visible and accurate.
-        CATCHLIGHTS: There must be TWO visible catchlights in each eye: (1) A round catchlight from the beauty dish at approximately the 12 o'clock position in the iris. (2) A soft semi-circular catchlight at the 6 o'clock position in the iris from the Eyelighter — subtle, approximately one quarter iris diameter wide, centered at the bottom of the eye.
-        NO SIDE LIGHTING. NO GRIDDED FILL LIGHT. NO LIGHTS FROM LEFT OR RIGHT. Only the overhead beauty dish and the underchin eyelighter reflector.
-        RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
+      FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot — not a waist-up, not a full body.
+      POSE: The subject faces DIRECTLY and SQUARELY into the camera. Face straight on. No turning. No 3/4 angle. No profile. Shoulders square to camera. Torso may be angled very slightly on variations only. It is acceptable to slightly crop the edges of the shoulders.
+      CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
+      BACKGROUND: Dark gray seamless studio backdrop. Base color #141414 with a very subtle circular gradient brightening to approximately #323232 at the center behind the subject's head and shoulders — like a classic studio vignette falloff. No environmental elements. No props. No location context. Pure studio.
+      LIGHTING: True clamshell setup — two light sources only, placed on the vertical center axis directly in front of the subject:
+        1. KEY LIGHT: 24" Westcott Rapid Box Beauty Dish by Joel Grimes positioned DIRECTLY ABOVE the subject's head on the vertical center axis — not to the left, not to the right, centered. Aimed downward at approximately 45 degrees toward the face. This creates soft, even, flattering illumination with gentle shadow falloff under the chin and nose.
+        2. EYELIGHTER REFLECTOR: Westcott Eyelighter reflector placed directly below the subject's face, centered on the vertical axis. This bounces light upward to fill shadows under the chin and eyes. CRITICAL: This creates a distinctive semi-circular catchlight in the BOTTOM of each iris — centered at the 6 o'clock position, approximately one quarter the diameter of the iris. This catchlight MUST be visible and accurate.
+      CATCHLIGHTS: There must be TWO visible catchlights in each eye: (1) A round catchlight from the beauty dish at approximately the 12 o'clock position in the iris. (2) A soft semi-circular catchlight at the 6 o'clock position in the iris from the Eyelighter — subtle, approximately one quarter iris diameter wide, centered at the bottom of the eye.
+      NO SIDE LIGHTING. NO GRIDDED FILL LIGHT. NO LIGHTS FROM LEFT OR RIGHT. Only the overhead beauty dish and the underchin eyelighter reflector.
+      RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
 
     stylePrompt = "Dark gray seamless studio backdrop #141414 with subtle circular center brightening to #323232 behind subject. Pure studio. No location. No props.";
     lensInstruction = "85mm Telephoto Portrait Lens";
@@ -344,7 +344,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
       lightingInstruction += ` BLACK & WHITE CONVERSION: Convert the final image to black and white. Emphasize tonal contrast, preserve skin texture detail, and ensure rich deep blacks and clean whites. The conversion should feel like a professional darkroom print — not a simple desaturation filter.`;
     }
 
-  const finalLightingDirection = lightingDirectionOverride || config.lighting || "Short Lighting preferred (key light on the far side of the face from camera).";
+  const finalLightingDirection = lightingDirectionOverride || "SHORT LIGHTING MANDATORY: key light strikes the far (shadow-side) cheek only. The near/camera-facing cheek must be in relative shadow. NEVER broad lighting. NEVER key light on the near cheek. No exceptions unless the scene physically requires it such as a subject standing directly beside a window.";
 
   let colorInstruction = "";
   if (config.brandColor) colorInstruction += `Primary Brand Accent Color: ${config.brandColor} (Use subtly in background or props). `;
