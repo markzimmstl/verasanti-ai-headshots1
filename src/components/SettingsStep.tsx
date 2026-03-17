@@ -1400,7 +1400,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         <div style={{ position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 12 }}>
 
            {/* Process box — desktop only */}
-          {!isMobile && <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 18 }}>
+          {!isMobile && <div style={{ background: 'rgba(255,255,255,0.06)', border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 18 }}>
             <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, marginBottom: 14 }}>How it works</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
@@ -1507,29 +1507,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
         </div>
       </div>
 
-      {/* Mobile bottom bar */}
-      <div className="lg:hidden" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: 'rgba(8,10,15,0.95)', backdropFilter: 'blur(12px)', borderTop: `1px solid ${T.panelBorder}`, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        {(() => {
-          const canSave = !!clothingStyleGroup && !!clothingOption && !!sceneId;
-          return (
-            <>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 10, color: T.white40, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {looks.length === 0 ? 'No Looks saved yet' : `${looks.length} Look${looks.length > 1 ? 's' : ''} · ${totalImages} image${totalImages !== 1 ? 's' : ''}`}
-                </p>
-              </div>
-              <button type="button" onClick={handleAddOrUpdateLook} disabled={!canSave}
-                style={{ padding: '8px 16px', borderRadius: 9, fontSize: 12, fontWeight: 700, flexShrink: 0, cursor: canSave ? 'pointer' : 'not-allowed', background: canSave ? T.purpleGrad : T.panel, border: `1px solid ${canSave ? T.purpleBorder : T.panelBorder}`, color: canSave ? T.white : T.white40 }}>
-                {activeLookId ? 'Update Look' : 'Save Look'}
-              </button>
-              <button onClick={handleContinue} disabled={!canContinue}
-                style={{ padding: '8px 16px', borderRadius: 9, fontSize: 12, fontWeight: 700, flexShrink: 0, cursor: canContinue ? 'pointer' : 'not-allowed', background: canContinue ? T.purpleGrad : T.panel, border: `1px solid ${canContinue ? T.purpleBorder : T.panelBorder}`, color: canContinue ? T.white : T.white40, opacity: canContinue ? 1 : 0.5 }}>
-                Continue
-              </button>
-            </>
-          );
-        })()}
-      </div>
+     
     </div>
   );
 };
