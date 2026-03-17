@@ -1210,11 +1210,24 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         <Sun style={{ width: 13, height: 13, color: T.purple }} />
                         <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Lighting & Mood</p>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
                         {['Polished Professional','Daylight','Cinematic','Dark & Moody'].map((m) => (
                           <button key={m} type="button" onClick={() => handleMoodChange(m)} style={pill((config.mood||'Polished Professional')===m)}>{m}</button>
                         ))}
                       </div>
+                      <button type="button" onClick={() => updateConfig({ signatureStudio: !config.signatureStudio })}
+                        style={{ ...pill(!!config.signatureStudio), width: '100%', justifyContent: 'center', marginBottom: 10 }}>
+                        ✦ Signature Studio
+                      </button>
+                      {config.signatureStudio && (
+                        <p style={{ fontSize: 10, color: T.white60, lineHeight: 1.5, marginBottom: 10 }}>
+                          Clamshell lighting with beauty dish key, eyelighter reflector, and gridded fill. Classic dual catchlights. Works with any mood above.
+                        </p>
+                      )}
+                      <button type="button" onClick={() => updateConfig({ blackAndWhite: !config.blackAndWhite })}
+                        style={{ ...pill(!!config.blackAndWhite), width: '100%', justifyContent: 'center' }}>
+                        {config.blackAndWhite ? '◼' : '◻'} Black & White
+                      </button>
                     </div>
 
                     {/* Camera Angle */}
