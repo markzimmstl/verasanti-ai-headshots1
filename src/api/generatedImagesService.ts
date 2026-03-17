@@ -86,10 +86,27 @@ export async function saveImageForUser(
       const blob = new Blob([byteArray], { type: mimeType });
       const file = new File([blob], `${image.id}.webp`, { type: mimeType });
 
-      const uploadResult = await (base44 as any).uploadFile(file);
-      if (!uploadResult?.url) throw new Error('Upload returned no URL');
-      imageUrl = uploadResult.url;
-      console.log('[Images] Uploaded base64 to Base44 storage:', imageUrl);
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadResult = await (base44 as any).integrations?.UploadFile?.uploadFile({ file });
+      if (uploadResult?.url) {
+        imageUrl = uploadResult.url;
+        console.log('[Images] Uploaded to Base44 storage:', imageUrl);
+      } else {
+        // Fallback: try direct fetch to Base44 upload endpoint
+        const token = localStorage.getItem('base44_access_token') || localStorage.getItem('token');
+        const appId = '69a8dfde570848365d594a26';
+        const response = await fetch(`https://base44.app/api/apps/${appId}/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData,
+        });
+        if (!response.ok) throw new Error(`Upload failed: ${response.status}`);
+        const result = await response.json();
+        if (!result?.url) throw new Error('Upload returned no URL');
+        imageUrl = result.url;
+        console.log('[Images] Uploaded via direct API:', imageUrl);
+      }
     }
 
     await Entity.create({
