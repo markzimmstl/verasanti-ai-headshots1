@@ -71,10 +71,31 @@ export async function saveImageForUser(
   }
 
   try {
+    let imageUrl = image.imageUrl;
+
+    // If imageUrl is base64, upload it to Base44 file storage first
+    if (imageUrl.startsWith('data:')) {
+      const base64Data = imageUrl.split(',')[1];
+      const mimeType = imageUrl.split(';')[0].split(':')[1] || 'image/webp';
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      const file = new File([blob], `${image.id}.webp`, { type: mimeType });
+
+      const uploadResult = await (base44 as any).uploadFile(file);
+      if (!uploadResult?.url) throw new Error('Upload returned no URL');
+      imageUrl = uploadResult.url;
+      console.log('[Images] Uploaded base64 to Base44 storage:', imageUrl);
+    }
+
     await Entity.create({
       user_id: userId,
       image_id: image.id,
-      image_url: image.imageUrl,
+      image_url: imageUrl,
       style_name: image.styleName,
       style_id: image.styleId || '',
       aspect_ratio: image.aspectRatio,
