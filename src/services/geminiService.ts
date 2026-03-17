@@ -225,6 +225,22 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   let lensInstruction = "50mm Standard Lens";
   let lightingDirectionOverride = "";
 
+    // ── SIGNATURE STUDIO HEADSHOT — full override before framing/scene runs ──
+      if (config.signatureStudio) {
+        framingInstruction = `** SIGNATURE STUDIO HEADSHOT — ALL OTHER FRAMING AND POSE RULES ARE OVERRIDDEN **
+    FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot — not a waist-up, not a full body.
+    POSE: The subject faces DIRECTLY and SQUARELY into the camera. Face straight on. No turning. No 3/4 angle. No profile. Shoulders square to camera. Torso may be angled very slightly on variations only. It is acceptable to slightly crop the edges of the shoulders.
+    CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
+    BACKGROUND: IGNORE the selected scene entirely. Use a smooth, neutral dark studio backdrop — seamless paper or painted wall. No environmental elements. No props. No location context. Pure studio.
+    LIGHTING: Soft clamshell setup. 24" Westcott Rapid Box Beauty Dish by Joel Grimes as the key light, positioned about 2 feet above the subject's eye level and slightly to camera-left. Feather the beauty dish so the strongest part of the beam falls just in front of the subject and bounces into a Westcott Eyelighter reflector placed directly below the face. Soft even illumination, open shadows, bright clean round catchlights in the eyes from the top beauty dish and a semi-circular catchlight in the bottom of the iris from the curved Eyelighter. Narrow feathered gridded light on camera-right as subtle fill to even out the exposure without flattening facial structure. Flattering and sculpted but not dramatic.
+    RESULT: High-end studio-lit corporate headshot. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
+
+        stylePrompt = "Clean neutral dark studio backdrop. Seamless paper background. Pure studio environment. No location. No props.";
+        lensInstruction = "85mm Telephoto Portrait Lens";
+        lightingDirectionOverride = "";
+        negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements of any kind. ONLY a clean neutral studio backdrop. Face must be STRAIGHT ON to camera — ZERO 3/4 angle, ZERO profile, ZERO body turns beyond very slight. ***`;
+      }
+
   switch (config.framing) {
     case "Headshot": {
       let poseInstruction = "";
@@ -320,11 +336,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     default: lightingInstruction = "Lighting: Short lighting mandatory — key light on the far cheek, near cheek in relative shadow.";
   }
 
-  if (config.signatureStudio) {
-    lightingInstruction = `SIGNATURE STUDIO HEADSHOT (THIS OVERRIDES ALL OTHER LIGHTING INSTRUCTIONS): Create a clean, modern studio headshot. FRAMING: Crop from lower chest to just above the head. The subject faces DIRECTLY and SQUARELY into the camera — face straight on, no turning. Shoulders square to camera on first generation; torso may be angled very slightly on variations. It is acceptable to slightly crop the edges of the shoulders. LIGHTING: Soft clamshell setup. Use a 24" Westcott Rapid Box Beauty Dish by Joel Grimes as the key light, positioned about 2 feet above the subject's eye level and slightly to camera-left. Feather the beauty dish so the strongest part of the beam falls just in front of the subject and bounces into a Westcott Eyelighter reflector placed directly below the face. This creates soft, even illumination, open shadows, and bright clean round catchlights in the eyes from the top beauty dish and a semi-circular catchlight in the bottom of the iris from the curved Eyelighter. Add a narrow feathered gridded light on camera-right as subtle fill to even out the exposure without flattening facial structure. BACKGROUND: Smooth, neutral dark background — if the selected scene is an environment, apply heavy depth-of-field blur to render it as a clean neutral tone. CAMERA: Shoot straight-on at eye level, 85mm full-frame equivalent focal length. Moderate contrast, neutral and accurate skin tones, minimal retouching. The final result should look like a high-end studio-lit corporate headshot — polished and professional but natural.`;
-  }
-
-    if (config.blackAndWhite) {
+      if (config.blackAndWhite) {
       lightingInstruction += ` BLACK & WHITE CONVERSION: Convert the final image to black and white. Emphasize tonal contrast, preserve skin texture detail, and ensure rich deep blacks and clean whites. The conversion should feel like a professional darkroom print — not a simple desaturation filter.`;
     }
 
