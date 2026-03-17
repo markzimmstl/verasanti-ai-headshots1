@@ -226,20 +226,24 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   let lightingDirectionOverride = "";
 
     // ── SIGNATURE STUDIO HEADSHOT — full override before framing/scene runs ──
-      if (config.signatureStudio) {
-        framingInstruction = `** SIGNATURE STUDIO HEADSHOT — ALL OTHER FRAMING AND POSE RULES ARE OVERRIDDEN **
-    FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot — not a waist-up, not a full body.
-    POSE: The subject faces DIRECTLY and SQUARELY into the camera. Face straight on. No turning. No 3/4 angle. No profile. Shoulders square to camera. Torso may be angled very slightly on variations only. It is acceptable to slightly crop the edges of the shoulders.
-    CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
-    BACKGROUND: IGNORE the selected scene entirely. Use a smooth, neutral dark studio backdrop — seamless paper or painted wall. No environmental elements. No props. No location context. Pure studio.
-    LIGHTING: Soft clamshell setup. 24" Westcott Rapid Box Beauty Dish by Joel Grimes as the key light, positioned about 2 feet above the subject's eye level and slightly to camera-left. Feather the beauty dish so the strongest part of the beam falls just in front of the subject and bounces into a Westcott Eyelighter reflector placed directly below the face. Soft even illumination, open shadows, bright clean round catchlights in the eyes from the top beauty dish and a semi-circular catchlight in the bottom of the iris from the curved Eyelighter. Narrow feathered gridded light on camera-right as subtle fill to even out the exposure without flattening facial structure. Flattering and sculpted but not dramatic.
-    RESULT: High-end studio-lit corporate headshot. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
+    if (config.signatureStudio) {
+    framingInstruction = `** SIGNATURE STUDIO HEADSHOT — ALL OTHER FRAMING AND POSE RULES ARE OVERRIDDEN **
+        FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot — not a waist-up, not a full body.
+        POSE: The subject faces DIRECTLY and SQUARELY into the camera. Face straight on. No turning. No 3/4 angle. No profile. Shoulders square to camera. Torso may be angled very slightly on variations only. It is acceptable to slightly crop the edges of the shoulders.
+        CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
+        BACKGROUND: Dark gray seamless studio backdrop. Base color #141414 with a very subtle circular gradient brightening to approximately #323232 at the center behind the subject's head and shoulders — like a classic studio vignette falloff. No environmental elements. No props. No location context. Pure studio.
+        LIGHTING: True clamshell setup — two light sources only, placed on the vertical center axis directly in front of the subject:
+          1. KEY LIGHT: 24" Westcott Rapid Box Beauty Dish by Joel Grimes positioned DIRECTLY ABOVE the subject's head on the vertical center axis — not to the left, not to the right, centered. Aimed downward at approximately 45 degrees toward the face. This creates soft, even, flattering illumination with gentle shadow falloff under the chin and nose.
+          2. EYELIGHTER REFLECTOR: Westcott Eyelighter reflector placed directly below the subject's face, centered on the vertical axis. This bounces light upward to fill shadows under the chin and eyes. CRITICAL: This creates a distinctive semi-circular catchlight in the BOTTOM of each iris — centered at the 6 o'clock position, approximately one quarter the diameter of the iris. This catchlight MUST be visible and accurate.
+        CATCHLIGHTS: There must be TWO visible catchlights in each eye: (1) A round catchlight from the beauty dish at approximately the 12 o'clock position in the iris. (2) A soft semi-circular catchlight at the 6 o'clock position in the iris from the Eyelighter — subtle, approximately one quarter iris diameter wide, centered at the bottom of the eye.
+        NO SIDE LIGHTING. NO GRIDDED FILL LIGHT. NO LIGHTS FROM LEFT OR RIGHT. Only the overhead beauty dish and the underchin eyelighter reflector.
+        RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
 
-        stylePrompt = "Clean neutral dark studio backdrop. Seamless paper background. Pure studio environment. No location. No props.";
-        lensInstruction = "85mm Telephoto Portrait Lens";
-        lightingDirectionOverride = "";
-        negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements of any kind. ONLY a clean neutral studio backdrop. Face must be STRAIGHT ON to camera — ZERO 3/4 angle, ZERO profile, ZERO body turns beyond very slight. ***`;
-      }
+    stylePrompt = "Dark gray seamless studio backdrop #141414 with subtle circular center brightening to #323232 behind subject. Pure studio. No location. No props.";
+    lensInstruction = "85mm Telephoto Portrait Lens";
+    lightingDirectionOverride = "";
+    negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements. ONLY a dark gray studio backdrop (#141414 to #323232 center gradient). Face STRAIGHT ON to camera — ZERO 3/4 angle, ZERO profile. NO side lighting. NO lights from left or right. Only overhead beauty dish and underchin eyelighter. ***`;
+  }
 
   if (!config.signatureStudio) switch (config.framing) {
     case "Headshot": {
