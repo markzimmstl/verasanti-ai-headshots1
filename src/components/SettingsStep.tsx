@@ -1181,13 +1181,17 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                           { value: '16:9', label: '16:9', desc: 'Wide' },
                           { value: '9:16', label: '9:16', desc: 'Story' },
                           { value: '4:5',  label: '4:5',  desc: 'Portrait' },
-                        ].map((ratio) => (
-                            <button key={ratio.value} type="button" onClick={() => handleAspectRatioChange(ratio.value as AspectRatio)}
-                              style={{ ...pill((config.aspectRatio||'1:1')===ratio.value), flexDirection: 'column', gap: 2, padding: '8px 6px' }}>
+                        ].map((ratio) => {
+                          const locked = config.signatureStudio && (ratio.value === '16:9' || ratio.value === '9:16');
+                          return (
+                            <button key={ratio.value} type="button"
+                              onClick={() => !locked && handleAspectRatioChange(ratio.value as AspectRatio)}
+                              style={{ ...pill((config.aspectRatio||'1:1')===ratio.value), flexDirection: 'column', gap: 2, padding: '8px 6px', opacity: locked ? 0.3 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                               <span style={{ fontSize: 12, fontWeight: 600 }}>{ratio.label}</span>
                               <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>{ratio.desc}</span>
                             </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1198,10 +1202,20 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Pose / Framing</p>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                        {['Headshot','Waist Up','Three-Quarter','Full Body'].map((frame) => (
-                          <button key={frame} type="button" onClick={() => handleFramingChange(frame)} style={pill((config.framing||'Waist Up')===frame)}>{frame}</button>
-                        ))}
+                        {['Headshot','Waist Up','Three-Quarter','Full Body'].map((frame) => {
+                          const locked = config.signatureStudio && (frame === 'Three-Quarter' || frame === 'Full Body');
+                          return (
+                            <button key={frame} type="button"
+                              onClick={() => !locked && handleFramingChange(frame)}
+                              style={{ ...pill((config.framing||'Waist Up')===frame), opacity: locked ? 0.3 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
+                              {frame}
+                            </button>
+                          );
+                        })}
                       </div>
+                      {config.signatureStudio && (
+                        <p style={{ fontSize: 10, color: T.white60, marginTop: 6 }}>Headshot and Waist Up only with Signature Studio Headshot.</p>
+                      )}
                     </div>
 
                     {/* Mood */}
@@ -1210,24 +1224,45 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         <Sun style={{ width: 13, height: 13, color: T.purple }} />
                         <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Lighting & Mood</p>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+
+                      {/* Signature Studio Headshot — featured preset */}
+                      <button type="button" onClick={() => {
+                          const turning = !config.signatureStudio;
+                          updateConfig({
+                            signatureStudio: turning,
+                            ...(turning ? {
+                              framing: config.framing === 'Three-Quarter' || config.framing === 'Full Body' ? 'Headshot' : config.framing,
+                              aspectRatio: config.aspectRatio === '16:9' || config.aspectRatio === '9:16' ? '1:1' : config.aspectRatio,
+                              cameraAngle: 'Eye Level',
+                            } : {}),
+                          });
+                        }}
+                        style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, padding: '12px 14px', borderRadius: 10, marginBottom: 10, cursor: 'pointer', transition: 'all 0.15s', background: config.signatureStudio ? 'linear-gradient(135deg, rgba(159,103,255,0.2), rgba(76,29,149,0.3))' : T.panel, border: `1px solid ${config.signatureStudio ? T.purple : T.panelBorder}`, boxShadow: config.signatureStudio ? `0 0 0 1px ${T.purple}` : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: config.signatureStudio ? T.white : T.white80 }}>✦ Signature Studio Headshot</span>
+                          {config.signatureStudio && <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 100, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple }}>Active</span>}
+                        </div>
+                        <span style={{ fontSize: 11, color: config.signatureStudio ? T.white60 : T.white40 }}>Sophisticated studio look for the modern professional.</span>
+                      </button>
+
+                      {/* Standard mood pills — grayed out when Signature Studio active */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10, opacity: config.signatureStudio ? 0.3 : 1, pointerEvents: config.signatureStudio ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
                         {['Polished Professional','Daylight','Cinematic','Dark & Moody'].map((m) => (
                           <button key={m} type="button" onClick={() => handleMoodChange(m)} style={pill((config.mood||'Polished Professional')===m)}>{m}</button>
                         ))}
                       </div>
-                      <button type="button" onClick={() => updateConfig({ signatureStudio: !config.signatureStudio })}
-                        style={{ ...pill(!!config.signatureStudio), width: '100%', justifyContent: 'center', marginBottom: 10 }}>
-                        ✦ Signature Studio
-                      </button>
                       {config.signatureStudio && (
-                        <p style={{ fontSize: 10, color: T.white60, lineHeight: 1.5, marginBottom: 10 }}>
-                          Clamshell lighting with beauty dish key, eyelighter reflector, and gridded fill. Classic dual catchlights. Works with any mood above.
-                        </p>
+                        <p style={{ fontSize: 10, color: T.white40, marginBottom: 10 }}>Standard lighting moods are disabled while Signature Studio Headshot is active.</p>
                       )}
+
+                      {/* Black & White toggle */}
                       <button type="button" onClick={() => updateConfig({ blackAndWhite: !config.blackAndWhite })}
                         style={{ ...pill(!!config.blackAndWhite), width: '100%', justifyContent: 'center' }}>
                         {config.blackAndWhite ? '◼' : '◻'} Black & White
                       </button>
+                      {config.blackAndWhite && (
+                        <p style={{ fontSize: 10, color: T.white60, marginTop: 6 }}>Applies a professional darkroom-style B&W conversion to the final image.</p>
+                      )}
                     </div>
 
                     {/* Camera Angle */}

@@ -36,6 +36,8 @@ export const DEFAULT_CONFIG: GenerationConfig = {
   brandColor: '',
   secondaryBrandColor: '',
   keepGlasses: true,
+  blackAndWhite: false,
+  signatureStudio: false,
 };
 
 const STEP_LABELS = ['Photos', 'Design', 'Generate', 'Results'];
