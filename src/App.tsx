@@ -8,7 +8,7 @@ import { AuthScreen } from './components/AuthScreen';
 import ShotListGenerator from './components/ShotListGenerator';
 import { useAuth } from './api/useAuth';
 import { loadCreditsForUser, saveCreditsForUser } from './api/userCreditsService';
-import { loadImagesForUser, saveImagesForUser } from './api/generatedImagesService';
+import { loadImagesForUser, saveImagesForUser, deleteImageForUser } from './api/generatedImagesService';
 import { 
   GenerationConfig, 
   GeneratedImage, 
@@ -921,6 +921,10 @@ function App() {
                     credits={credits}
                     onSpendCredit={handleSpendCredit}
                     onRequestTopUp={handleAddCredits}
+                    onDeleteImage={(imageId) => {
+                      setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
+                      if (user) deleteImageForUser(user.id, imageId).catch(() => {});
+                    }}
                   />
                 )}
                 {currentStep === 'shotlist' && (

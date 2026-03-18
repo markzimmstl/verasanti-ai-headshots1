@@ -48,6 +48,7 @@ interface ResultsStepProps {
   credits: number;
   onSpendCredit: (amount: number) => void;
   onRequestTopUp: () => void;
+  onDeleteImage?: (imageId: string) => void;
 }
 
 interface EditPreset {
@@ -167,7 +168,7 @@ const PresetPill: React.FC<{ active: boolean; onClick: () => void; isRegen?: boo
 );
 
 // ── Main component ────────────────────────────────────────────────────────────
-const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp }) => {
+const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp, onDeleteImage }) => {
   const [displayImages, setDisplayImages] = useState<GeneratedImage[]>(images);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(images[0] ?? null);
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
@@ -262,7 +263,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     try {
       const maskBase64 = canvasRef.current.toDataURL('image/png');
       const resultUrl = await magicErase(selectedImage.imageUrl, maskBase64, (selectedImage.aspectRatio || '1:1') as any);
-      const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: resultUrl, imageUrl: resultUrl, styleName: `${selectedImage.styleName} (Erased)`, styleId: selectedImage.styleId, createdAt: Date.now(), aspectRatio: selectedImage.aspectRatio };
+      const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: resultUrl, imageUrl: resultUrl, styleName: `${selectedImage.styleName.replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '').trim()} (Erased)`, styleId: selectedImage.styleId, createdAt: Date.now(), aspectRatio: selectedImage.aspectRatio };
       setDisplayImages(prev => { const updated = [...prev]; updated.splice(prev.findIndex(i => i.id === selectedImage.id) + 1, 0, newImg); return updated; });
       setSelectedImage(newImg); setIsEditPanelOpen(false); setEditMode('presets');
     } catch { setEditError('Magic Eraser failed. Try painting over a smaller area and try again.'); }
@@ -314,7 +315,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
         const regenerateConfig = { ...imageConfig, ...(regenAllPreset?.configOverride || {}) };
         const stylePrompt = (source as any).stylePrompt || imageConfig.backgroundType || 'Professional studio portrait';
         const resultUrl = await generateBrandPhotoWithRefsSafe(refs, `${stylePrompt}\n\nADDITIONAL INSTRUCTION:\n${prompt}`, regenerateConfig, regenerateConfig.customBackground, Math.floor(Math.random() * 10));
-        const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: resultUrl, imageUrl: resultUrl, styleName: `${source.styleName} (Regenerated)`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig };
+        const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: resultUrl, imageUrl: resultUrl, styleName: `${source.styleName.replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '').trim()} (Regenerated)`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig };
         insertions.push({ sourceId: source.id, newImage: newImg });
         setDisplayImages(prev => { const updated = [...prev]; const idx = updated.findIndex(img => img.id === source.id); if (idx !== -1) updated.splice(idx + 1, 0, newImg); return updated; });
       }
@@ -325,7 +326,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   };
 
   const insertEditedImage = (url: string, source: GeneratedImage, label: string) => {
-    const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: url, imageUrl: url, styleName: `${source.styleName} ${label}`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any) };
+    const baseName = source.styleName.replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '').trim();
+    const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: url, imageUrl: url, styleName: `${baseName} ${label}`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any) };
     setDisplayImages(prev => { const updated = [...prev]; updated.splice(prev.findIndex(i => i.id === source.id) + 1, 0, newImg); return updated; });
     setSelectedImage(newImg); setEditPrompt(''); setSelectedPreset(null); setIsEditPanelOpen(false);
   };
@@ -685,13 +687,27 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {displayImages.map((img, idx) => (
-                <button key={img.id} type="button" onClick={() => setSelectedImage(img)}
-                  style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: `2px solid ${selectedImage?.id === img.id ? T.purple : 'transparent'}`, boxShadow: selectedImage?.id === img.id ? `0 0 0 2px ${T.purpleBorder}` : 'none', cursor: 'pointer', background: T.panel, padding: 0, transition: 'all 0.15s' }}>
-                  <img src={img.imageUrl} alt={`Thumbnail ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  {img.styleName?.includes('(Edited)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>EDITED</div>}
-                  {img.styleName?.includes('(Regenerated)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>REGEN</div>}
-                  {img.styleName?.includes('(Erased)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(13,148,136,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>ERASED</div>}
-                </button>
+                <div key={img.id} style={{ position: 'relative', aspectRatio: '1' }} className="group">
+                  <button type="button" onClick={() => setSelectedImage(img)}
+                    style={{ position: 'relative', width: '100%', height: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: `2px solid ${selectedImage?.id === img.id ? T.purple : 'transparent'}`, boxShadow: selectedImage?.id === img.id ? `0 0 0 2px ${T.purpleBorder}` : 'none', cursor: 'pointer', background: T.panel, padding: 0, transition: 'all 0.15s', display: 'block' }}>
+                    <img src={img.imageUrl} alt={`Thumbnail ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {img.styleName?.includes('(Edited)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>EDITED</div>}
+                    {img.styleName?.includes('(Regenerated)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>REGEN</div>}
+                    {img.styleName?.includes('(Erased)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(13,148,136,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>ERASED</div>}
+                  </button>
+                  <button type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!window.confirm('Remove this image?')) return;
+                      setDisplayImages(prev => prev.filter(i => i.id !== img.id));
+                      if (selectedImage?.id === img.id) setSelectedImage(displayImages.find(i => i.id !== img.id) || null);
+                      if (onDeleteImage) onDeleteImage(img.id);
+                    }}
+                    className="group-hover:opacity-100"
+                    style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', color: '#fff', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
+                    ✕
+                  </button>
+                </div>
               ))}
             </div>
           </div>
