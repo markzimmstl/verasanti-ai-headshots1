@@ -49,6 +49,7 @@ interface ResultsStepProps {
   onSpendCredit: (amount: number) => void;
   onRequestTopUp: () => void;
   onDeleteImage?: (imageId: string) => void;
+  onSaveImage?: (image: GeneratedImage) => void;
 }
 
 interface EditPreset {
@@ -167,8 +168,16 @@ const PresetPill: React.FC<{ active: boolean; onClick: () => void; isRegen?: boo
   </button>
 );
 
+// helper to strip all edit labels from a style name
+const stripLabels = (name: string) =>
+  name
+    .replace(/ \(Edited\)/g, '').replace(/ · Edited/g, '')
+    .replace(/ \(Regenerated\)/g, '').replace(/ · Regenerated/g, '')
+    .replace(/ \(Erased\)/g, '').replace(/ · Erased/g, '')
+    .trim();
+
 // ── Main component ────────────────────────────────────────────────────────────
-const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp, onDeleteImage }) => {
+const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp, onDeleteImage, onSaveImage }) => {
   const [displayImages, setDisplayImages] = useState<GeneratedImage[]>(images);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(images[0] ?? null);
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
@@ -248,12 +257,26 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   };
 
   const checkAndSpendCredit = (amount: number): boolean => {
-    if (credits < amount) {
-      onRequestTopUp();
-      return false;
-    }
+    if (credits < amount) { onRequestTopUp(); return false; }
     onSpendCredit(amount);
     return true;
+  };
+
+  const insertEditedImage = (url: string, source: GeneratedImage, label: string) => {
+    const baseName = stripLabels(source.styleName);
+    const dotLabel = label.replace('(Edited)', '· Edited').replace('(Regenerated)', '· Regenerated').replace('(Erased)', '· Erased');
+    const newImg: GeneratedImage = {
+      id: Date.now() + '' + Math.random(),
+      originalUrl: url, imageUrl: url,
+      styleName: `${baseName} ${dotLabel}`,
+      styleId: source.styleId,
+      createdAt: Date.now(),
+      aspectRatio: source.aspectRatio,
+      ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any),
+    };
+    setDisplayImages(prev => { const updated = [...prev]; updated.splice(prev.findIndex(i => i.id === source.id) + 1, 0, newImg); return updated; });
+    setSelectedImage(newImg); setEditPrompt(''); setSelectedPreset(null); setIsEditPanelOpen(false);
+    if (onSaveImage) onSaveImage(newImg);
   };
 
   const handleApplyErase = async () => {
@@ -263,9 +286,17 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     try {
       const maskBase64 = canvasRef.current.toDataURL('image/png');
       const resultUrl = await magicErase(selectedImage.imageUrl, maskBase64, (selectedImage.aspectRatio || '1:1') as any);
-      const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: resultUrl, imageUrl: resultUrl, styleName: `${selectedImage.styleName.replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '').trim()} (Erased)`, styleId: selectedImage.styleId, createdAt: Date.now(), aspectRatio: selectedImage.aspectRatio };
+      const newImg: GeneratedImage = {
+        id: Date.now() + '' + Math.random(),
+        originalUrl: resultUrl, imageUrl: resultUrl,
+        styleName: `${stripLabels(selectedImage.styleName)} · Erased`,
+        styleId: selectedImage.styleId,
+        createdAt: Date.now(),
+        aspectRatio: selectedImage.aspectRatio,
+      };
       setDisplayImages(prev => { const updated = [...prev]; updated.splice(prev.findIndex(i => i.id === selectedImage.id) + 1, 0, newImg); return updated; });
       setSelectedImage(newImg); setIsEditPanelOpen(false); setEditMode('presets');
+      if (onSaveImage) onSaveImage(newImg);
     } catch { setEditError('Magic Eraser failed. Try painting over a smaller area and try again.'); }
     finally { setIsRefining(false); }
   };
@@ -300,7 +331,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   const handleRegenAll = async () => {
     const prompt = regenAllPrompt.trim();
     if (!prompt) return;
-    const originals = displayImages.filter(img => !img.styleName.includes('(Edited)') && !img.styleName.includes('(Regenerated)') && !img.styleName.includes('(Erased)'));
+    const originals = displayImages.filter(img => !img.styleName.includes('· Edited') && !img.styleName.includes('· Regenerated') && !img.styleName.includes('· Erased') && !img.styleName.includes('(Edited)') && !img.styleName.includes('(Regenerated)') && !img.styleName.includes('(Erased)'));
     if (!originals.length) return;
     if (!checkAndSpendCredit(originals.length)) return;
     setIsRegenAll(true); setRegenAllError(null); regenAllCancelRef.current = false;
@@ -315,26 +346,24 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
         const regenerateConfig = { ...imageConfig, ...(regenAllPreset?.configOverride || {}) };
         const stylePrompt = (source as any).stylePrompt || imageConfig.backgroundType || 'Professional studio portrait';
         const resultUrl = await generateBrandPhotoWithRefsSafe(refs, `${stylePrompt}\n\nADDITIONAL INSTRUCTION:\n${prompt}`, regenerateConfig, regenerateConfig.customBackground, Math.floor(Math.random() * 10));
-        const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: resultUrl, imageUrl: resultUrl, styleName: `${source.styleName.replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '').trim()} (Regenerated)`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig };
+        const newImg: GeneratedImage = {
+          id: Date.now() + '' + Math.random(),
+          originalUrl: resultUrl, imageUrl: resultUrl,
+          styleName: `${stripLabels(source.styleName)} · Regenerated`,
+          styleId: source.styleId,
+          createdAt: Date.now(),
+          aspectRatio: source.aspectRatio,
+          stylePrompt: (source as any).stylePrompt,
+          originalConfig: (source as any).originalConfig,
+        };
         insertions.push({ sourceId: source.id, newImage: newImg });
         setDisplayImages(prev => { const updated = [...prev]; const idx = updated.findIndex(img => img.id === source.id); if (idx !== -1) updated.splice(idx + 1, 0, newImg); return updated; });
+        if (onSaveImage) onSaveImage(newImg);
       }
       if (insertions.length) setSelectedImage(insertions[0].newImage);
       if (!regenAllCancelRef.current) { setIsEditPanelOpen(false); setEditMode('presets'); }
     } catch { setRegenAllError(`Regeneration failed on image ${regenAllProgress?.current ?? '?'}. Completed images have been added.`); }
     finally { setIsRegenAll(false); setRegenAllProgress(null); regenAllCancelRef.current = false; }
-  };
-
-  const insertEditedImage = (url: string, source: GeneratedImage, label: string) => {
-    const baseName = source.styleName
-      .replace(/ \(Edited\)/g, '').replace(/ · Edited/g, '')
-      .replace(/ \(Regenerated\)/g, '').replace(/ · Regenerated/g, '')
-      .replace(/ \(Erased\)/g, '').replace(/ · Erased/g, '')
-      .trim();
-    const dotLabel = label.replace('(Edited)', '· Edited').replace('(Regenerated)', '· Regenerated').replace('(Erased)', '· Erased');
-    const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: url, imageUrl: url, styleName: `${baseName} ${dotLabel}`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any) };
-    setDisplayImages(prev => { const updated = [...prev]; updated.splice(prev.findIndex(i => i.id === source.id) + 1, 0, newImg); return updated; });
-    setSelectedImage(newImg); setEditPrompt(''); setSelectedPreset(null); setIsEditPanelOpen(false);
   };
 
   const downloadImage = async (url: string, format: 'webp' | 'png') => {
@@ -386,9 +415,8 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   };
 
   const aspectClass = getAspectClass(selectedImage?.aspectRatio);
-  const originalCount = displayImages.filter(img => !img.styleName.includes('(Edited)') && !img.styleName.includes('(Regenerated)') && !img.styleName.includes('(Erased)')).length;
+  const originalCount = displayImages.filter(img => !img.styleName.includes('· Edited') && !img.styleName.includes('· Regenerated') && !img.styleName.includes('· Erased') && !img.styleName.includes('(Edited)') && !img.styleName.includes('(Regenerated)') && !img.styleName.includes('(Erased)')).length;
 
-  // ── Inline style helpers ──────────────────────────────────────────────────
   const btnBase = (bg: string, border: string, color: string, disabled?: boolean): React.CSSProperties => ({
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
     padding: '13px', borderRadius: 10, fontSize: 13, fontWeight: 600,
@@ -472,7 +500,6 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                 </button>
               ) : (
                 <div style={{ borderRadius: 16, border: `1px solid ${T.panelBorder}`, background: '#0D0F16' }}>
-                  {/* Panel header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${T.panelBorder}`, flexWrap: 'wrap', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <ModeTab active={editMode === 'presets'} onClick={() => setEditMode('presets')} icon={<Wand2 style={{ width: 12, height: 12 }} />} label="Edit / Enhance" />
@@ -648,7 +675,6 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                 <Download style={{ width: 16, height: 16 }} />Download Web WebP
               </button>
 
-              {/* Format selector for Download All */}
               <div style={{ padding: '10px 12px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}` }}>
                 <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 8px' }}>Download All — Format</p>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -692,13 +718,13 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {displayImages.map((img, idx) => (
-                <div key={img.id} style={{ position: 'relative', aspectRatio: '1' }} className="group">
+                <div key={img.id} style={{ position: 'relative', aspectRatio: '1' }}>
                   <button type="button" onClick={() => setSelectedImage(img)}
                     style={{ position: 'relative', width: '100%', height: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: `2px solid ${selectedImage?.id === img.id ? T.purple : 'transparent'}`, boxShadow: selectedImage?.id === img.id ? `0 0 0 2px ${T.purpleBorder}` : 'none', cursor: 'pointer', background: T.panel, padding: 0, transition: 'all 0.15s', display: 'block' }}>
                     <img src={img.imageUrl} alt={`Thumbnail ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    {img.styleName?.includes('(Edited)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>EDITED</div>}
-                    {img.styleName?.includes('(Regenerated)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>REGEN</div>}
-                    {img.styleName?.includes('(Erased)') && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(13,148,136,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>ERASED</div>}
+                    {(img.styleName?.includes('· Edited') || img.styleName?.includes('(Edited)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>EDITED</div>}
+                    {(img.styleName?.includes('· Regenerated') || img.styleName?.includes('(Regenerated)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>REGEN</div>}
+                    {(img.styleName?.includes('· Erased') || img.styleName?.includes('(Erased)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(13,148,136,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>ERASED</div>}
                   </button>
                   <button type="button"
                     onClick={(e) => {
@@ -708,7 +734,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                       if (selectedImage?.id === img.id) setSelectedImage(displayImages.find(i => i.id !== img.id) || null);
                       if (onDeleteImage) onDeleteImage(img.id);
                     }}
-                       style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
+                    style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>
                     ✕
                   </button>
                 </div>
