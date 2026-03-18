@@ -198,6 +198,15 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
 
   // Industrial scenes push Gemini toward low angles due to trained visual priors.
   // Strategy: rewrite stylePrompt to remove trigger words, describe scene as already-at-eye-level.
+  // Wellness/yoga scenes trigger casual/active poses — force upright professional stance
+    const isWellnessScene = lowerPrompt.includes('yoga') || lowerPrompt.includes('wellness') || 
+      lowerPrompt.includes('meditation') || lowerPrompt.includes('pilates') || 
+      lowerPrompt.includes('fitness') || lowerPrompt.includes('gym') || 
+      lowerPrompt.includes('studio') || lowerPrompt.includes('movement');
+    if (isWellnessScene) {
+      negativeConstraints += ` *** ABSOLUTE WELLNESS SCENE RULE: The subject is a PROFESSIONAL standing PERFECTLY UPRIGHT. NEVER bending over. NEVER in a yoga pose. NEVER crouching. NEVER stretching. NEVER in any athletic or exercise position. The subject is a business professional who happens to be photographed in this space — they are NOT participating in the activity. Spine is VERTICAL. Standing tall with confident professional posture ONLY. ***`;
+    }
+    
   const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling');
   if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
     const eyeLevelAngle = config.cameraAngle === 'High Angle' ? 'slightly above' : 'exactly at';
