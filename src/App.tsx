@@ -742,19 +742,22 @@ function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                {/* Shot List Generator nav button */}
-                <button
-                  onClick={() => { setCurrentStep('shotlist'); window.scrollTo(0, 0); }}
-                  className="hidden md:flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
-                  style={{
-                    background: currentStep === 'shotlist' ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                    border: currentStep === 'shotlist' ? '1px solid rgba(99,102,241,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                  }}
-                >
-                  <span style={{ fontSize: 13, color: currentStep === 'shotlist' ? '#a5b4fc' : 'rgba(255,255,255,0.4)' }}>
-                    ✦ Shot List
-                  </span>
-                </button>
+                
+                {/* Your Images button */}
+                {generatedImages.length > 0 && (
+                  <button
+                    onClick={() => { setCurrentStep('results'); window.scrollTo(0, 0); }}
+                    className="hidden md:flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
+                    style={{
+                      background: currentStep === 'results' ? 'rgba(76,29,149,0.2)' : 'rgba(255,255,255,0.04)',
+                      border: currentStep === 'results' ? '1px solid rgba(76,29,149,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <span style={{ fontSize: 13, color: currentStep === 'results' ? '#B98FFF' : 'rgba(255,255,255,0.4)' }}>
+                      ✦ Your Images
+                    </span>
+                  </button>
+                )}
 
                 {/* Credits button — clickable to open top-up modal */}
                 <button
