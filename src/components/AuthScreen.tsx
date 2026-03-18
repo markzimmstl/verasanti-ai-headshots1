@@ -223,7 +223,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
         {/* Left panel */}
           <div className="auth-left-panel fade-up-1">
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <img src="/logo.png" alt="VeraLooks" style={{ height: 40, width: 'auto' }} />
+              <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 40, width: 'auto' }} />
             </div>
             <div style={{ maxWidth: '340px' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
