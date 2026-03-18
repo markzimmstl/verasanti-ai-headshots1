@@ -1319,6 +1319,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                             {frame}
                           </button>
                         ))}
+                      </div>
                     </div>
 
                     {/* Mood */}
