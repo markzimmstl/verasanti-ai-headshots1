@@ -259,6 +259,7 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
 
           {/* Mobile-only title */}
           <div className="auth-mobile-title" style={{ marginBottom: '28px', textAlign: 'center' }}>
+            <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 44, width: 'auto', marginBottom: 16 }} />
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '32px', fontWeight: '400', color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
               Your brand,<br /><em style={{ color: 'rgba(159,103,255,0.9)' }}>beautifully</em><br />created.
             </h1>
