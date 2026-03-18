@@ -998,7 +998,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
               </div>
 
               {/* SECTION 2 — Background Scene */}
-              <div ref={sectionRefs.sec2}>
+              <div ref={sectionRefs.sec2} style={{ opacity: config.signatureStudio ? 0.4 : 1, pointerEvents: config.signatureStudio ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
                 <SectionBlock num={2} icon={<Camera style={{ width: 16, height: 16 }} />} title="Background Scene" unlocked={!!clothingStyleGroup}
                   isOpen={sec2Open} onToggle={() => clothingStyleGroup && setSec2Open(p => !p)}
                   hint="Choose Clothing Style first"
@@ -1075,36 +1075,112 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                 </SectionBlock>
               </div>
 
-                  {/* ── SIGNATURE STUDIO HEADSHOT BANNER ── */}
-              <div
-                onClick={() => {
-                  const turning = !config.signatureStudio;
-                  updateConfig({
-                    signatureStudio: turning,
-                    ...(turning ? {
-                      framing: config.framing === 'Three-Quarter' || config.framing === 'Full Body' ? 'Headshot' : config.framing,
-                      aspectRatio: config.aspectRatio === '16:9' || config.aspectRatio === '9:16' ? '1:1' : config.aspectRatio,
-                      cameraAngle: 'Eye Level',
-                    } : {}),
-                  });
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderRadius: 14, marginBottom: 24, cursor: 'pointer', transition: 'all 0.15s', background: config.signatureStudio ? 'linear-gradient(135deg, rgba(159,103,255,0.15), rgba(76,29,149,0.25))' : 'linear-gradient(135deg, rgba(159,103,255,0.05), rgba(76,29,149,0.08))', border: `1px solid ${config.signatureStudio ? T.purple : T.purpleBorder}`, boxShadow: config.signatureStudio ? `0 0 0 1px ${T.purpleBorder}` : 'none' }}
-                onMouseOver={e => { if (!config.signatureStudio) (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
-                onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-              >
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: config.signatureStudio ? T.purpleGrad : T.purpleDim, border: `1px solid ${T.purpleBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Camera style={{ width: 18, height: 18, color: config.signatureStudio ? T.white : T.purple }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: config.signatureStudio ? T.white : T.white80, margin: 0 }}>✦ Signature Studio Headshot</p>
-                    {config.signatureStudio && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 100, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple }}>Active</span>}
+                 {/* ── SIGNATURE STUDIO HEADSHOT BANNER ── */}
+              <div style={{ marginBottom: 24 }}>
+                {/* Header row — always visible */}
+                <div
+                  onClick={() => {
+                    const turning = !config.signatureStudio;
+                    updateConfig({
+                      signatureStudio: turning,
+                      ...(turning ? {
+                        framing: config.framing === 'Three-Quarter' || config.framing === 'Full Body' ? 'Headshot' : config.framing,
+                        aspectRatio: config.aspectRatio === '16:9' || config.aspectRatio === '9:16' ? '1:1' : config.aspectRatio,
+                        cameraAngle: 'Eye Level',
+                        blackAndWhite: false,
+                      } : {}),
+                    });
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderRadius: config.signatureStudio ? '14px 14px 0 0' : 14, cursor: 'pointer', transition: 'all 0.15s', background: config.signatureStudio ? 'linear-gradient(135deg, rgba(159,103,255,0.2), rgba(76,29,149,0.3))' : 'linear-gradient(135deg, rgba(159,103,255,0.05), rgba(76,29,149,0.08))', border: `1px solid ${config.signatureStudio ? T.purple : T.purpleBorder}`, borderBottom: config.signatureStudio ? `1px solid ${T.purpleBorder}` : undefined }}
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: config.signatureStudio ? T.purpleGrad : T.purpleDim, border: `1px solid ${T.purpleBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Camera style={{ width: 18, height: 18, color: config.signatureStudio ? T.white : T.purple }} />
                   </div>
-                  <p style={{ fontSize: 12, color: config.signatureStudio ? T.white60 : T.white40, margin: 0 }}>Sophisticated studio look for the modern professional. Overrides background and lighting.</p>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: config.signatureStudio ? T.white : T.white80, margin: 0 }}>✦ Signature Studio Headshot</p>
+                      {config.signatureStudio && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 100, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple }}>Active</span>}
+                    </div>
+                    <p style={{ fontSize: 12, color: config.signatureStudio ? T.white60 : T.white40, margin: 0 }}>
+                      {config.signatureStudio ? 'Click to deactivate. Background and lighting sections are overridden.' : 'Sophisticated studio look for the modern professional. Click to activate.'}
+                    </p>
+                  </div>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${config.signatureStudio ? T.purple : T.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: config.signatureStudio ? T.purpleGrad : 'transparent' }}>
+                    {config.signatureStudio && <span style={{ color: T.white, fontSize: 11 }}>✓</span>}
+                  </div>
                 </div>
-                <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${config.signatureStudio ? T.purple : T.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: config.signatureStudio ? T.purpleGrad : 'transparent' }}>
-                  {config.signatureStudio && <span style={{ color: T.white, fontSize: 11 }}>✓</span>}
-                </div>
+
+                {/* Expanded controls — only when active */}
+                {config.signatureStudio && (
+                  <div style={{ padding: '18px 20px', background: 'rgba(76,29,149,0.08)', border: `1px solid ${T.purple}`, borderTop: 'none', borderRadius: '0 0 14px 14px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                    {/* Background */}
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 10px' }}>Background</p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {[
+                          { id: 'dark-gray', label: 'Dark Gray', bg: 'linear-gradient(135deg, #141414, #323232)', prompt: 'Dark gray seamless studio backdrop #141414 with subtle circular center brightening to #323232 behind subject.' },
+                          { id: 'deep-black', label: 'Deep Black', bg: 'linear-gradient(135deg, #000000, #141414)', prompt: 'Deep black seamless studio backdrop #000000 with very subtle circular center brightening to #141414 behind subject.' },
+                          { id: 'pure-white', label: 'Pure White', bg: '#FFFFFF', prompt: 'Pure white seamless studio backdrop #FFFFFF. Clean, bright, no gradient.' },
+                        ].map((bg) => {
+                          const isActive = config.backgroundType === bg.prompt;
+                          return (
+                            <button key={bg.id} type="button"
+                              onClick={() => updateConfig({ backgroundType: bg.prompt })}
+                              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '10px 8px', borderRadius: 10, border: `2px solid ${isActive ? T.purple : T.panelBorder}`, background: isActive ? T.purpleDim : T.panel, cursor: 'pointer', transition: 'all 0.15s' }}>
+                              <div style={{ width: 36, height: 36, borderRadius: 8, background: bg.bg, border: '1px solid rgba(255,255,255,0.1)' }} />
+                              <span style={{ fontSize: 10, fontWeight: 600, color: isActive ? T.white : T.white60 }}>{bg.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Aspect Ratio */}
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 10px' }}>Aspect Ratio</p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {[
+                          { value: '1:1', label: '1:1', desc: 'Square' },
+                          { value: '4:5', label: '4:5', desc: 'Portrait' },
+                        ].map((ratio) => (
+                          <button key={ratio.value} type="button"
+                            onClick={() => handleAspectRatioChange(ratio.value as AspectRatio)}
+                            style={{ ...pill((config.aspectRatio || '1:1') === ratio.value), flex: 1, justifyContent: 'center', flexDirection: 'column', gap: 2, padding: '8px 6px' }}>
+                            <span style={{ fontSize: 12, fontWeight: 600 }}>{ratio.label}</span>
+                            <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>{ratio.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Framing */}
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 10px' }}>Framing</p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {['Headshot', 'Waist Up'].map((frame) => (
+                          <button key={frame} type="button"
+                            onClick={() => handleFramingChange(frame)}
+                            style={{ ...pill((config.framing || 'Headshot') === frame), flex: 1, justifyContent: 'center' }}>
+                            {frame}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Black & White */}
+                    <div>
+                      <button type="button" onClick={() => updateConfig({ blackAndWhite: !config.blackAndWhite })}
+                        style={{ ...pill(!!config.blackAndWhite), width: '100%', justifyContent: 'center' }}>
+                        {config.blackAndWhite ? '◼' : '◻'} Black & White
+                      </button>
+                      {config.blackAndWhite && (
+                        <p style={{ fontSize: 10, color: T.white60, marginTop: 6 }}>Professional darkroom-style B&W conversion.</p>
+                      )}
+                    </div>
+
+                  </div>
+                )}
               </div>
 
               {/* SECTION 3 — Fine-Tune */}
@@ -1200,7 +1276,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
               </div>
 
               {/* SECTION 4 — Camera & Composition */}
-              <div ref={sectionRefs.sec4}>
+              <div ref={sectionRefs.sec4} style={{ opacity: config.signatureStudio ? 0.4 : 1, pointerEvents: config.signatureStudio ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
                 <SectionBlock num={4} icon={<Aperture style={{ width: 16, height: 16 }} />} title="Camera, Lighting & Composition" badge="Optional" unlocked={!!sceneId}
                   isOpen={sec4Open} onToggle={() => sceneId && setSec4Open(p => !p)} hint="Choose a Background first">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="camera-grid">
@@ -1218,17 +1294,14 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                           { value: '16:9', label: '16:9', desc: 'Wide' },
                           { value: '9:16', label: '9:16', desc: 'Story' },
                           { value: '4:5',  label: '4:5',  desc: 'Portrait' },
-                        ].map((ratio) => {
-                          const locked = config.signatureStudio && (ratio.value === '16:9' || ratio.value === '9:16');
-                          return (
-                            <button key={ratio.value} type="button"
-                              onClick={() => !locked && handleAspectRatioChange(ratio.value as AspectRatio)}
-                              style={{ ...pill((config.aspectRatio||'1:1')===ratio.value), flexDirection: 'column', gap: 2, padding: '8px 6px', opacity: locked ? 0.3 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
-                              <span style={{ fontSize: 12, fontWeight: 600 }}>{ratio.label}</span>
-                              <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>{ratio.desc}</span>
-                            </button>
-                          );
-                        })}
+                        ].map((ratio) => (
+                          <button key={ratio.value} type="button"
+                            onClick={() => handleAspectRatioChange(ratio.value as AspectRatio)}
+                            style={{ ...pill((config.aspectRatio||'1:1')===ratio.value), flexDirection: 'column', gap: 2, padding: '8px 6px' }}>
+                            <span style={{ fontSize: 12, fontWeight: 600 }}>{ratio.label}</span>
+                            <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>{ratio.desc}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
 
@@ -1239,20 +1312,13 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Pose / Framing</p>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                        {['Headshot','Waist Up','Three-Quarter','Full Body'].map((frame) => {
-                          const locked = config.signatureStudio && (frame === 'Three-Quarter' || frame === 'Full Body');
-                          return (
-                            <button key={frame} type="button"
-                              onClick={() => !locked && handleFramingChange(frame)}
-                              style={{ ...pill((config.framing||'Waist Up')===frame), opacity: locked ? 0.3 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
-                              {frame}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {config.signatureStudio && (
-                        <p style={{ fontSize: 10, color: T.white60, marginTop: 6 }}>Headshot and Waist Up only with Signature Studio Headshot.</p>
-                      )}
+                        {['Headshot','Waist Up','Three-Quarter','Full Body'].map((frame) => (
+                          <button key={frame} type="button"
+                            onClick={() => handleFramingChange(frame)}
+                            style={pill((config.framing||'Waist Up')===frame)}>
+                            {frame}
+                          </button>
+                        ))}
                     </div>
 
                     {/* Mood */}
@@ -1262,43 +1328,17 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: 0 }}>Lighting & Mood</p>
                       </div>
 
-                      {/* Signature Studio Headshot — featured preset */}
-                      <button type="button" onClick={() => {
-                          const turning = !config.signatureStudio;
-                          updateConfig({
-                            signatureStudio: turning,
-                            ...(turning ? {
-                              framing: config.framing === 'Three-Quarter' || config.framing === 'Full Body' ? 'Headshot' : config.framing,
-                              aspectRatio: config.aspectRatio === '16:9' || config.aspectRatio === '9:16' ? '1:1' : config.aspectRatio,
-                              cameraAngle: 'Eye Level',
-                            } : {}),
-                          });
-                        }}
-                        style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, padding: '12px 14px', borderRadius: 10, marginBottom: 10, cursor: 'pointer', transition: 'all 0.15s', background: config.signatureStudio ? 'linear-gradient(135deg, rgba(159,103,255,0.2), rgba(76,29,149,0.3))' : T.panel, border: `1px solid ${config.signatureStudio ? T.purple : T.panelBorder}`, boxShadow: config.signatureStudio ? `0 0 0 1px ${T.purple}` : 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: config.signatureStudio ? T.white : T.white80 }}>✦ Signature Studio Headshot</span>
-                          {config.signatureStudio && <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 100, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple }}>Active</span>}
-                        </div>
-                        <span style={{ fontSize: 11, color: config.signatureStudio ? T.white60 : T.white40 }}>Sophisticated studio look for the modern professional.</span>
-                      </button>
-
-                      {/* Standard mood pills — grayed out when Signature Studio active */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10, opacity: config.signatureStudio ? 0.3 : 1, pointerEvents: config.signatureStudio ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
                         {['Polished Professional','Daylight','Cinematic','Dark & Moody'].map((m) => (
                           <button key={m} type="button" onClick={() => handleMoodChange(m)} style={pill((config.mood||'Polished Professional')===m)}>{m}</button>
                         ))}
                       </div>
-                      {config.signatureStudio && (
-                        <p style={{ fontSize: 10, color: T.white40, marginBottom: 10 }}>Standard lighting moods are disabled while Signature Studio Headshot is active.</p>
-                      )}
-
-                      {/* Black & White toggle */}
                       <button type="button" onClick={() => updateConfig({ blackAndWhite: !config.blackAndWhite })}
                         style={{ ...pill(!!config.blackAndWhite), width: '100%', justifyContent: 'center' }}>
                         {config.blackAndWhite ? '◼' : '◻'} Black & White
                       </button>
                       {config.blackAndWhite && (
-                        <p style={{ fontSize: 10, color: T.white60, marginTop: 6 }}>Applies a professional darkroom-style B&W conversion to the final image.</p>
+                        <p style={{ fontSize: 10, color: T.white60, marginTop: 6 }}>Professional darkroom-style B&W conversion.</p>
                       )}
                     </div>
 
