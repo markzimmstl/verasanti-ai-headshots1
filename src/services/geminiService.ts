@@ -235,23 +235,40 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   let lightingDirectionOverride = "";
 
     // ── SIGNATURE STUDIO HEADSHOT — full override before framing/scene runs ──
-    if (config.signatureStudio) {
+  if (config.signatureStudio) {
+    const bodyVariation = (() => {
+      const v = globalIndex % 5;
+      if (v === 0) return "Shoulders and body perfectly square to camera. Completely symmetrical stance.";
+      if (v === 1) return "Body turned very slightly (15-20 degrees) to camera RIGHT. Face turned directly back to camera lens. Classic subtle portrait angle.";
+      if (v === 2) return "Body turned slightly (25-35 degrees) to camera LEFT. Face turned directly back to camera lens. Weight shifted to back foot.";
+      if (v === 3) return "Body turned very slightly (15-20 degrees) to camera LEFT. Face turned directly back to camera lens.";
+      return "Body turned (30-45 degrees) to camera RIGHT. Face turned directly back to camera lens. Classic portrait pose.";
+    })();
+
+    const expressionVariation = (() => {
+      const v = globalIndex % 4;
+      if (v === 0) return "Expression: Warm, natural, approachable smile — genuine and relaxed, not forced. Eyes bright and engaged.";
+      if (v === 1) return "Expression: Composed and confident — slight hint of a smile, direct eye contact, authoritative presence.";
+      if (v === 2) return "Expression: Serious and professional — neutral mouth, strong direct gaze, calm confidence.";
+      return "Expression: Friendly and open — soft natural smile, relaxed jaw, warm and inviting energy.";
+    })();
+
     framingInstruction = `** SIGNATURE STUDIO HEADSHOT — ALL OTHER FRAMING AND POSE RULES ARE OVERRIDDEN **
-      FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot — not a waist-up, not a full body.
-      POSE: The subject faces DIRECTLY and SQUARELY into the camera. Face straight on. No turning. No 3/4 angle. No profile. Shoulders square to camera. Torso may be angled very slightly on variations only. It is acceptable to slightly crop the edges of the shoulders.
-      CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
-      BACKGROUND: Dark gray seamless studio backdrop. Base color #141414 with a very subtle circular gradient brightening to approximately #323232 at the center behind the subject's head and shoulders — like a classic studio vignette falloff. No environmental elements. No props. No location context. Pure studio.
-      LIGHTING: True clamshell setup — two light sources only, placed on the vertical center axis directly in front of the subject:
-        1. KEY LIGHT: 24" Westcott Rapid Box Beauty Dish by Joel Grimes positioned DIRECTLY ABOVE the subject's head on the vertical center axis — not to the left, not to the right, centered. Aimed downward at approximately 45 degrees toward the face. This creates soft, even, flattering illumination with gentle shadow falloff under the chin and nose.
-        2. EYELIGHTER REFLECTOR: Westcott Eyelighter reflector placed directly below the subject's face, centered on the vertical axis. This bounces light upward to fill shadows under the chin and eyes. CRITICAL: This creates a distinctive semi-circular catchlight in the BOTTOM of each iris — centered at the 6 o'clock position, approximately one quarter the diameter of the iris. This catchlight MUST be visible and accurate.
-      CATCHLIGHTS: There must be TWO visible catchlights in each eye: (1) A bright round catchlight from the beauty dish at approximately the 12 o'clock position in the iris. (2) A soft, wide crescent-arc catchlight at the 6 o'clock position from the Eyelighter — this is NOT a dot or small point. It is a broad, gentle arc spanning approximately one third of the iris width, centered at the very bottom of the iris, shaped like a soft smile or half-moon. It should be clearly visible but softer and dimmer than the top catchlight. CRITICAL: The bottom catchlight must be a wide crescent arc, never a small dot or point.
-      NO SIDE LIGHTING. NO GRIDDED FILL LIGHT. NO LIGHTS FROM LEFT OR RIGHT. Only the overhead beauty dish and the underchin eyelighter reflector.
-      RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
+    FRAMING: Crop from lower chest to just above the head. This is a tight studio headshot. The bottom of the frame must fall at or just below the chest — NOT at the waist, NOT at the hips. Show the face, neck, collar/neckline, and upper chest only.
+    POSE: ${bodyVariation} The face ALWAYS points DIRECTLY into the camera lens — no profile, no looking away. ${expressionVariation}
+    CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
+    BACKGROUND: Dark gray seamless studio backdrop. Base color #141414 with a very subtle circular gradient brightening to approximately #323232 at the center behind the subject's head — like a classic studio vignette falloff. No environmental elements. No props. No location context. Pure studio.
+    LIGHTING: True clamshell setup using feathered beauty dish technique:
+      KEY LIGHT: 24" Westcott Rapid Box Beauty Dish, positioned directly overhead on the vertical center axis — centered left to right, NOT off to one side. The dish is FEATHERED: it is angled and positioned so that its brightest hot-spot falls approximately one foot in FRONT of the subject, not directly onto the face. The subject is lit by the softer, more diffuse EDGE of the light, not the center beam. This creates soft, even illumination across the face with gentle, natural shadow falloff on the sides of the face and a slight shadow under the nose and chin. The light wraps slightly — not flat, not harsh, but sculpted and flattering.
+      EYELIGHTER: Westcott Eyelighter reflector placed directly below the subject's face at approximately waist height, on the vertical center axis. Because the beauty dish hotspot falls in front of the subject, the eyelighter receives the strongest, most direct portion of that reflected light. It bounces this light upward, filling the under-chin shadows and creating the signature dual catchlight — a soft, wide crescent arc at the 6 o'clock position in each iris (NOT a dot — a broad, gentle arc spanning approximately one third of the iris width).
+    CATCHLIGHTS: TWO catchlights in each eye: (1) A round catchlight at 12 o'clock from the beauty dish edge light. (2) A soft, wide crescent-arc catchlight at 6 o'clock from the eyelighter — broad and gentle, not a small dot.
+    NO SIDE LIGHTING. NO GRIDDED FILL. NO LIGHTS FROM LEFT OR RIGHT. Only overhead feathered beauty dish and underchin eyelighter.
+    RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting with natural facial sculpting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
 
     stylePrompt = "Dark gray seamless studio backdrop #141414 with subtle circular center brightening to #323232 behind subject. Pure studio. No location. No props.";
     lensInstruction = "85mm Telephoto Portrait Lens";
     lightingDirectionOverride = "";
-    negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements. ONLY a dark gray studio backdrop (#141414 to #323232 center gradient). Face STRAIGHT ON to camera — ZERO 3/4 angle, ZERO profile. NO side lighting. NO lights from left or right. Only overhead beauty dish and underchin eyelighter. ***`;
+    negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements. ONLY a dark gray studio backdrop. Face STRAIGHT ON to camera — ZERO profile. NO side lighting. NO lights from left or right. Only overhead feathered beauty dish and underchin eyelighter. ABSOLUTELY NO VISIBLE LIGHTING EQUIPMENT IN THE FRAME — no beauty dishes, no softboxes, no reflectors, no light stands visible in the image. The lighting equipment must not appear in the photograph. ***`;
   }
 
   if (!config.signatureStudio) switch (config.framing) {
@@ -616,44 +633,80 @@ export const generateBrandPhoto = async (
 };
 
 export const refineGeneratedImage = async (
-  currentImageBase64: string,
+  currentImageBase64OrUrl: string,
   refinementPrompt: string,
   aspectRatio: AspectRatio = "1:1"
 ): Promise<string> => {
   const ai = getAiClient();
-  const mimeType = currentImageBase64.includes("image/png") ? "image/png" : "image/jpeg";
+
+  // If we received a URL instead of base64, fetch and convert it first
+  let imageData = currentImageBase64OrUrl;
+  if (currentImageBase64OrUrl.startsWith('http')) {
+    try {
+      const response = await fetch(currentImageBase64OrUrl);
+      const blob = await response.blob();
+      imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn('Failed to fetch image URL for refinement:', err);
+      return currentImageBase64OrUrl;
+    }
+  }
+
+  const mimeType = imageData.includes("image/png") ? "image/png" : "image/jpeg";
   try {
     const response = await ai.models.generateContent({
       model: IMAGE_MODEL,
       contents: [{ role: "user", parts: [
-        { inlineData: { mimeType, data: cleanBase64(currentImageBase64) } },
+        { inlineData: { mimeType, data: cleanBase64(imageData) } },
         { text: `Edit this image: ${refinementPrompt}.` },
       ]}],
       config: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: aspectRatio.replace('/', ':') } },
     });
     const outputParts = response.candidates?.[0]?.content?.parts;
     const images = extractImagesFromParts(outputParts || []);
-    // If refinement returns no image, silently fall back to the original
     if (images.length === 0) {
       console.warn("Refinement returned no images — using original.");
-      return currentImageBase64;
+      return currentImageBase64OrUrl;
     }
     return images[0];
   } catch (error: any) {
-    // Never show alert() — silently return the original image so generation continues
     console.warn("Refinement failed, using original image:", error.message);
-    return currentImageBase64;
+    return currentImageBase64OrUrl;
   }
 };
 
 // MAGIC ERASER
 export const magicErase = async (
-  imageBase64: string,
+  imageBase64OrUrl: string,
   maskBase64: string,
   aspectRatio: AspectRatio = "1:1"
 ): Promise<string> => {
   const ai = getAiClient();
-  const mimeType = imageBase64.includes("image/png") ? "image/png" : "image/jpeg";
+
+  // If we received a URL instead of base64, fetch and convert it first
+  let imageData = imageBase64OrUrl;
+  if (imageBase64OrUrl.startsWith('http')) {
+    try {
+      const response = await fetch(imageBase64OrUrl);
+      const blob = await response.blob();
+      imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn('Failed to fetch image URL for magic erase:', err);
+      throw new Error('Could not load image for editing.');
+    }
+  }
+
+  const mimeType = imageData.includes("image/png") ? "image/png" : "image/jpeg";
   const prompt = `I am providing two images:
 1. The ORIGINAL photo
 2. A MASK image with RED brush strokes painted over a specific area
@@ -671,7 +724,7 @@ Your task — follow these rules with extreme precision:
       model: IMAGE_MODEL,
       contents: [{ role: "user", parts: [
         { text: prompt },
-        { inlineData: { mimeType, data: cleanBase64(imageBase64) } },
+        { inlineData: { mimeType, data: cleanBase64(imageData) } },
         { inlineData: { mimeType: "image/png", data: cleanBase64(maskBase64) } },
       ]}],
       config: { responseModalities: ["TEXT", "IMAGE"], imageConfig: { aspectRatio: aspectRatio.replace('/', ':') } },

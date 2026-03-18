@@ -1075,6 +1075,38 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                 </SectionBlock>
               </div>
 
+                  {/* ── SIGNATURE STUDIO HEADSHOT BANNER ── */}
+              <div
+                onClick={() => {
+                  const turning = !config.signatureStudio;
+                  updateConfig({
+                    signatureStudio: turning,
+                    ...(turning ? {
+                      framing: config.framing === 'Three-Quarter' || config.framing === 'Full Body' ? 'Headshot' : config.framing,
+                      aspectRatio: config.aspectRatio === '16:9' || config.aspectRatio === '9:16' ? '1:1' : config.aspectRatio,
+                      cameraAngle: 'Eye Level',
+                    } : {}),
+                  });
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px', borderRadius: 14, marginBottom: 24, cursor: 'pointer', transition: 'all 0.15s', background: config.signatureStudio ? 'linear-gradient(135deg, rgba(159,103,255,0.15), rgba(76,29,149,0.25))' : 'linear-gradient(135deg, rgba(159,103,255,0.05), rgba(76,29,149,0.08))', border: `1px solid ${config.signatureStudio ? T.purple : T.purpleBorder}`, boxShadow: config.signatureStudio ? `0 0 0 1px ${T.purpleBorder}` : 'none' }}
+                onMouseOver={e => { if (!config.signatureStudio) (e.currentTarget as HTMLElement).style.opacity = '0.85'; }}
+                onMouseOut={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: config.signatureStudio ? T.purpleGrad : T.purpleDim, border: `1px solid ${T.purpleBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Camera style={{ width: 18, height: 18, color: config.signatureStudio ? T.white : T.purple }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: config.signatureStudio ? T.white : T.white80, margin: 0 }}>✦ Signature Studio Headshot</p>
+                    {config.signatureStudio && <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 100, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, color: T.purple }}>Active</span>}
+                  </div>
+                  <p style={{ fontSize: 12, color: config.signatureStudio ? T.white60 : T.white40, margin: 0 }}>Sophisticated studio look for the modern professional. Overrides background and lighting.</p>
+                </div>
+                <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${config.signatureStudio ? T.purple : T.panelBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: config.signatureStudio ? T.purpleGrad : 'transparent' }}>
+                  {config.signatureStudio && <span style={{ color: T.white, fontSize: 11 }}>✓</span>}
+                </div>
+              </div>
+
               {/* SECTION 3 — Fine-Tune */}
               <div ref={sectionRefs.sec3}>
                 <SectionBlock num={3} icon={<Sparkles style={{ width: 16, height: 16 }} />} title="Fine-Tune Your Look" badge="Optional" unlocked={!!sceneId}
@@ -1312,7 +1344,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       <button
                         type="button"
                         onClick={() => setShowShotListTemplate(true)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.purple, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', marginBottom: 10, transition: 'all 0.15s' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: T.white, background: T.purpleGrad, border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginBottom: 10, transition: 'all 0.15s', boxShadow: '0 4px 16px rgba(46,16,101,0.35)' }}
                       >
                         ✦ Use guided template
                       </button>
