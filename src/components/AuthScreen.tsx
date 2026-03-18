@@ -221,12 +221,11 @@ export default function AuthScreen({ onLogin }: { onLogin?: LoginFn }) {
       <div className="auth-container" style={{ width: '100%', maxWidth: '900px', minHeight: '580px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', position: 'relative', zIndex: 2 }}>
 
         {/* Left panel */}
-        <div className="auth-left-panel fade-up-1">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: 34, height: 34, background: 'linear-gradient(135deg, #7C3AED, #9F67FF)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '700', color: '#fff', fontFamily: "'Cormorant Garamond', serif" }}>V</div>
-            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '20px', fontWeight: '500', color: '#fff', letterSpacing: '0.02em' }}>VeraLooks</span>
-          </div>
-          <div style={{ maxWidth: '340px' }}>
+          <div className="auth-left-panel fade-up-1">
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <img src="/logo.png" alt="VeraLooks" style={{ height: 40, width: 'auto' }} />
+            </div>
+            <div style={{ maxWidth: '340px' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: '100px', padding: '5px 12px', marginBottom: '24px' }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#9F67FF' }} />
               <span style={{ fontSize: '11px', color: '#B98FFF', fontWeight: '500', letterSpacing: '0.06em', textTransform: 'uppercase' }}>AI Brand Photography</span>
