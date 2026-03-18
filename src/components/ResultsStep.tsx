@@ -326,8 +326,13 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   };
 
   const insertEditedImage = (url: string, source: GeneratedImage, label: string) => {
-    const baseName = source.styleName.replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '').trim();
-    const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: url, imageUrl: url, styleName: `${baseName} ${label}`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any) };
+    const baseName = source.styleName
+      .replace(/ \(Edited\)/g, '').replace(/ · Edited/g, '')
+      .replace(/ \(Regenerated\)/g, '').replace(/ · Regenerated/g, '')
+      .replace(/ \(Erased\)/g, '').replace(/ · Erased/g, '')
+      .trim();
+    const dotLabel = label.replace('(Edited)', '· Edited').replace('(Regenerated)', '· Regenerated').replace('(Erased)', '· Erased');
+    const newImg: GeneratedImage = { id: Date.now() + '' + Math.random(), originalUrl: url, imageUrl: url, styleName: `${baseName} ${dotLabel}`, styleId: source.styleId, createdAt: Date.now(), aspectRatio: source.aspectRatio, ...(({ stylePrompt: (source as any).stylePrompt, originalConfig: (source as any).originalConfig }) as any) };
     setDisplayImages(prev => { const updated = [...prev]; updated.splice(prev.findIndex(i => i.id === source.id) + 1, 0, newImg); return updated; });
     setSelectedImage(newImg); setEditPrompt(''); setSelectedPreset(null); setIsEditPanelOpen(false);
   };
@@ -703,8 +708,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                       if (selectedImage?.id === img.id) setSelectedImage(displayImages.find(i => i.id !== img.id) || null);
                       if (onDeleteImage) onDeleteImage(img.id);
                     }}
-                    className="group-hover:opacity-100"
-                    style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', color: '#fff', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
+                       style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>
                     ✕
                   </button>
                 </div>
