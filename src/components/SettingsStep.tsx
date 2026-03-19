@@ -433,15 +433,22 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
     setCustomBgImage(null);
   };
 
-  const canBuildLook = clothingStyleGroup && clothingOption && sceneId && scenePrompt && config.framing && config.aspectRatio && config.mood;
+  const canBuildLook = config.signatureStudio
+    ? (clothingStyleGroup && clothingOption && config.framing && config.aspectRatio)
+    : (clothingStyleGroup && clothingOption && sceneId && scenePrompt && config.framing && config.aspectRatio && config.mood);
 
   const handleAddOrUpdateLook = () => {
-    if (!canBuildLook) { alert('Please choose a Clothing Style, clothing option, scene, and camera settings for this Look.'); return; }
-    if (!clothingStyleGroup || !clothingOption || !sceneId || !sceneName || !scenePrompt) return;
+    if (!canBuildLook) { alert('Please choose a Clothing Style, clothing option, and camera settings for this Look.'); return; }
+    if (!clothingStyleGroup || !clothingOption) return;
+    const effectiveSceneId = config.signatureStudio ? 'signature-studio' : (sceneId || '');
+    const effectiveSceneName = config.signatureStudio ? 'Signature Studio' : (sceneName || '');
+    const effectiveScenePrompt = config.signatureStudio ? (config.backgroundType || 'Dark gray seamless studio backdrop') : (scenePrompt || '');
+    if (!config.signatureStudio && (!effectiveSceneId || !effectiveScenePrompt)) return;
     const newLook: LookConfig = {
       id: activeLookId || `${Date.now()}`,
       label: activeLookId ? looks.find((l) => l.id === activeLookId)?.label || 'Look' : `Look #${looks.length + 1}`,
-      clothingStyleGroup, clothingOption, sceneId, sceneName, scenePrompt,
+      clothingStyleGroup, clothingOption,
+      sceneId: effectiveSceneId, sceneName: effectiveSceneName, scenePrompt: effectiveScenePrompt,
       imageCount, variationLevel, bodySizeOffset,
       config: cloneConfig({ ...config, retouchLevel: config.retouchLevel || 'None' }),
       isSurprise: false,
