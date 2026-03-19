@@ -265,7 +265,13 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     NO SIDE LIGHTING. NO GRIDDED FILL. NO LIGHTS FROM LEFT OR RIGHT. Only overhead feathered beauty dish and underchin eyelighter.
     RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting with natural facial sculpting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
 
-    stylePrompt = "Dark gray seamless studio backdrop #141414 with subtle circular center brightening to #323232 behind subject. Pure studio. No location. No props.";
+    stylePrompt = `ABSOLUTE BACKGROUND MANDATE — NO EXCEPTIONS: ${
+      config.backgroundType?.includes('#FFFFFF') 
+        ? 'PURE WHITE seamless studio paper backdrop. Solid white #FFFFFF wall-to-wall. No texture. No gradient. No environmental elements whatsoever.'
+        : config.backgroundType?.includes('#000000')
+        ? 'DEEP BLACK seamless studio paper backdrop. Near-solid black #000000 with only the most imperceptible brightening at center. No environmental elements whatsoever.'
+        : 'DARK GRAY seamless studio paper backdrop. Base color #141414 with subtle circular brightening to #323232 at center only. No environmental elements whatsoever.'
+    } This is a controlled studio environment. There is NO wood paneling. NO office. NO furniture. NO windows. NO bookshelves. NO architectural elements. ONLY seamless studio paper behind the subject.`;
     lensInstruction = "85mm Telephoto Portrait Lens";
     lightingDirectionOverride = "";
     negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements. ONLY a dark gray studio backdrop. Face STRAIGHT ON to camera — ZERO profile. NO side lighting. NO lights from left or right. Only overhead feathered beauty dish and underchin eyelighter. ABSOLUTELY NO VISIBLE LIGHTING EQUIPMENT IN THE FRAME — no beauty dishes, no softboxes, no reflectors, no light stands visible in the image. The lighting equipment must not appear in the photograph. ***`;
