@@ -430,11 +430,43 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
   negativeConstraints += ` AVOID: overly perfect clothing (no catalog-flat fabric, no CGI-smooth surfaces, no unnaturally pristine wrinkle-free garments). AVOID: studio-artifical lighting that looks computer-rendered or evenly lit without shadow falloff. AVOID: plastic-looking surfaces, unnaturally sharp fabric edges, or clothing that appears vacuum-pressed with zero natural drape.`;
 
   const naturalismInstruction = `
-   NATURALISM & IMPERFECTION (IMPORTANT):
-   - CLOTHING: Fabric must show natural drape, subtle creases, and organic texture. A well-pressed professional garment still has slight fold variation and weight. It should NOT look like a CGI render or catalog photo with impossibly smooth surfaces.
-   - LIGHTING: Light should have natural falloff, subtle shadows in fabric folds, and directional quality. Avoid flat, even, "everywhere at once" lighting that removes all depth.
-   - SURFACES & ENVIRONMENT: Background elements should have slight material texture — wood grain, fabric weave, painted wall variation. Nothing should look plastic or artificially perfect.
-   - OVERALL FEEL: The final image should feel like it was taken by a skilled photographer on location — not assembled in 3D software. Slight, authentic imperfections are preferred over hyper-polished artificial perfection.
+   PHOTOREALISTIC MEDIUM-FORMAT RENDERING (CRITICAL — APPLIES TO EVERY ELEMENT IN THE FRAME):
+
+   SKIN:
+   - Render visible pore structure across the entire face — nose, cheeks, forehead, chin.
+   - Show natural micro-texture: fine vellus hair (peach fuzz) on cheeks and forehead, subtle skin variation across different facial zones.
+   - Skin tone must have natural chromatic variation — slight warmth on cheeks, subtle coolness under eyes, natural flush on nose bridge.
+   - Highlight rolloff must be soft and gradual — no blown-out white patches. Specular highlights on skin should be small and natural, not broad or plastic.
+   - Fine lines, pores, and natural skin imperfections must be present and visible. The face must NOT look airbrushed, filtered, or digitally smoothed in any way.
+   - Subsurface scattering: skin should appear slightly translucent at the edges of ears, nostrils, and fingers when lit from behind or beside.
+
+   HAIR:
+   - Individual hair strands must be visible and distinct, especially at the hairline, temples, and edges.
+   - Hair must show natural variation in tone — lighter strands, darker strands, natural highlights and lowlights woven throughout.
+   - No uniform, perfectly identical strand repetition. Hair should look like it was photographed, not rendered.
+   - Flyaways, wispy strands at the hairline, and subtle frizz are natural and should be present.
+   - Hair texture at the crown and along the length must show natural volume variation and organic movement.
+
+   CLOTHING & FABRIC:
+   - Every garment must show natural fabric behavior — subtle wrinkles at the joints, drape caused by gravity, compression folds where the garment meets the body.
+   - Fabric weave or texture must be visible at normal viewing distance — the difference between cotton, linen, wool, and silk must be clearly apparent.
+   - No catalog-flat fabric. No CGI-smooth surfaces. No impossibly perfect, wrinkle-free garments.
+   - Stitching, seams, and button details should be physically accurate and visible.
+   - Subtle lint, fabric variation, and natural wear are acceptable and add realism.
+
+   SCENE & ENVIRONMENT:
+   - Every surface in the scene must have visible material texture — wood grain, fabric weave, painted wall variation, concrete roughness, leather grain.
+   - Nothing in the scene should look plastic, synthetic, or artificially perfect.
+   - Objects near the subject (furniture, props, surfaces) must show the same level of photographic detail as the subject.
+   - Natural depth of field: elements closer to the camera should be slightly sharper than elements further away, creating natural optical depth.
+
+   OVERALL PHOTOGRAPHIC QUALITY:
+   - This image must look like it was captured on a medium-format camera (Hasselblad, Phase One) with a high-quality prime lens.
+   - Tonal range should be rich and full — deep blacks with detail, bright highlights with rolloff, and a wide midtone range.
+   - Micro-contrast throughout the image — fine detail edges should have subtle local contrast that makes everything feel sharp and three-dimensional.
+   - Slight, authentic luminance noise is acceptable and preferred over artificial smoothness.
+   - Color rendering should be neutral and accurate — no oversaturation, no artificial color grading.
+   - The final image must feel like it was taken by a skilled photographer, not assembled in software.
   `;
 
   // ── EXPERT MODE: the user's prompt IS the brief. Don't bury it under defaults. ──

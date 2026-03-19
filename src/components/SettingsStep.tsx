@@ -928,7 +928,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                   badge={clothingStyleGroup || undefined}
                   rightEl={clothingStyleGroup && sec1Open ? (
                     <button type="button" onClick={(e) => { e.stopPropagation(); handleSurpriseMe(); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.purple, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, borderRadius: 100, padding: '4px 12px', cursor: 'pointer', transition: 'all 0.15s' }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.white, background: T.purpleGrad, border: `1px solid ${T.purpleBorder}`, borderRadius: 100, padding: '4px 12px', cursor: 'pointer', transition: 'all 0.15s', fontWeight: 600 }}>
                       <Shuffle style={{ width: 11, height: 11 }} />Surprise Me
                     </button>
                   ) : undefined}
@@ -983,9 +983,9 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                             ))}
                           </div>
                           <button onClick={handleCustomClothingToggle}
-                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 16, padding: '12px', borderRadius: 10, border: `1px dashed ${T.panelBorder}`, background: 'none', color: T.white40, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}
-                            onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purple; (e.currentTarget as HTMLElement).style.color = T.purple; }}
-                            onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = T.panelBorder; (e.currentTarget as HTMLElement).style.color = T.white40; }}>
+                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 16, padding: '12px', borderRadius: 10, border: `1px dashed ${T.purpleBorder}`, background: 'none', color: T.white80, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purple; (e.currentTarget as HTMLElement).style.color = T.white; }}
+                            onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purpleBorder; (e.currentTarget as HTMLElement).style.color = T.white80; }}>
                             <Plus style={{ width: 14, height: 14 }} />Add Your Own Outfit
                           </button>
                         </>
@@ -1027,10 +1027,10 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                         })}
                       </div>
                       <button onClick={handleCustomBackgroundToggle}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 14, padding: '12px', borderRadius: 10, border: `1px dashed ${T.panelBorder}`, background: 'none', color: T.white40, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s' }}
-                        onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purple; (e.currentTarget as HTMLElement).style.color = T.purple; }}
-                        onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = T.panelBorder; (e.currentTarget as HTMLElement).style.color = T.white40; }}>
-                        <Plus style={{ width: 14, height: 14 }} />Add Your Own Background
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', marginTop: 14, padding: '12px', borderRadius: 10, border: `1px dashed ${T.purpleBorder}`, background: 'none', color: T.white80, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}
+                        onMouseOver={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purple; (e.currentTarget as HTMLElement).style.color = T.white; }}
+                        onMouseOut={e => { (e.currentTarget as HTMLElement).style.borderColor = T.purpleBorder; (e.currentTarget as HTMLElement).style.color = T.white80; }}>
+                        <Plus style={{ width: 14, height: 14 }} />Add Your Own Background Scene
                       </button>
                     </>
                   ) : (

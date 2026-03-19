@@ -110,13 +110,17 @@ const EDIT_CATEGORIES: { category: string; presets: EditPreset[] }[] = [
     ],
   },
   {
-    category: 'Overall Quality',
-    presets: [
-      { label: 'Sharpen overall detail', prompt: 'Increase overall image sharpness and micro-contrast. Enhance fine detail in the face, clothing, and background.', mode: 'edit' },
-      { label: 'Fix AI artifacts', prompt: 'Fix any unnatural AI artifacts — incorrect finger counts, asymmetrical facial features, distorted clothing seams, or unrealistic skin patterns. Make the image look like a real photograph.', mode: 'edit' },
-    ],
-  },
-];
+    category: 'Retouch Options',
+      presets: [
+        { label: 'No retouch — natural skin', prompt: 'Remove all beauty filter effects. Restore completely natural skin texture with visible pores, fine lines, subtle skin variation, and realistic imperfections. The skin must look like a high-resolution photograph with zero digital smoothing.', mode: 'edit' },
+        { label: 'Natural retouch', prompt: 'Apply light, natural retouching — reduce blemishes subtly, even out skin tone slightly, but preserve all natural skin texture, pores, and fine lines. Keep the result realistic and human.', mode: 'edit' },
+        { label: 'Polished retouch', prompt: 'Apply commercial-level retouching — smooth skin tone, reduce blemishes and fine lines, brighten eyes slightly. Keep essential facial features intact. Result should look polished and professional but not artificial.', mode: 'edit' },
+        { label: 'Airbrushed', prompt: 'Apply high-fashion magazine retouching — very smooth, flawless complexion, perfected features, even skin tone throughout, minimized pores and lines. Glamorous and polished.', mode: 'edit' },
+        { label: 'Sharpen overall detail', prompt: 'Increase overall image sharpness and micro-contrast. Enhance fine detail in the face, clothing, and background.', mode: 'edit' },
+        { label: 'Fix AI artifacts', prompt: 'Fix any unnatural AI artifacts — incorrect finger counts, asymmetrical facial features, distorted clothing seams, or unrealistic skin patterns. Make the image look like a real photograph.', mode: 'edit' },
+      ],
+    },
+  ];
 
 const REGEN_ALL_PRESETS: EditPreset[] = EDIT_CATEGORIES.flatMap(c => c.presets).filter(p => p.mode === 'regenerate');
 
