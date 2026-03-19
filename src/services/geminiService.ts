@@ -17,7 +17,7 @@ export const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-const IMAGE_MODEL = "gemini-2.5-flash-image";
+const IMAGE_MODEL = "gemini-3.1-flash-image-preview";
 const TEXT_MODEL = "gemini-2.5-flash";
 
 const cleanBase64 = (dataUrl: string): string => {
