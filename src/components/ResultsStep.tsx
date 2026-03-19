@@ -209,6 +209,10 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   const [hasMask, setHasMask] = useState(false);
 
   useEffect(() => {
+    setDisplayImages(images);
+  }, [images]);
+  
+  useEffect(() => {
     if (editMode === 'eraser' && selectedImage && canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');

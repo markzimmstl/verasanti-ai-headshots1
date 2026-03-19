@@ -928,6 +928,25 @@ function App() {
                       setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
                       if (user) deleteImageForUser(user.id, imageId).catch(() => {});
                     }}
+                    onSaveImage={(image) => {
+                      setGeneratedImages(prev => {
+                        // Find the source image (strip edit labels to match base name)
+                        const baseName = image.styleName
+                          .replace(/ · Edited/g, '').replace(/ · Regenerated/g, '').replace(/ · Erased/g, '')
+                          .replace(/ \(Edited\)/g, '').replace(/ \(Regenerated\)/g, '').replace(/ \(Erased\)/g, '')
+                          .trim();
+                        const sourceIndex = prev.findIndex(img =>
+                          img.styleName === baseName || img.id === image.styleId
+                        );
+                        if (sourceIndex !== -1) {
+                          const updated = [...prev];
+                          updated.splice(sourceIndex + 1, 0, image);
+                          return updated;
+                        }
+                        return [...prev, image];
+                      });
+                      if (user) saveImagesForUser(user.id, [image]).catch(() => {});
+                    }}
                   />
                 )}
                 {currentStep === 'shotlist' && (
