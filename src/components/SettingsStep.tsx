@@ -1192,8 +1192,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
               {/* SECTION 3 — Fine-Tune */}
               <div ref={sectionRefs.sec3}>
-                <SectionBlock num={3} icon={<Sparkles style={{ width: 16, height: 16 }} />} title="Fine-Tune Your Look" badge="Optional" unlocked={!!sceneId}
-                  isOpen={sec3Open} onToggle={() => sceneId && setSec3Open(p => !p)} hint="Choose a Background first">
+                <SectionBlock num={3} icon={<Sparkles style={{ width: 16, height: 16 }} />} title="Fine-Tune Your Look" badge="Optional" unlocked={!!sceneId || config.signatureStudio}
+                  isOpen={sec3Open} onToggle={() => (sceneId || config.signatureStudio) && setSec3Open(p => !p)} hint="Choose a Background or Signature Studio first">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="finetune-grid">
                     <style>{`@media (max-width: 600px) { .finetune-grid { grid-template-columns: 1fr !important; } }`}</style>
 
@@ -1284,8 +1284,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
               {/* SECTION 4 — Camera & Composition */}
               <div ref={sectionRefs.sec4} style={{ opacity: config.signatureStudio ? 0.4 : 1, pointerEvents: config.signatureStudio ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-                <SectionBlock num={4} icon={<Aperture style={{ width: 16, height: 16 }} />} title="Camera, Lighting & Composition" badge="Optional" unlocked={!!sceneId}
-                  isOpen={sec4Open} onToggle={() => sceneId && setSec4Open(p => !p)} hint="Choose a Background first">
+                <SectionBlock num={4} icon={<Aperture style={{ width: 16, height: 16 }} />} title="Camera, Lighting & Composition" badge="Optional" unlocked={!!sceneId || config.signatureStudio}
+                  isOpen={sec4Open} onToggle={() => (sceneId || config.signatureStudio) && setSec4Open(p => !p)} hint="Choose a Background first">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="camera-grid">
                     <style>{`@media (max-width: 600px) { .camera-grid { grid-template-columns: 1fr !important; } }`}</style>
 
@@ -1593,12 +1593,12 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
           {/* Save Look button */}
           {(() => {
-            const canSave = !!clothingStyleGroup && !!clothingOption && !!sceneId;
+            const canSave = !!clothingStyleGroup && !!clothingOption && (!!sceneId || !!config.signatureStudio);
             return (
               <div style={{ background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 16, padding: 16 }}>
                 {!canSave && (
                   <p style={{ fontSize: 11, color: T.white40, textAlign: 'center', marginBottom: 12 }}>
-                    {!clothingStyleGroup ? 'Choose a Clothing Style to get started.' : !clothingOption ? 'Choose a clothing item next.' : 'Choose a Background Scene to unlock.'}
+                  {!clothingStyleGroup ? 'Choose a Clothing Style to get started.' : !clothingOption ? 'Choose a clothing item next.' : !config.signatureStudio ? 'Choose a Background Scene or activate Signature Studio.' : 'Choose your Signature Studio options above.'}                  
                   </p>
                 )}
                 <button type="button" onClick={handleAddOrUpdateLook} disabled={!canSave}
