@@ -1192,7 +1192,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
               {/* SECTION 3 — Fine-Tune */}
               <div ref={sectionRefs.sec3}>
-                <SectionBlock num={3} icon={<Sparkles style={{ width: 16, height: 16 }} />} title="Fine-Tune Your Look" badge="Optional" unlocked={!!sceneId || config.signatureStudio}
+                <SectionBlock num={3} icon={<Sparkles style={{ width: 16, height: 16 }} />} title="Fine-Tune Your Look" badge="Optional" unlocked={!!sceneId || !!config.signatureStudio}
                   isOpen={sec3Open} onToggle={() => (sceneId || config.signatureStudio) && setSec3Open(p => !p)} hint="Choose a Background or Signature Studio first">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="finetune-grid">
                     <style>{`@media (max-width: 600px) { .finetune-grid { grid-template-columns: 1fr !important; } }`}</style>
@@ -1284,7 +1284,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
               {/* SECTION 4 — Camera & Composition */}
               <div ref={sectionRefs.sec4} style={{ opacity: config.signatureStudio ? 0.4 : 1, pointerEvents: config.signatureStudio ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-                <SectionBlock num={4} icon={<Aperture style={{ width: 16, height: 16 }} />} title="Camera, Lighting & Composition" badge="Optional" unlocked={!!sceneId || config.signatureStudio}
+                <SectionBlock num={4} icon={<Aperture style={{ width: 16, height: 16 }} />} title="Camera, Lighting & Composition" badge="Optional" unlocked={!!sceneId || !!config.signatureStudio}
                   isOpen={sec4Open} onToggle={() => (sceneId || config.signatureStudio) && setSec4Open(p => !p)} hint="Choose a Background first">
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="camera-grid">
                     <style>{`@media (max-width: 600px) { .camera-grid { grid-template-columns: 1fr !important; } }`}</style>
