@@ -772,6 +772,16 @@ function App() {
                   </button>
                 )}
 
+                {/* Help / Contact */}
+                
+                  href="mailto:mark@veralooks.com?subject=VeraLooks%20Support"
+                  style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', padding: '4px 2px', transition: 'color 0.15s' }}
+                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+                  onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
+                >
+                  Help
+                </a>
+
                 {/* Credits button — clickable to open top-up modal */}
                 <button
                   onClick={handleAddCredits}
