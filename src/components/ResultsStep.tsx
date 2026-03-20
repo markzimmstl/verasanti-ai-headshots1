@@ -464,12 +464,14 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
       </div>
 
       {/* Success banner */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 12, marginBottom: 32, background: T.tealDim, border: `1px solid ${T.tealBorder}` }}>
-        <CheckCircle style={{ width: 18, height: 18, color: T.teal, flexShrink: 0 }} />
-        <p style={{ fontSize: 13, color: T.teal, margin: 0 }}>
-          Generation complete — download your images before closing this tab.
-        </p>
-      </div>
+      {images.some(img => img.createdAt > Date.now() - 5 * 60 * 1000) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 12, marginBottom: 32, background: T.tealDim, border: `1px solid ${T.tealBorder}` }}>
+          <CheckCircle style={{ width: 18, height: 18, color: T.teal, flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: T.teal, margin: 0 }}>
+            Generation complete — download your images before closing this tab.
+          </p>
+        </div>
+      )}
 
       {/* ── Main two-column grid ── */}
       <div className="results-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>

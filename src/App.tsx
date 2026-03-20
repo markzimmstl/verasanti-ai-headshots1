@@ -425,6 +425,19 @@ function App() {
     }
   }, []);
 
+  // Refresh images periodically to pick up deletions from other devices
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      loadImagesForUser(user.id).then(saved => {
+        if (saved.length > 0) {
+          setGeneratedImages(saved);
+        }
+      });
+    }, 60000); // refresh every 60 seconds
+    return () => clearInterval(interval);
+  }, [user]);
+
   const handleUploadContinue = () => {
     setCurrentStep('settings');
     window.scrollTo(0, 0);
