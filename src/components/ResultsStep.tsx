@@ -82,6 +82,7 @@ const EDIT_CATEGORIES: { category: string; presets: EditPreset[] }[] = [
   {
     category: 'Background & Scene',
     presets: [
+      { label: '✏️ Describe your own background', prompt: '', mode: 'edit' },
       { label: 'Zoom out — show more scene', prompt: 'Zoom out significantly to reveal more of the surrounding environment. Keep the subject centered but smaller in the frame with more background visible on all sides.', mode: 'edit' },
       { label: 'Blur background more', prompt: 'Apply a stronger, more pronounced lens blur (shallow depth of field / bokeh effect) to the background. The subject must remain in sharp focus.', mode: 'edit' },
       { label: 'Remove distracting objects', prompt: 'Remove any distracting background objects, poles, signs, or clutter from behind the subject. Replace with clean neutral background material matching the existing scene.', mode: 'edit' },
@@ -309,7 +310,16 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     finally { setIsRefining(false); }
   };
 
-  const handleSelectPreset = (preset: EditPreset) => { setSelectedPreset(preset); setEditPrompt(preset.prompt); };
+  const handleSelectPreset = (preset: EditPreset) => { 
+    setSelectedPreset(preset); 
+    setEditPrompt(preset.prompt);
+    if (preset.prompt === '') {
+      setTimeout(() => {
+        const textarea = document.querySelector('textarea[placeholder="Describe your edit with specific visual detail…"]') as HTMLTextAreaElement;
+        if (textarea) textarea.focus();
+      }, 50);
+    }
+  };
 
   const handleApplyEdit = async () => {
     if (!selectedImage || !editPrompt.trim()) return;

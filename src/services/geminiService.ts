@@ -207,8 +207,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
       negativeConstraints += ` *** ABSOLUTE WELLNESS SCENE RULE: The subject is a PROFESSIONAL standing PERFECTLY UPRIGHT. NEVER bending over. NEVER in a yoga pose. NEVER crouching. NEVER stretching. NEVER in any athletic or exercise position. The subject is a business professional who happens to be photographed in this space — they are NOT participating in the activity. Spine is VERTICAL. Standing tall with confident professional posture ONLY. ***`;
     }
     
-  const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling');
-  if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
+    const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling') || lowerPrompt.includes('boutique') || lowerPrompt.includes('shop front') || lowerPrompt.includes('retail');  if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
     const eyeLevelAngle = config.cameraAngle === 'High Angle' ? 'slightly above' : 'exactly at';
     // Replace the stylePrompt with a camera-neutral rewrite that describes the scene
     // from the photographer's eye level — removing tall-structure trigger words
