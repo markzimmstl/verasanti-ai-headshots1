@@ -342,6 +342,11 @@ function App() {
         setCredits(best);
         localStorage.setItem('veralooks_credits', best.toString());
         console.log('[Credits] Loaded from Base44:', b44Credits, '| local:', storedNow, '| using:', best);
+        // If localStorage has more credits than Base44, sync up (handles Stripe return race condition)
+        if (storedNow > b44Credits) {
+          console.log('[Credits] localStorage ahead of Base44 — syncing up');
+          saveCreditsForUser(user.id, user.email, best);
+        }
       } else if (!stored) {
         console.log('[Credits] No credits found for user');
       }
