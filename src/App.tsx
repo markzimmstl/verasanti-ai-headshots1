@@ -426,17 +426,17 @@ function App() {
   }, []);
 
   // Refresh images periodically to pick up deletions from other devices
-  useEffect(() => {
-    if (!user) return;
-    const interval = setInterval(() => {
-      loadImagesForUser(user.id).then(saved => {
-        if (saved.length > 0) {
-          setGeneratedImages(saved);
-        }
-      });
-    }, 60000); // refresh every 60 seconds
-    return () => clearInterval(interval);
-  }, [user]);
+    useEffect(() => {
+      if (!user) return;
+      const interval = setInterval(() => {
+        loadImagesForUser(user.id).then(saved => {
+          if (saved.length > 0) {
+            setGeneratedImages(saved);
+          }
+        });
+      }, 60000); // refresh every 60 seconds
+      return () => clearInterval(interval);
+    }, [user]);
 
   const handleUploadContinue = () => {
     setCurrentStep('settings');
@@ -760,7 +760,7 @@ function App() {
                 {generatedImages.length > 0 && (
                   <button
                     onClick={() => { setCurrentStep('results'); window.scrollTo(0, 0); }}
-                    className="hidden md:flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
+                    className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
                     style={{
                       background: currentStep === 'results' ? 'rgba(76,29,149,0.2)' : 'rgba(255,255,255,0.04)',
                       border: currentStep === 'results' ? '1px solid rgba(76,29,149,0.4)' : '1px solid rgba(255,255,255,0.08)',
