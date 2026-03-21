@@ -62,10 +62,16 @@ const DEFAULT_VARIATION_LEVEL: VariationLevel = 'high';
 const DEFAULT_BODY_OFFSET = 0;
 
 const PRESET_COLORS = [
-  '#FFFFFF', '#0A0A0A', '#1F2937', '#DC2626', '#EA580C', '#D97706',
-  '#65A30D', '#16A34A', '#059669', '#0D9488', '#0891B2', '#0284C7',
-  '#2563EB', '#4F46E5', '#7C3AED', '#9333EA', '#C026D3', '#DB2777',
-  '#E11D48', '#57534E'
+  '#FFFFFF', '#0A0A0A',
+  '#EF4444', '#DC2626',
+  '#F97316', '#FB923C',
+  '#EAB308', '#FDE047',
+  '#22C55E', '#16A34A',
+  '#0D9488', '#06B6D4',
+  '#3B82F6', '#2563EB',
+  '#8B5CF6', '#7C3AED',
+  '#EC4899', '#DB2777',
+  '#F43F5E', '#E11D48',
 ];
 
 const HAIR_COLORS = [
@@ -226,7 +232,7 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
   const [imageCount, setImageCount] = useState<number>(2);
   const [variationLevel, setVariationLevel] = useState<VariationLevel>(DEFAULT_VARIATION_LEVEL);
   const [bodySizeOffset, setBodySizeOffset] = useState<number>(DEFAULT_BODY_OFFSET);
-  const [activeColorPicker, setActiveColorPicker] = useState<'primary' | 'secondary' | 'customBg' | null>(null);
+  const [activeColorPicker, setActiveColorPicker] = useState<'primary' | 'secondary' | 'customBg' | 'signatureBg' | null>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const [showAboutYouWarning, setShowAboutYouWarning] = useState(false);
   const [shotListExpanded, setShotListExpanded] = useState(false);
@@ -645,9 +651,8 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
 
   const canContinue = aboutYouComplete && looks.length > 0;
 
-  // ── Color picker ───────────────────────────────────────────────
   const renderColorPicker = (
-    type: 'primary' | 'secondary' | 'customBg',
+    type: 'primary' | 'secondary' | 'customBg' | 'signatureBg',
     currentValue: string,
     onChangeFn: (val: string) => void,
     placeholder: string
@@ -685,24 +690,29 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
               style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '6px 8px', marginBottom: 12, fontSize: 12, background: 'none', border: `1px solid ${T.panelBorder}`, borderRadius: 8, color: T.white40, cursor: 'pointer' }}>
               <Ban style={{ width: 12, height: 12, color: T.red }} /><span>None / Clear</span>
             </button>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginBottom: 14 }}>
               {PRESET_COLORS.map((color) => (
                 <button key={color} type="button" onClick={() => { onChangeFn(color); setActiveColorPicker(null); }}
-                  style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${T.panelBorder}`, backgroundColor: color, cursor: 'pointer', position: 'relative', transition: 'transform 0.1s' }}>
-                  {currentValue === color && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check style={{ width: 14, height: 14, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} /></div>}
+                  style={{ width: 30, height: 30, borderRadius: '50%', border: `2px solid ${currentValue === color ? T.purple : T.panelBorder}`, backgroundColor: color, cursor: 'pointer', position: 'relative', transition: 'transform 0.1s' }}>
+                  {currentValue === color && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check style={{ width: 14, height: 14, color: color === '#FFFFFF' || color === '#FDE047' || color === '#FB923C' ? '#000' : '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }} /></div>}
                 </button>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: T.white40, fontSize: 12 }}>#</span>
-                <input type="text" value={currentValue.replace('#', '')} onChange={(e) => onChangeFn(`#${e.target.value}`)} placeholder="HEX"
-                  style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 8, paddingLeft: 20, paddingRight: 8, paddingTop: 6, paddingBottom: 6, fontSize: 12, color: T.white, outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-              <button type="button" onClick={() => { pickColorWithEyeDropper(type as any); setActiveColorPicker(null); }} disabled={!isEyeDropperSupported}
-                style={{ padding: '6px 8px', background: T.panel, border: `1px solid ${T.panelBorder}`, borderRadius: 8, color: T.white60, cursor: 'pointer' }} title="Pick from screen">
-                <Pipette style={{ width: 14, height: 14 }} />
-              </button>
+            {/* Native color palette */}
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 10, color: T.white40, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Full Palette</label>
+              <input
+                type="color"
+                value={currentValue || '#000000'}
+                onChange={(e) => onChangeFn(e.target.value)}
+                style={{ width: '100%', height: 36, borderRadius: 8, border: `1px solid ${T.panelBorder}`, background: 'none', cursor: 'pointer', padding: 2 }}
+              />
+            </div>
+            {/* Hex input */}
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: T.white40, fontSize: 12 }}>#</span>
+              <input type="text" value={currentValue.replace('#', '')} onChange={(e) => onChangeFn(`#${e.target.value}`)} placeholder="HEX"
+                style={{ width: '100%', background: T.bg, border: `1px solid ${T.panelBorder}`, borderRadius: 8, paddingLeft: 20, paddingRight: 8, paddingTop: 6, paddingBottom: 6, fontSize: 12, color: T.white, outline: 'none', boxSizing: 'border-box' }} />
             </div>
           </div>
         )}
@@ -1126,9 +1136,9 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                       <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 10px' }}>Background</p>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {[
-                          { id: 'dark-gray', label: 'Dark Gray', bg: 'linear-gradient(135deg, #141414, #323232)', prompt: 'Dark gray seamless studio backdrop #141414 with subtle circular center brightening to #323232 behind subject.' },
-                          { id: 'deep-black', label: 'Deep Black', bg: 'linear-gradient(135deg, #000000, #141414)', prompt: 'Deep black seamless studio backdrop #000000 with very subtle circular center brightening to #141414 behind subject.' },
-                          { id: 'pure-white', label: 'Pure White', bg: '#FFFFFF', prompt: 'Pure white seamless studio backdrop #FFFFFF. Clean, bright, no gradient.' },
+                          { id: 'dark-gray', label: 'Dark Gray', bg: 'linear-gradient(135deg, #141414, #323232)', prompt: 'Dark gray seamless studio backdrop. The backdrop is #141414 at the edges with a very subtle, small, diffuse circular brightening to #323232 centered at the middle of the backdrop at approximately shoulder height of the subject — like a small softbox pointed directly at the background from the front. Pure studio, no environmental elements.' },
+                          { id: 'deep-black', label: 'Deep Black', bg: 'linear-gradient(135deg, #000000, #0a0a0a)', prompt: 'Deep black seamless studio backdrop. The backdrop is pure #000000 at the edges with an extremely subtle, barely perceptible circular brightening to #0d0d0d centered at shoulder height of the subject — the faintest suggestion of a background light. Pure studio, no environmental elements.' },
+                          { id: 'pure-white', label: 'Pure White', bg: '#FFFFFF', prompt: 'Pure white seamless studio backdrop #FFFFFF. Completely flat, no gradient, no shadow. Clean, bright, evenly lit white wall-to-wall.' },
                         ].map((bg) => {
                           const isActive = config.backgroundType === bg.prompt;
                           return (
@@ -1140,7 +1150,21 @@ export const SettingsStep: React.FC<SettingsStepProps> = ({
                             </button>
                           );
                         })}
+                        {/* Custom color option */}
+                        <button type="button"
+                          onClick={() => updateConfig({ backgroundType: `Solid background color: ${config.brandColor || '#7C3AED'}` })}
+                          style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '10px 8px', borderRadius: 10, border: `2px solid ${config.backgroundType?.startsWith('Solid background color') ? T.purple : T.panelBorder}`, background: config.backgroundType?.startsWith('Solid background color') ? T.purpleDim : T.panel, cursor: 'pointer', transition: 'all 0.15s' }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: config.brandColor || '#7C3AED', border: '1px solid rgba(255,255,255,0.1)' }} />
+                          <span style={{ fontSize: 10, fontWeight: 600, color: config.backgroundType?.startsWith('Solid background color') ? T.white : T.white60 }}>Custom</span>
+                        </button>
                       </div>
+                      {config.backgroundType?.startsWith('Solid background color') && (
+                        <div style={{ marginTop: 10 }}>
+                          {renderColorPicker('signatureBg', config.brandColor || '', (color) => {
+                            updateConfig({ brandColor: color, backgroundType: `Solid background color: ${color}` });
+                          }, 'Choose color')}
+                        </div>
+                      )}
                     </div>
 
                     {/* Aspect Ratio */}
