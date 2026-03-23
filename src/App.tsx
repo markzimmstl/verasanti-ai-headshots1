@@ -698,20 +698,29 @@ function App() {
       {!isLoading && user && (
         <div className="min-h-screen flex flex-col">
 
-          {/* HEADER */}
+{/* HEADER */}
           <header
             className="border-b sticky top-0 z-40 shrink-0 backdrop-blur-xl"
             style={{ borderColor: 'rgba(255,255,255,0.06)', background: 'rgba(8,10,15,0.92)' }}
           >
             <div className="max-w-6xl mx-auto px-8 h-16 flex items-center justify-between">
 
-              <button
-                onClick={handleGoHome}
-                className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
-                aria-label="VeraLooks Home"
-              >
-                <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
-              </button>
+              {/* Logo + website link */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={handleGoHome}
+                  className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
+                  aria-label="VeraLooks Home"
+                >
+                  <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
+                </button>
+                <a href="https://www.veralooks.com" target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', textDecoration: 'none', transition: 'color 0.15s', letterSpacing: '0.02em' }}
+                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                  onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.22)')}>
+                  veralooks.com ↗
+                </a>
+              </div>
 
               <div className="hidden md:flex items-center gap-1.5">
                 {STEP_LABELS.map((label, i) => {
@@ -760,7 +769,7 @@ function App() {
               </div>
 
               <div className="flex items-center gap-3">
-                
+
                 {/* Your Images button */}
                 {generatedImages.length > 0 && (
                   <button
@@ -777,17 +786,33 @@ function App() {
                   </button>
                 )}
 
-                {/* Help / Contact */}
-                
-                  <a href="mailto:mark@veralooks.com?subject=VeraLooks%20Support"
+                {/* Blog */}
+                <a href="https://www.veralooks.com/blog" target="_blank" rel="noopener noreferrer"
+                  className="hidden md:block"
                   style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', padding: '4px 2px', transition: 'color 0.15s' }}
                   onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
-                  onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}
-                >
+                  onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}>
+                  Blog
+                </a>
+
+                {/* Support */}
+                <a href="https://www.veralooks.com/support" target="_blank" rel="noopener noreferrer"
+                  className="hidden md:block"
+                  style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', padding: '4px 2px', transition: 'color 0.15s' }}
+                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+                  onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}>
+                  Support
+                </a>
+
+                {/* Help / Contact */}
+                <a href="mailto:mark@veralooks.com?subject=VeraLooks%20Support"
+                  style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', padding: '4px 2px', transition: 'color 0.15s' }}
+                  onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+                  onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.4)')}>
                   Help
                 </a>
 
-                {/* Credits button — clickable to open top-up modal */}
+                {/* Credits button */}
                 <button
                   onClick={handleAddCredits}
                   className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all hover:opacity-80"
@@ -822,7 +847,7 @@ function App() {
               </div>
             </div>
 
-            {/* Low-credits warning banner — shown below header */}
+            {/* Low-credits warning banner */}
             <LowCreditsBanner credits={credits} onTopUp={handleAddCredits} />
           </header>
 
