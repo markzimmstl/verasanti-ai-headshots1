@@ -733,8 +733,11 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
 
           {/* Thumbnail gallery */}
           <div style={{ borderRadius: 16, border: `1px solid ${T.panelBorder}`, background: T.panel, padding: 20 }}>
-            <p style={{ fontFamily: T.serif, fontSize: 20, fontWeight: 400, color: T.white, margin: '0 0 14px' }}>
+            <p style={{ fontFamily: T.serif, fontSize: 20, fontWeight: 400, color: T.white, margin: '0 0 6px' }}>
               All Images <span style={{ fontSize: 14, color: T.white40 }}>({displayImages.length})</span>
+            </p>
+            <p style={{ fontSize: 11, color: T.white40, margin: '0 0 14px', lineHeight: 1.5 }}>
+              Images are stored for 90 days — longer than most AI headshot apps. Download any you want to keep.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {displayImages.map((img, idx) => (
