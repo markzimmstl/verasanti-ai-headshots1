@@ -8,7 +8,7 @@ import { AuthScreen } from './components/AuthScreen';
 import ShotListGenerator from './components/ShotListGenerator';
 import { useAuth } from './api/useAuth';
 import { loadCreditsForUser, saveCreditsForUser } from './api/userCreditsService';
-import { loadImagesForUser, saveImagesForUser, deleteImageForUser } from './api/generatedImagesService';
+import { loadImagesForUser, saveImagesForUser, deleteImageForUser, logDownloadForUser } from './api/generatedImagesService';
 import { 
   GenerationConfig, 
   GeneratedImage, 
@@ -980,6 +980,9 @@ function App() {
                     onDeleteImage={(imageId) => {
                       setGeneratedImages(prev => prev.filter(img => img.id !== imageId));
                       if (user) deleteImageForUser(user.id, imageId).catch(() => {});
+                    }}
+                    onLogDownload={(imageId, format) => {
+                      if (user) logDownloadForUser(user.id, imageId, format).catch(() => {});
                     }}
                     onSaveImage={(image) => {
                       setGeneratedImages(prev => {

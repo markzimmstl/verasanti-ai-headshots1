@@ -120,3 +120,34 @@ export async function deleteImageForUser(userId: string, imageId: string): Promi
     console.warn('[Images] Delete failed:', err);
   }
 }
+
+function getDownloadsEntity() {
+  try {
+    return (base44 as any).entities?.ImageDownloads ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function logDownloadForUser(
+  userId: string,
+  imageId: string,
+  format: 'png' | 'webp' | 'zip'
+): Promise<void> {
+  const Entity = getDownloadsEntity();
+  if (!Entity) {
+    console.warn('[Downloads] ImageDownloads entity not available');
+    return;
+  }
+  try {
+    await Entity.create({
+      user_id: userId,
+      image_id: imageId,
+      download_format: format,
+      downloaded_at: Date.now(),
+    });
+    console.log('[Downloads] Logged download:', imageId, format);
+  } catch (err) {
+    console.warn('[Downloads] Failed to log download:', err);
+  }
+}

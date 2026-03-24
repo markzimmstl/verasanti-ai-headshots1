@@ -50,6 +50,7 @@ interface ResultsStepProps {
   onRequestTopUp: () => void;
   onDeleteImage?: (imageId: string) => void;
   onSaveImage?: (image: GeneratedImage) => void;
+  onLogDownload?: (imageId: string, format: 'png' | 'webp' | 'zip') => void;
 }
 
 interface EditPreset {
@@ -182,7 +183,9 @@ const stripLabels = (name: string) =>
     .trim();
 
 // ── Main component ────────────────────────────────────────────────────────────
-const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp, onDeleteImage, onSaveImage }) => {
+const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerateMore, refs, baseConfig, credits, onSpendCredit, onRequestTopUp, onDeleteImage, onSaveImage,
+  onLogDownload,
+}) => {
   const [displayImages, setDisplayImages] = useState<GeneratedImage[]>(images);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(images[0] ?? null);
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
@@ -385,6 +388,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   };
 
   const downloadImage = async (url: string, format: 'webp' | 'png') => {
+    if (onLogDownload && selectedImage) onLogDownload(selectedImage.id, format);
     try {
       const blob = await fetch(url).then(r => r.blob());
       const bitmap = await createImageBitmap(blob);
@@ -403,9 +407,12 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     } catch { alert('Download failed. Please try right-clicking the image to save.'); }
   };
 
-  const handleDownloadAll = async () => {
-    setIsDownloadingAll(true);
-    try {
+    const handleDownloadAll = async () => {
+      setIsDownloadingAll(true);
+      if (onLogDownload) {
+        displayImages.forEach(img => onLogDownload(img.id, 'zip'));
+      }
+      try {
       const JSZip = await loadJSZip();
       const zip = new JSZip(); const folder = zip.folder('VeraLooks-Photos');
       await Promise.all(displayImages.map(async (img, idx) => {
