@@ -17,7 +17,7 @@ import {
   ReferenceImage,
 } from './types';
 import { generateBrandPhotoWithRefsSafe } from './services/geminiService';
-import { AlertCircle, LogOut, Zap, X } from 'lucide-react';
+import { AlertCircle, LogOut, Zap, Menu, X } from 'lucide-react';
 
 // @ts-ignore
 import { BRAND_DEFINITIONS } from './data/brandDefinitions';
@@ -314,6 +314,7 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Sync credits when user loads — Base44 entity first, localStorage fallback
   useEffect(() => {
@@ -712,10 +713,10 @@ function App() {
                   className="flex items-center hover:opacity-80 transition-opacity focus:outline-none"
                   aria-label="VeraLooks Home"
                 >
-                  <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto' }} />
+                  <img src="/VeraLooks_logo_white.png" alt="VeraLooks" style={{ height: 28, width: 'auto', minWidth: 120, objectFit: 'contain' }} />
                 </button>
                 <a href="https://www.veralooks.com" target="_blank" rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: 'rgba(255,255,255,0.22)', textDecoration: 'none', transition: 'color 0.15s', letterSpacing: '0.02em' }}
+                  style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textDecoration: 'none', transition: 'color 0.15s', letterSpacing: '0.02em' }}
                   onMouseOver={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
                   onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.22)')}>
                   veralooks.com ↗
@@ -847,8 +848,53 @@ function App() {
               </div>
             </div>
 
+            {/* Mobile menu dropdown */}
+            {mobileMenuOpen && (
+              <div className="md:hidden" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(8,10,15,0.98)', padding: '12px 24px 16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {generatedImages.length > 0 && (
+                    <button onClick={() => { setCurrentStep('results'); window.scrollTo(0, 0); setMobileMenuOpen(false); }}
+                      style={{ textAlign: 'left', fontSize: 14, color: currentStep === 'results' ? '#B98FFF' : 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      ✦ Your Images
+                    </button>
+                  )}
+                  <a href="https://www.veralooks.com/blog" target="_blank" rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                    Blog
+                  </a>
+                  <a href="https://www.veralooks.com/support" target="_blank" rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                    Support
+                  </a>
+                  <a href="mailto:mark@veralooks.com?subject=VeraLooks%20Support"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>
+                    Help
+                  </a>
+                  <button onClick={() => { handleAddCredits(); setMobileMenuOpen(false); }}
+                    style={{ textAlign: 'left', fontSize: 14, color: credits <= LOW_CREDITS_THRESHOLD && credits > 0 ? '#F59E0B' : 'rgba(255,255,255,0.7)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    {credits} Credits
+                  </button>
+                  <button onClick={() => { logout(); setMobileMenuOpen(false); }}
+                    style={{ textAlign: 'left', fontSize: 14, color: 'rgba(255,255,255,0.5)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Low-credits warning banner */}
             <LowCreditsBanner credits={credits} onTopUp={handleAddCredits} />
+          {/* Mobile hamburger */}
+              <button
+                className="flex md:hidden items-center justify-center w-8 h-8 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}
+                onClick={() => setMobileMenuOpen(p => !p)}
+              >
+                {mobileMenuOpen ? <X style={{ width: 14, height: 14 }} /> : <Menu style={{ width: 14, height: 14 }} />}
+              </button>
           </header>
 
           {/* ERROR MODAL */}
@@ -983,7 +1029,7 @@ function App() {
                     }}
                     onLogDownload={(imageId, format) => {
                       if (user) logDownloadForUser(user.id, imageId, format).catch(() => {});
-                    }}
+                    }} 
                     onSaveImage={(image) => {
                       setGeneratedImages(prev => {
                         // Find the source image (strip edit labels to match base name)

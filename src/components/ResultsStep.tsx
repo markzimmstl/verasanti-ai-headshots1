@@ -469,27 +469,12 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
               {displayImages.length} image{displayImages.length !== 1 ? 's' : ''} generated. Select one to download or refine.
             </p>
           </div>
-          <button
-            type="button" onClick={onGenerateMore || onRestart}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: T.panel, border: `1px solid ${T.panelBorder}`, color: T.white60 }}
-            onMouseOver={e => (e.currentTarget.style.background = T.panelHover)}
-            onMouseOut={e => (e.currentTarget.style.background = T.panel)}
-          >
-            <ChevronLeft style={{ width: 16, height: 16 }} />Create New Look
-          </button>
+         
         </div>
       </div>
 
       {/* Success banner */}
-      {images.some(img => img.createdAt > Date.now() - 5 * 60 * 1000) && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 12, marginBottom: 32, background: T.tealDim, border: `1px solid ${T.tealBorder}` }}>
-          <CheckCircle style={{ width: 18, height: 18, color: T.teal, flexShrink: 0 }} />
-          <p style={{ fontSize: 13, color: T.teal, margin: 0 }}>
-            Generation complete — download your images before closing this tab.
-          </p>
-        </div>
-      )}
-
+      
       {/* ── Main two-column grid ── */}
       <div className="results-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>
 
@@ -687,6 +672,16 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
         {/* ── Right sidebar ── */}
         <div style={{ position: 'sticky', top: 80, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+           {/* Create New Look */}
+          <button
+            type="button" onClick={onGenerateMore || onRestart}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 20px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', background: T.panel, border: `1px solid ${T.panelBorder}`, color: T.white60 }}
+            onMouseOver={e => (e.currentTarget.style.background = T.panelHover)}
+            onMouseOut={e => (e.currentTarget.style.background = T.panel)}
+          >
+            <ChevronLeft style={{ width: 16, height: 16 }} />Create New Look
+          </button>
+          
           {/* Download */}
           <div style={{ borderRadius: 16, border: `1px solid ${T.panelBorder}`, background: T.panel, padding: 20 }}>
             <p style={{ fontFamily: T.serif, fontSize: 20, fontWeight: 400, color: T.white, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
