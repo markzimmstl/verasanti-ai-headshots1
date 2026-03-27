@@ -50,7 +50,7 @@ interface ResultsStepProps {
   onRequestTopUp: () => void;
   onDeleteImage?: (imageId: string) => void;
   onSaveImage?: (image: GeneratedImage) => void;
-  onLogDownload?: (imageId: string, format: 'png' | 'webp' | 'zip') => void;
+  onLogDownload?: (imageId: string, format: 'png' | 'webp' | 'jpg' | 'zip') => void;
 }
 
 interface EditPreset {

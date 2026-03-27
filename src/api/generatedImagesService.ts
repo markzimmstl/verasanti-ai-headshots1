@@ -132,7 +132,7 @@ function getDownloadsEntity() {
 export async function logDownloadForUser(
   userId: string,
   imageId: string,
-  format: 'png' | 'webp' | 'zip'
+  format: 'png' | 'webp' | 'jpg' | 'zip'
 ): Promise<void> {
   const Entity = getDownloadsEntity();
   if (!Entity) {
