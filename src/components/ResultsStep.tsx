@@ -205,7 +205,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
 
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [showDownloadTip, setShowDownloadTip] = useState(false);
-  const [downloadAllFormat, setDownloadAllFormat] = useState<'png' | 'webp' | 'both'>('png');
+  const [downloadAllFormat, setDownloadAllFormat] = useState<'png' | 'jpg' | 'webp'>('png');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -423,13 +423,12 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
         canvas.width = bitmap.width; canvas.height = bitmap.height;
         canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
         const baseName = `VeraLooks-${String(idx + 1).padStart(2, '0')}-${img.styleName.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30)}`;
-        const addFormat = async (fmt: 'png' | 'webp') => {
-          const mimeType = fmt === 'webp' ? 'image/webp' : 'image/png';
-          const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('fail')), mimeType, fmt === 'webp' ? 0.85 : undefined));
+        const addFormat = async (fmt: 'png' | 'jpg' | 'webp') => {
+          const mimeType = fmt === 'webp' ? 'image/webp' : fmt === 'jpg' ? 'image/jpeg' : 'image/png';
+          const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('fail')), mimeType, fmt === 'png' ? undefined : 0.85));
           folder?.file(`${baseName}.${fmt}`, blob);
         };
-        if (downloadAllFormat === 'both') { await addFormat('png'); await addFormat('webp'); }
-        else { await addFormat(downloadAllFormat); }
+        await addFormat(downloadAllFormat);
       }));
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(zipBlob); a.download = 'VeraLooks-Photos.zip';
@@ -682,7 +681,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
             <ChevronLeft style={{ width: 16, height: 16 }} />Create New Look
           </button>
           
-          {/* Download */}
+{/* Download */}
           <div style={{ borderRadius: 16, border: `1px solid ${T.panelBorder}`, background: T.panel, padding: 20 }}>
             <p style={{ fontFamily: T.serif, fontSize: 20, fontWeight: 400, color: T.white, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Download style={{ width: 18, height: 18, color: T.purple }} />Download
@@ -692,23 +691,51 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
                 style={{ ...btnBase(T.purpleGrad, 'rgba(76,29,149,0.6)', T.white, !selectedImage), boxShadow: '0 4px 20px rgba(46,16,101,0.4)' }}>
                 <FileDown style={{ width: 16, height: 16 }} />Download Hi-Res PNG
               </button>
+              <p style={{ fontSize: 10, color: T.white40, margin: '-4px 0 0', textAlign: 'center' }}>Best for print, editing, and professional use</p>
+
+              <button type="button" onClick={() => selectedImage && downloadImage(selectedImage.imageUrl, 'jpg')} disabled={!selectedImage}
+                style={btnBase(T.panel, T.panelBorder, T.white60, !selectedImage)}>
+                <Download style={{ width: 16, height: 16 }} />Download JPG
+              </button>
+              <p style={{ fontSize: 10, color: T.white40, margin: '-4px 0 0', textAlign: 'center' }}>Great for Instagram, email, and general sharing</p>
+
               <button type="button" onClick={() => selectedImage && downloadImage(selectedImage.imageUrl, 'webp')} disabled={!selectedImage}
                 style={btnBase(T.panel, T.panelBorder, T.white60, !selectedImage)}>
-                <Download style={{ width: 16, height: 16 }} />Download Web WebP
+                <Download style={{ width: 16, height: 16 }} />Download WebP
               </button>
+              <p style={{ fontSize: 10, color: T.white40, margin: '-4px 0 0', textAlign: 'center' }}>Optimized for websites — smaller file size</p>
+
+              {/* Download Selected */}
+              {favoritedImages.size > 0 && (
+                <div style={{ borderRadius: 10, background: T.purpleDim, border: `1px solid ${T.purpleBorder}`, padding: '10px 12px' }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: T.purple, margin: '0 0 8px' }}>
+                    {favoritedImages.size} image{favoritedImages.size !== 1 ? 's' : ''} selected
+                  </p>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['png', 'jpg', 'webp'] as const).map(fmt => (
+                      <button key={fmt} type="button"
+                        onClick={() => handleDownloadSelected(fmt)}
+                        style={{ flex: 1, padding: '6px 4px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: T.sans, background: T.purpleGrad, border: `1px solid rgba(76,29,149,0.6)`, color: T.white, textTransform: 'uppercase' as const }}>
+                        {fmt.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 10, color: T.purple, margin: '6px 0 0' }}>Downloads as ZIP</p>
+                </div>
+              )}
 
               <div style={{ padding: '10px 12px', borderRadius: 10, background: T.panel, border: `1px solid ${T.panelBorder}` }}>
                 <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: T.amber, margin: '0 0 8px' }}>Download All — Format</p>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {(['png', 'webp', 'both'] as const).map(fmt => (
+                  {(['png', 'jpg', 'webp'] as const).map(fmt => (
                     <button key={fmt} type="button" onClick={() => setDownloadAllFormat(fmt)}
                       style={{ flex: 1, padding: '6px 4px', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: T.sans, transition: 'all 0.15s', textTransform: 'uppercase' as const, letterSpacing: '0.04em', background: downloadAllFormat === fmt ? T.purpleGrad : T.panel, border: `1px solid ${downloadAllFormat === fmt ? 'rgba(76,29,149,0.6)' : T.panelBorder}`, color: downloadAllFormat === fmt ? T.white : T.white40 }}>
-                      {fmt === 'both' ? 'Both' : fmt.toUpperCase()}
+                      {fmt.toUpperCase()}
                     </button>
                   ))}
                 </div>
                 <p style={{ fontSize: 10, color: T.white20, margin: '6px 0 0', lineHeight: 1.5 }}>
-                  {downloadAllFormat === 'png' ? 'Hi-res PNG — best for print & editing' : downloadAllFormat === 'webp' ? 'Smaller file size, great for web' : 'Both formats included in the ZIP'}
+                  {downloadAllFormat === 'png' ? 'Hi-res PNG — best for print & editing' : downloadAllFormat === 'jpg' ? 'JPG — great for Instagram and sharing' : 'WebP — optimized for websites'}
                 </p>
               </div>
 
@@ -735,35 +762,61 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
 
           {/* Thumbnail gallery */}
           <div style={{ borderRadius: 16, border: `1px solid ${T.panelBorder}`, background: T.panel, padding: 20 }}>
-            <p style={{ fontFamily: T.serif, fontSize: 20, fontWeight: 400, color: T.white, margin: '0 0 6px' }}>
-              All Images <span style={{ fontSize: 14, color: T.white40 }}>({displayImages.length})</span>
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <p style={{ fontFamily: T.serif, fontSize: 20, fontWeight: 400, color: T.white, margin: 0 }}>
+                All Images <span style={{ fontSize: 14, color: T.white40 }}>({displayImages.length})</span>
+              </p>
+              {favoritedImages.size > 0 && (
+                <span style={{ fontSize: 11, color: T.purple, fontWeight: 600 }}>
+                  {favoritedImages.size} ♥
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 11, color: T.white40, margin: '0 0 14px', lineHeight: 1.5 }}>
-              Images are stored for 90 days — longer than most AI headshot apps. Download any you want to keep.
+              Tap ♥ to select images for download. Images stored 90 days.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {displayImages.map((img, idx) => (
-                <div key={img.id} style={{ position: 'relative', aspectRatio: '1' }}>
-                  <button type="button" onClick={() => setSelectedImage(img)}
-                    style={{ position: 'relative', width: '100%', height: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: `2px solid ${selectedImage?.id === img.id ? T.purple : 'transparent'}`, boxShadow: selectedImage?.id === img.id ? `0 0 0 2px ${T.purpleBorder}` : 'none', cursor: 'pointer', background: T.panel, padding: 0, transition: 'all 0.15s', display: 'block' }}>
-                    <img src={img.imageUrl} alt={`Thumbnail ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    {(img.styleName?.includes('· Edited') || img.styleName?.includes('(Edited)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>EDITED</div>}
-                    {(img.styleName?.includes('· Regenerated') || img.styleName?.includes('(Regenerated)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>REGEN</div>}
-                    {(img.styleName?.includes('· Erased') || img.styleName?.includes('(Erased)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(13,148,136,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>ERASED</div>}
-                  </button>
-                  <button type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!window.confirm('Remove this image?')) return;
-                      setDisplayImages(prev => prev.filter(i => i.id !== img.id));
-                      if (selectedImage?.id === img.id) setSelectedImage(displayImages.find(i => i.id !== img.id) || null);
-                      if (onDeleteImage) onDeleteImage(img.id);
-                    }}
-                    style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>
-                    ✕
-                  </button>
-                </div>
-              ))}
+              {displayImages.map((img, idx) => {
+                const isFavorited = favoritedImages.has(img.id);
+                return (
+                  <div key={img.id} style={{ position: 'relative', aspectRatio: '1' }}>
+                    <button type="button" onClick={() => setSelectedImage(img)}
+                      style={{ position: 'relative', width: '100%', height: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: `2px solid ${selectedImage?.id === img.id ? T.purple : 'transparent'}`, boxShadow: selectedImage?.id === img.id ? `0 0 0 2px ${T.purpleBorder}` : 'none', cursor: 'pointer', background: T.panel, padding: 0, transition: 'all 0.15s', display: 'block' }}>
+                      <img src={img.imageUrl} alt={`Thumbnail ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      {(img.styleName?.includes('· Edited') || img.styleName?.includes('(Edited)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>EDITED</div>}
+                      {(img.styleName?.includes('· Regenerated') || img.styleName?.includes('(Regenerated)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(76,29,149,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>REGEN</div>}
+                      {(img.styleName?.includes('· Erased') || img.styleName?.includes('(Erased)')) && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(13,148,136,0.75)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 9, fontWeight: 700, textAlign: 'center', padding: '3px 0', letterSpacing: '0.06em' }}>ERASED</div>}
+                    </button>
+                    {/* Heart/favorite button */}
+                    <button type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFavoritedImages(prev => {
+                          const next = new Set(prev);
+                          if (next.has(img.id)) next.delete(img.id);
+                          else next.add(img.id);
+                          return next;
+                        });
+                      }}
+                      style={{ position: 'absolute', bottom: 4, left: 4, width: 20, height: 20, borderRadius: '50%', background: isFavorited ? 'rgba(159,103,255,0.9)' : 'rgba(0,0,0,0.35)', border: `1px solid ${isFavorited ? T.purple : 'rgba(255,255,255,0.08)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, lineHeight: 1, transition: 'all 0.15s' }}>
+                      {isFavorited ? '♥' : '♡'}
+                    </button>
+                    {/* Delete button */}
+                    <button type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!window.confirm('Remove this image?')) return;
+                        setDisplayImages(prev => prev.filter(i => i.id !== img.id));
+                        setFavoritedImages(prev => { const next = new Set(prev); next.delete(img.id); return next; });
+                        if (selectedImage?.id === img.id) setSelectedImage(displayImages.find(i => i.id !== img.id) || null);
+                        if (onDeleteImage) onDeleteImage(img.id);
+                      }}
+                      style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: 700, lineHeight: 1 }}>
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
