@@ -211,6 +211,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushSize, setBrushSize] = useState(20);
   const [hasMask, setHasMask] = useState(false);
+  const [favoritedImages, setFavoritedImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setDisplayImages(images);
@@ -387,7 +388,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
     finally { setIsRegenAll(false); setRegenAllProgress(null); regenAllCancelRef.current = false; }
   };
 
-  const downloadImage = async (url: string, format: 'webp' | 'png') => {
+  const downloadImage = async (url: string, format: 'webp' | 'png' | 'jpg') => {
     if (onLogDownload && selectedImage) onLogDownload(selectedImage.id, format);
     try {
       const blob = await fetch(url).then(r => r.blob());
@@ -395,7 +396,7 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
       const canvas = document.createElement('canvas');
       canvas.width = bitmap.width; canvas.height = bitmap.height;
       canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
-      const mimeType = format === 'webp' ? 'image/webp' : 'image/png';
+      const mimeType = format === 'webp' ? 'image/webp' : format === 'jpg' ? 'image/jpeg' : 'image/png';
       const filename = `VeraLooks-Headshot.${format}`;
       const finalBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('Failed')), mimeType, format === 'webp' ? 0.85 : undefined));
       if ('showSaveFilePicker' in window) {
@@ -435,6 +436,36 @@ const ResultsStep: React.FC<ResultsStepProps> = ({ images, onRestart, onGenerate
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setShowDownloadTip(true);
     } catch { alert('Download All failed. Please download images individually.'); }
+    finally { setIsDownloadingAll(false); }
+  };
+
+  const handleDownloadSelected = async (format: 'png' | 'jpg' | 'webp') => {
+    const selected = displayImages.filter(img => favoritedImages.has(img.id));
+    if (!selected.length) return;
+    setIsDownloadingAll(true);
+    try {
+      const JSZip = await loadJSZip();
+      const zip = new JSZip();
+      const folder = zip.folder('VeraLooks-Selected');
+      await Promise.all(selected.map(async (img, idx) => {
+        const res = await fetch(img.imageUrl);
+        const sourceBlob = await res.blob();
+        const bitmap = await createImageBitmap(sourceBlob);
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width; canvas.height = bitmap.height;
+        canvas.getContext('2d')!.drawImage(bitmap, 0, 0);
+        const mimeType = format === 'webp' ? 'image/webp' : format === 'jpg' ? 'image/jpeg' : 'image/png';
+        const ext = format;
+        const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(new Error('fail')), mimeType, format === 'png' ? undefined : 0.85));
+        const baseName = `VeraLooks-${String(idx + 1).padStart(2, '0')}-${img.styleName.replace(/[^a-zA-Z0-9]/g, '-').slice(0, 30)}`;
+        folder?.file(`${baseName}.${ext}`, blob);
+        if (onLogDownload) onLogDownload(img.id, format);
+      }));
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(zipBlob); a.download = 'VeraLooks-Selected.zip';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setShowDownloadTip(true);
+    } catch { alert('Download failed. Please try again.'); }
     finally { setIsDownloadingAll(false); }
   };
 
