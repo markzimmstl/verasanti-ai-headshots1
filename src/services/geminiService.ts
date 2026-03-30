@@ -219,7 +219,10 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     } else if (lowerPrompt.includes('park') || lowerPrompt.includes('trail') || lowerPrompt.includes('outdoor') || lowerPrompt.includes('nature') || lowerPrompt.includes('garden')) {
       stylePrompt = `professional personal brand portrait taken outdoors in a beautiful natural park setting; lush green trees and soft dappled natural light visible behind the subject at mid-ground level; subject standing upright on a paved path or manicured lawn; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead; warm natural daylight; NOT a warehouse, NOT industrial, NOT urban grit`;
     } else if (lowerPrompt.includes('street')) {
-      stylePrompt = `professional personal brand portrait on an upscale urban street; attractive
+      stylePrompt = `professional personal brand portrait on an upscale urban street; attractive storefronts, tree-lined sidewalk, or city buildings visible behind subject at mid-ground level; subject standing upright facing camera; warm natural or golden hour light; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
+    } else {
+      stylePrompt = `professional personal brand portrait in a ${stylePrompt}; subject standing upright facing camera; environment visible behind subject at mid-ground level — not towering overhead; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
+    }
     negativeConstraints += ` *** ABSOLUTE RULE: Camera is at eye level. ZERO low-angle shots. ZERO upward tilt. ZERO worm's-eye perspective. The background does not dictate the camera angle. ***`;
   }
 
