@@ -139,8 +139,9 @@ const buildPrompt = (
    - Do NOT show: octaboxes, softboxes, umbrellas, light stands, c-stands, reflectors, diffusers, grids, scrims, or flash heads.
    - Do NOT show reflections of lighting equipment in windows, glasses, or glossy surfaces.
    - BACKGROUND SEPARATION RULE: Do NOT allow vertical lines, window frames, trees, poles, or columns to appear directly behind the subject's head.
-   - CROPPING RULE: NEVER crop at a joint (knees, elbows, wrists, ankles). Always crop mid-limb or beyond.
-   - FINGERS: Never cut off fingers. If hands are visible, all fingers must be fully within the frame. Same rule applies to toes (full body shots) and the top of the head.
+   - CROPPING RULE: *** ABSOLUTE — ZERO EXCEPTIONS *** NEVER crop at a joint (knees, elbows, wrists, ankles, hips, shoulders). Always crop mid-limb. This means: if the frame edge falls near a joint, zoom out slightly so the joint is fully inside the frame and the crop falls on the limb itself. A crop through a knee, elbow, wrist, ankle, or hip is a critical failure.
+   - FINGERS: NEVER cut off fingers. If hands are visible, ALL fingers must be fully within the frame with clear space around them. Same rule applies to toes in full body shots. NEVER cut the top of the head — always leave headroom above the hair.
+   - BENT POSTURE: *** ABSOLUTE — NO EXCEPTIONS *** The subject must NEVER be bent forward at the waist, hunched, leaning dramatically forward, or in any posture where the torso angles toward the ground. This applies regardless of the scene, activity, or environment shown. The subject is a professional being photographed — they stand UPRIGHT with a straight spine at ALL times.
    - Avoid "mergers" where background objects look like they are growing out of the subject's head.
    - The background must be the ENVIRONMENT ONLY. 
    - CLOTHING TEXT: No text, no logos, no lettering, no graphics on any garment.
@@ -207,7 +208,7 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
       negativeConstraints += ` *** ABSOLUTE WELLNESS SCENE RULE: The subject is a PROFESSIONAL standing PERFECTLY UPRIGHT. NEVER bending over. NEVER in a yoga pose. NEVER crouching. NEVER stretching. NEVER in any athletic or exercise position. The subject is a business professional who happens to be photographed in this space — they are NOT participating in the activity. Spine is VERTICAL. Standing tall with confident professional posture ONLY. ***`;
     }
     
-    const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling') || lowerPrompt.includes('boutique') || lowerPrompt.includes('shop front') || lowerPrompt.includes('retail');  if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
+    const isIndustrialScene = lowerPrompt.includes('construction') || lowerPrompt.includes('warehouse') || lowerPrompt.includes('scaffolding') || lowerPrompt.includes('industrial') || lowerPrompt.includes('high ceiling') || lowerPrompt.includes('boutique') || lowerPrompt.includes('shop front') || lowerPrompt.includes('retail') || lowerPrompt.includes('park') || lowerPrompt.includes('trail') || lowerPrompt.includes('outdoor') || lowerPrompt.includes('nature') || lowerPrompt.includes('garden') || lowerPrompt.includes('street');  if (isIndustrialScene && config.cameraAngle !== 'Low Angle (Power)') {
     const eyeLevelAngle = config.cameraAngle === 'High Angle' ? 'slightly above' : 'exactly at';
     // Replace the stylePrompt with a camera-neutral rewrite that describes the scene
     // from the photographer's eye level — removing tall-structure trigger words
@@ -215,10 +216,10 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
       stylePrompt = `professional corporate portrait; subject standing upright facing camera on a concrete floor; behind the subject at the same horizontal level are industrial metal storage racks with boxes — visible from mid-torso height, not towering; warm industrial overhead lighting; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
     } else if (lowerPrompt.includes('construction')) {
       stylePrompt = `professional corporate portrait; subject standing upright on a job site facing camera; behind the subject at the same horizontal level are steel beams, building materials, and site equipment — visible from mid-torso height; natural outdoor daylight; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
-    } else {
-      // Generic industrial rewrite
-      stylePrompt = `professional corporate portrait in an industrial setting; subject standing upright facing camera; industrial environment visible behind subject at mid-ground level — not towering overhead; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead`;
-    }
+    } else if (lowerPrompt.includes('park') || lowerPrompt.includes('trail') || lowerPrompt.includes('outdoor') || lowerPrompt.includes('nature') || lowerPrompt.includes('garden')) {
+      stylePrompt = `professional personal brand portrait taken outdoors in a beautiful natural park setting; lush green trees and soft dappled natural light visible behind the subject at mid-ground level; subject standing upright on a paved path or manicured lawn; camera at ${eyeLevelAngle} the subject's eye height pointing straight ahead; warm natural daylight; NOT a warehouse, NOT industrial, NOT urban grit`;
+    } else if (lowerPrompt.includes('street')) {
+      stylePrompt = `professional personal brand portrait on an upscale urban street; attractive
     negativeConstraints += ` *** ABSOLUTE RULE: Camera is at eye level. ZERO low-angle shots. ZERO upward tilt. ZERO worm's-eye perspective. The background does not dictate the camera angle. ***`;
   }
 
@@ -258,10 +259,13 @@ NO SCREENS. NO MONITORS. NO WHITEBOARDS. NO PROJECTORS. EVER.`;
     CAMERA: Shoot straight-on at eye level. 85mm full-frame equivalent focal length. Never tilt up or down.
     BACKGROUND: Dark gray seamless studio backdrop. Base color #141414 with a very subtle circular gradient brightening to approximately #323232 at the center behind the subject's head — like a classic studio vignette falloff. No environmental elements. No props. No location context. Pure studio.
     LIGHTING: Pure two-light clamshell setup — exactly two light sources, nothing else:
-  KEY LIGHT: 24" Westcott Rapid Box Beauty Dish positioned 1 foot ABOVE and 1 foot IN FRONT of the subject, pointing straight down. Centered left-to-right on the vertical axis directly in front of the subject. Because the dish is positioned in front of and above the subject rather than directly overhead, the light is naturally feathered — the subject receives the soft, diffuse edge of the beam rather than the hot center. This produces beautiful dimensional lighting on the face: gentle shadows under the brow, nose, and chin that sculpt the face without being harsh, smooth flattering skin rendering, and a single round catchlight at approximately the 12 o'clock position in each iris.
-  EYELIGHTER REFLECTOR: Westcott Eyelighter curved reflector placed at approximately waist height, directly in front of the subject on the same vertical center axis as the beauty dish. The eyelighter catches the light from the beauty dish and bounces it back upward toward the subject's face. This fills in the shadows under the chin and eyes and creates a distinctive crescent-shaped catchlight at the bottom of each iris — approximately one-third of the iris in width, half the visible iris in height, centered at the 6 o'clock position. This bottom catchlight is slightly softer and less bright than the top catchlight from the beauty dish.
-CATCHLIGHTS: Exactly TWO catchlights visible in each eye: (1) A round specular catchlight from the beauty dish at the 12 o'clock position. (2) A soft crescent-shaped catchlight from the Eyelighter at the 6 o'clock position — one-third iris width, half iris height, slightly softer than the top catchlight.
-ABSOLUTELY NO OTHER LIGHTS: NO rim lights. NO hair lights. NO kicker lights. NO background lights on the subject. NO lights from behind. NO lights from the sides. NO separation lights. Only the beauty dish in front above and the eyelighter reflector in front below. The background may have its own subtle gradient from a separate background light but NO lights touch the subject from behind or the sides.
+    KEY LIGHT: 24" Westcott Rapid Box Beauty Dish positioned 1 foot ABOVE and 1 foot IN FRONT of the subject, pointing straight down. Centered left-to-right on the vertical axis directly in front of the subject. Because the dish is positioned in front of and above the subject rather than directly overhead, the light is naturally feathered — the subject receives the soft, diffuse edge of the beam rather than the hot center. This produces beautiful dimensional lighting on the face: gentle shadows under the brow, nose, and chin that sculpt the face without being harsh, smooth flattering skin rendering, and a single round catchlight at approximately the 12 o'clock position in each iris.
+    EYELIGHTER REFLECTOR: Westcott Eyelighter curved reflector placed at approximately waist height, directly in front of the subject on the same vertical center axis as the beauty dish. The eyelighter catches the light from the beauty dish and bounces it back upward toward the subject's face. This fills in the shadows under the chin and eyes and creates a distinctive crescent-shaped catchlight at the bottom of each iris — approximately one-third of the iris in width, half the visible iris in height, centered at the 6 o'clock position. This bottom catchlight is slightly softer and less bright than the top catchlight from the beauty dish.
+    CATCHLIGHTS: Exactly TWO catchlights visible in each eye — no more, no less:
+    (1) TOP CATCHLIGHT: A single small round specular highlight from the beauty dish, positioned at the 12 o'clock position in the iris. This is a solid round dot — NOT a ring, NOT a circle with a dark center, NOT a donut shape. A solid filled circle only.
+    (2) BOTTOM CATCHLIGHT: A soft, wide crescent arc from the Eyelighter at the 6 o'clock position — approximately one-third of the iris width, half the visible iris height, slightly softer and less bright than the top catchlight.
+    CATCHLIGHT NEGATIVE: *** ABSOLUTELY FORBIDDEN: ring-shaped catchlights (circle surrounding the pupil), donut catchlights, multiple ring catchlights, octabox catchlights, strip box catchlights, or any catchlight pattern suggesting a ring light or circular flash. ONLY the two catchlights described above are permitted. ***
+    ABSOLUTELY NO OTHER LIGHTS: NO rim lights. NO hair lights. NO kicker lights. NO separation lights. NO edge lights. NO lights from behind the subject. NO lights from the sides of the subject. NO lights that create a bright outline or halo around the hair or shoulders. The subject's hair and shoulders must NOT have any bright highlight edge or rim. Only the beauty dish in front-above and the eyelighter reflector in front-below touch the subject. Zero side or back lighting of any kind.
     RESULT: High-end studio-lit corporate headshot. Even, flattering, symmetrical lighting with natural facial sculpting. Polished and professional but natural. Moderate contrast, neutral and accurate skin tones.`;
 
     stylePrompt = `ABSOLUTE BACKGROUND MANDATE — NO EXCEPTIONS: ${
@@ -273,7 +277,7 @@ ABSOLUTELY NO OTHER LIGHTS: NO rim lights. NO hair lights. NO kicker lights. NO 
     } This is a controlled studio environment. There is NO wood paneling. NO office. NO furniture. NO windows. NO bookshelves. NO architectural elements. ONLY seamless studio paper behind the subject.`;
     lensInstruction = "85mm Telephoto Portrait Lens";
     lightingDirectionOverride = "";
-    negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO offices. NO outdoor scenes. NO props. NO location elements. ONLY a dark gray studio backdrop. Face STRAIGHT ON to camera — ZERO profile. NO side lighting. NO lights from left or right. Only overhead feathered beauty dish and underchin eyelighter. ABSOLUTELY NO VISIBLE LIGHTING EQUIPMENT IN THE FRAME — no beauty dishes, no softboxes, no reflectors, no light stands visible in the image. The lighting equipment must not appear in the photograph. ***`;
+    negativeConstraints += ` *** SIGNATURE STUDIO OVERRIDE: NO environmental backgrounds. NO rooftops. NO bookcases. NO offices. NO outdoor scenes. NO props. NO location elements. ONLY a dark gray studio backdrop. Face STRAIGHT ON to camera — ZERO profile. NO side lighting. NO lights from left or right. NO rim lights. NO hair lights. NO edge lights. NO bright outlines on hair or shoulders. Only overhead feathered beauty dish and underchin eyelighter. ABSOLUTELY NO VISIBLE LIGHTING EQUIPMENT IN THE FRAME. NO ring light catchlights. NO donut catchlights. NO circular catchlights surrounding the pupil. ONLY a solid round top catchlight and a crescent bottom catchlight. ***`;
   }
 
   if (!config.signatureStudio) switch (config.framing) {
@@ -327,7 +331,7 @@ ABSOLUTELY NO OTHER LIGHTS: NO rim lights. NO hair lights. NO kicker lights. NO 
        - Gaze: ${rot.gaze}
        - This is a PROFESSIONAL EDITORIAL PORTRAIT. The composition must feel intentional and dynamic.`;
       lensInstruction = "50mm Standard Lens";
-      negativeConstraints += " Do NOT create a full body shot. Do NOT show shoes. Do NOT create a waist-up or headshot.";
+      negativeConstraints += ` *** THREE-QUARTER FRAMING VIOLATION — FORBIDDEN: full body shot showing feet and floor, waist-up shot, headshot. The frame MUST show the subject from the top of the head to just above the knees. Showing feet or shoes is a critical failure. Cutting off at the waist is a critical failure. ***`;
       break;
     }
 
@@ -350,7 +354,7 @@ ABSOLUTELY NO OTHER LIGHTS: NO rim lights. NO hair lights. NO kicker lights. NO 
        - Body angle: ${rot.bodyAngle}
        - Gaze: ${rot.gaze}
        - This is a PROFESSIONAL EDITORIAL PORTRAIT. The composition must feel intentional and dynamic.`;
-      negativeConstraints += " Do NOT cut off the feet. Do NOT cut off the head. Do NOT crop at knees or waist.";
+      negativeConstraints += ` *** FULL BODY FRAMING — ABSOLUTE MANDATE: The subject's feet AND shoes must be fully visible standing on the floor. The subject's entire head must be visible with air space above. Cutting off feet is a critical failure. Cutting off the head is a critical failure. This MUST be a full body shot from head to toe. ***`;
       break;
     }
 
